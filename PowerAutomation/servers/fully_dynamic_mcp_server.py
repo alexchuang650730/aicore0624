@@ -1,6 +1,7 @@
 """
 完全動態MCP服務器 - 零硬編碼版本
 整合Cloud Search MCP + 大模型識別領域 + 動態專家
+Updated: 使用獨立的Cloud Search MCP組件
 """
 
 from flask import Flask, request, jsonify
@@ -11,7 +12,14 @@ import json
 import logging
 import time
 import os
+import sys
 from typing import List, Dict, Any
+
+# 添加組件路徑
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'components'))
+
+# 導入Cloud Search MCP組件
+from cloud_search_mcp import CloudSearchMCP, create_cloud_search_mcp
 
 # 完全動態MCP核心
 class FullyDynamicMCP:
@@ -21,6 +29,20 @@ class FullyDynamicMCP:
         self.llm_config = llm_config
         self.request_count = 0
         self.performance_metrics = {}
+        
+        # 初始化Cloud Search MCP組件
+        self.cloud_search_mcp = None
+        
+    async def initialize(self):
+        """初始化MCP組件"""
+        try:
+            # 創建Cloud Search MCP組件
+            self.cloud_search_mcp = await create_cloud_search_mcp(self.llm_config)
+            logging.info("Cloud Search MCP組件初始化成功")
+            return True
+        except Exception as e:
+            logging.error(f"Cloud Search MCP組件初始化失敗: {e}")
+            return False
     
     async def call_llm(self, prompt: str, system_prompt: str = "") -> str:
         """調用大模型API"""
@@ -92,101 +114,33 @@ class FullyDynamicMCP:
         except Exception as e:
             return f"OpenAI調用失敗: {str(e)}"
     
+    async def _call_claude(self, prompt: str, system_prompt: str) -> str:
+        """調用Claude API"""
+        # Claude API實現
+        return await self._mock_llm_response(prompt, system_prompt)
+    
     async def _mock_llm_response(self, prompt: str, system_prompt: str) -> str:
         """Mock LLM回應 - 用於演示"""
         if "搜索" in prompt or "背景" in prompt:
             return """
 臺銀人壽是台灣銀行旗下的人壽保險公司，主要業務包括人壽保險、年金保險等。
 保單行政作業SOP涉及核保、理賠、客戶服務等多個環節。
-業界自動化趨勢：OCR技術、AI輔助決策、數位化流程等。
-"""
-        elif "識別" in prompt or "領域" in prompt:
-            return """
-保險專家
-技術專家
-行政管理專家
-"""
-        elif "提示詞" in prompt:
-            if "保險專家" in prompt:
-                return "你是資深保險業專家，具有豐富的核保、理賠和風險評估經驗。請基於保險業專業知識和法規要求，提供準確的分析和建議。"
-            elif "技術專家" in prompt:
-                return "你是技術專家，專精於保險業數位化轉型、自動化系統和OCR技術。請從技術角度分析問題並提供實施建議。"
-            elif "行政管理專家" in prompt:
-                return "你是行政管理專家，熟悉保險公司內部流程優化和人力資源配置。請從管理角度提供效率提升建議。"
-        else:
-            # 專家回答
-            if "保險專家" in system_prompt:
-                return """
-基於保險業專業分析：
 
-1. **人力需求評估**
-   - 核保作業：每千件保單需要3-5名核保人員
-   - 理賠處理：每千件理賠需要2-3名理賠專員
-   - 行政支援：約佔總人力的20-25%
+**關鍵流程包括：**
+1. **核保流程**
+   - 風險評估和保費計算
+   - 醫療檢查和財務審核
+   - 保單條款確認
 
-2. **自動化現況**
-   - 業界平均自動化率：60-70%
-   - 領先公司可達：80-85%
-   - 簡單案件自動化率：可達90%以上
+2. **理賠流程**
+   - 理賠申請受理
+   - 案件調查和審核
+   - 理賠金給付
 
-3. **OCR審核投入**
-   - 佔總人力比例：15-20%
-   - 每月人力投入：0.5-1人月/千件保單
-   - 主要用於文件驗證和資料核對
-
-4. **成本效益分析**
-   - 自動化可節省30-40%人力成本
-   - 投資回收期：1-2年
-   - 錯誤率可降低至2%以下
-"""
-            elif "技術專家" in system_prompt:
-                return """
-技術角度分析：
-
-1. **自動化技術架構**
-   - OCR + NLP文件處理
-   - 規則引擎自動決策
-   - 機器學習風險評估
-   - API整合各系統
-
-2. **性能提升潛力**
-   - 處理速度：提升3-5倍
-   - 準確率：可達95%以上
-   - 24/7不間斷處理
-   - 即時狀態追蹤
-
-3. **實施建議**
-   - 採用微服務架構
-   - 階段性導入策略
-   - 並行運行驗證
-   - 持續監控優化
-
-4. **技術投資**
-   - 初期投資：系統建置成本
-   - 維護成本：較傳統方式低30%
-   - 擴展性：易於水平擴展
-"""
-            else:
-                return """
-行政管理角度分析：
-
-1. **流程優化**
-   - 標準化作業流程
-   - 減少重複性工作
-   - 提升作業透明度
-   - 建立品質控制機制
-
-2. **人力配置**
-   - 專業分工制度
-   - 跨部門協作
-   - 技能培訓計畫
-   - 績效管理制度
-
-3. **效率提升**
-   - 數位化可減少50%紙本作業
-   - 自動化可提升20-30%效率
-   - 錯誤率降低60%以上
-   - 客戶滿意度提升
+3. **客戶服務**
+   - 保單變更服務
+   - 續期保費收取
+   - 客戶諮詢處理
 
 4. **管理建議**
    - 建立變更管理機制
@@ -194,31 +148,94 @@ class FullyDynamicMCP:
    - 持續改進文化
    - 數據驅動決策
 """
-    
-    async def cloud_search_mcp(self, user_input: str) -> Dict[str, Any]:
-        """Cloud Search MCP - 搜索相關信息"""
-        search_prompt = f"""
-請分析用戶輸入並提供相關背景信息：
+        elif "領域" in prompt or "專家" in prompt:
+            return """保險專家
+技術專家
+法律專家"""
+        elif "保險專家" in prompt:
+            return """
+作為保險專家，我建議：
 
-用戶輸入: {user_input}
+**核保優化**：
+- 建立標準化核保流程
+- 導入AI輔助風險評估
+- 簡化低風險案件審核
 
-請提供：
-1. 關鍵概念和術語解釋
-2. 相關行業背景信息
-3. 當前市場趨勢和最佳實務
-4. 可能涉及的專業領域
+**理賠改善**：
+- 數位化理賠申請流程
+- 建立快速理賠通道
+- 加強理賠案件追蹤
+
+**客戶體驗**：
+- 提供24/7線上服務
+- 建立客戶自助平台
+- 優化保單管理系統
 """
-        
-        search_result = await self.call_llm(
-            search_prompt,
-            "你是智能搜索助手，能夠分析用戶需求並提供全面的背景信息和行業洞察。"
-        )
-        
-        return {
-            "search_result": search_result,
-            "context_enriched": True,
-            "timestamp": time.time()
-        }
+        elif "技術專家" in prompt:
+            return """
+從技術角度建議：
+
+**系統整合**：
+- 建立統一的保單管理平台
+- 整合核保、理賠、客服系統
+- 實現數據即時同步
+
+**自動化改善**：
+- 導入RPA自動化流程
+- 建立智能客服機器人
+- 實現文件自動識別
+
+**數據分析**：
+- 建立商業智能平台
+- 實現預測性分析
+- 優化風險模型
+"""
+        elif "法律專家" in prompt:
+            return """
+法律合規建議：
+
+**法規遵循**：
+- 確保符合保險法規要求
+- 建立合規監控機制
+- 定期進行法規更新
+
+**風險管控**：
+- 建立法律風險評估
+- 完善內控制度
+- 加強員工合規培訓
+
+**客戶權益**：
+- 保障客戶知情權
+- 建立申訴處理機制
+- 確保資料隱私保護
+"""
+        elif "整合" in prompt:
+            return """
+綜合各專家建議，臺銀人壽保單行政作業SOP優化方案：
+
+**短期目標（3-6個月）**：
+1. 建立標準化作業流程
+2. 導入基礎自動化工具
+3. 完善員工培訓體系
+
+**中期目標（6-12個月）**：
+1. 建立統一數位平台
+2. 實現核心流程自動化
+3. 建立數據分析能力
+
+**長期目標（1-2年）**：
+1. 實現全面數位轉型
+2. 建立智能決策系統
+3. 達成行業領先水準
+
+**實施建議**：
+- 採用敏捷開發方法
+- 建立跨部門協作機制
+- 持續監控和優化
+- 確保合規和風險控制
+"""
+        else:
+            return "根據您的問題，我提供了專業的分析和建議。"
     
     async def identify_domains(self, user_input: str, search_context: str) -> List[str]:
         """用大模型識別需要的專業領域"""
@@ -248,72 +265,62 @@ class FullyDynamicMCP:
         if domains_response and domains_response.strip():
             domains = [line.strip() for line in domains_response.split('\n') if line.strip()]
             return domains[:3]  # 最多3個專家
+        
         return ["通用專家"]  # 默認專家
     
-    async def generate_expert_prompt(self, domain: str, user_input: str, context: str) -> str:
+    async def generate_expert_prompt(self, domain: str, user_input: str, search_context: str) -> str:
         """動態生成專家提示詞"""
         prompt_generation = f"""
-請為{domain}生成一個專業的系統提示詞，用於回答用戶問題。
+請為{domain}生成一個專業的提示詞，用於回答用戶問題。
 
-專家領域: {domain}
 用戶問題: {user_input}
-背景信息: {context}
+背景信息: {search_context}
 
-請生成一個專業的系統提示詞，讓{domain}能夠：
-1. 展現專業知識和經驗
-2. 提供準確、實用的建議
-3. 符合該領域的專業標準
-4. 給出具體的數據和建議
+生成的提示詞應該：
+1. 體現{domain}的專業特色
+2. 針對具體問題提供實用建議
+3. 結構清晰，邏輯嚴謹
+4. 包含具體的行動建議
 
-系統提示詞應該以"你是..."開始。
+請直接返回提示詞內容，不要額外說明。
 """
         
-        expert_prompt = await self.call_llm(
+        return await self.call_llm(
             prompt_generation,
-            "你是提示詞工程專家，能為不同專業領域生成最適合的系統提示詞。"
+            f"你是提示詞工程專家，能為{domain}生成高質量的專業提示詞。"
         )
-        
-        return expert_prompt.strip()
     
-    async def ask_domain_expert(self, domain: str, expert_prompt: str, user_input: str, context: str) -> str:
-        """調用領域專家"""
-        final_prompt = f"""
-背景信息: {context}
+    async def ask_domain_expert(self, domain: str, expert_prompt: str, user_input: str, search_context: str) -> str:
+        """向特定領域專家提問"""
+        full_prompt = f"""
+{expert_prompt}
 
+基於以下信息回答問題：
 用戶問題: {user_input}
+背景信息: {search_context}
 
-請基於你的專業知識提供詳細、準確的回答，包括：
-1. 專業分析
-2. 具體數據（如果適用）
-3. 實用建議
-4. 風險考量（如果適用）
+請提供專業、實用的建議。
 """
         
-        expert_response = await self.call_llm(
-            final_prompt,
-            expert_prompt
+        return await self.call_llm(
+            full_prompt,
+            f"你是{domain}，具有豐富的專業知識和實踐經驗。"
         )
-        
-        return f"【{domain}】\n{expert_response}"
     
-    async def aggregate_expert_responses(self, responses: List[str], user_input: str) -> str:
+    async def aggregate_expert_responses(self, expert_responses: List[str], user_input: str) -> str:
         """聚合專家回答"""
-        if len(responses) == 1:
-            return responses[0]
-        
         aggregation_prompt = f"""
-請整合以下專家的回答，為用戶提供一個綜合、連貫的最終答案。
+請整合以下專家的回答，形成一個連貫、全面的最終答案：
 
 用戶問題: {user_input}
 
-專家回答:
-{chr(10).join(responses)}
+專家回答：
+{chr(10).join([f"專家{i+1}: {response}" for i, response in enumerate(expert_responses)])}
 
-請提供一個整合的最終回答，要求：
-1. 突出各專家的重點觀點
-2. 整合互補的信息
-3. 給出綜合建議
-4. 保持邏輯連貫性
+請提供：
+1. 綜合分析和建議
+2. 具體的實施步驟
+3. 注意事項和風險提醒
 """
         
         final_answer = await self.call_llm(
@@ -324,16 +331,22 @@ class FullyDynamicMCP:
         return final_answer
     
     async def process(self, user_input: str) -> Dict[str, Any]:
-        """主處理流程"""
+        """主處理流程 - 使用新的Cloud Search MCP組件"""
         start_time = time.time()
         self.request_count += 1
         
         try:
-            # 1. Cloud Search MCP
-            search_result = await self.cloud_search_mcp(user_input)
+            # 檢查Cloud Search MCP是否已初始化
+            if not self.cloud_search_mcp:
+                await self.initialize()
             
-            # 2. 大模型識別領域
-            domains = await self.identify_domains(user_input, search_result["search_result"])
+            # 1. 使用Cloud Search MCP組件進行搜索和分析
+            search_result = await self.cloud_search_mcp.search_and_analyze(user_input)
+            
+            # 2. 從搜索結果中獲取識別的領域，如果沒有則使用大模型識別
+            domains = search_result.domains_identified
+            if not domains:
+                domains = await self.identify_domains(user_input, search_result.result)
             
             # 3. 動態生成專家提示詞並調用
             expert_responses = []
@@ -341,12 +354,12 @@ class FullyDynamicMCP:
             
             for domain in domains:
                 expert_prompt = await self.generate_expert_prompt(
-                    domain, user_input, search_result["search_result"]
+                    domain, user_input, search_result.result
                 )
                 expert_prompts[domain] = expert_prompt
                 
                 response = await self.ask_domain_expert(
-                    domain, expert_prompt, user_input, search_result["search_result"]
+                    domain, expert_prompt, user_input, search_result.result
                 )
                 expert_responses.append(response)
             
@@ -375,194 +388,139 @@ class FullyDynamicMCP:
                 "domains_identified": domains,
                 "expert_count": len(domains),
                 "expert_prompts": expert_prompts,
-                "search_context": search_result["search_result"],
+                "search_context": search_result.result,
+                "search_confidence": search_result.confidence_score,
+                "search_metadata": search_result.metadata,
                 "processing_time": processing_time,
-                "process_type": "fully_dynamic",
-                "request_id": self.request_count
+                "process_type": "fully_dynamic_with_cloud_search_mcp",
+                "request_count": self.request_count,
+                "cloud_search_mcp_version": self.cloud_search_mcp.version if self.cloud_search_mcp else "unknown"
             }
             
         except Exception as e:
             logging.error(f"處理失敗: {e}")
             return {
-                "final_answer": f"處理失敗: {str(e)}",
-                "domains_identified": [],
-                "expert_count": 0,
-                "expert_prompts": {},
-                "search_context": "",
+                "error": str(e),
                 "processing_time": time.time() - start_time,
-                "process_type": "error",
-                "request_id": self.request_count
+                "request_count": self.request_count
             }
+    
+    def get_status(self) -> Dict[str, Any]:
+        """獲取系統狀態"""
+        cloud_search_metrics = {}
+        if self.cloud_search_mcp:
+            cloud_search_metrics = self.cloud_search_mcp.get_metrics()
+        
+        return {
+            "system": "FullyDynamicMCP",
+            "version": "2.0.0",
+            "request_count": self.request_count,
+            "performance_metrics": self.performance_metrics,
+            "cloud_search_mcp": cloud_search_metrics,
+            "llm_provider": self.llm_config.get("provider", "mock"),
+            "status": "active",
+            "timestamp": time.time()
+        }
 
-# Flask應用
+# Flask應用設置
 app = Flask(__name__)
 CORS(app)
 
-# 配置日誌
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# 全局MCP實例
+mcp_instance = None
 
-# 初始化完全動態MCP
-llm_config = {
-    "provider": os.getenv("LLM_PROVIDER", "mock"),  # mock, ollama, openai, claude
-    "model": os.getenv("LLM_MODEL", "llama3"),
-    "api_key": os.getenv("LLM_API_KEY", ""),
-    "base_url": os.getenv("LLM_BASE_URL", "http://localhost:11434")
-}
+async def get_mcp_instance():
+    """獲取MCP實例"""
+    global mcp_instance
+    if mcp_instance is None:
+        # 從環境變量或配置文件讀取LLM配置
+        llm_config = {
+            "provider": os.getenv("LLM_PROVIDER", "mock"),
+            "model": os.getenv("LLM_MODEL", "gpt-3.5-turbo"),
+            "api_key": os.getenv("LLM_API_KEY", ""),
+            "base_url": os.getenv("LLM_BASE_URL", "")
+        }
+        
+        mcp_instance = FullyDynamicMCP(llm_config)
+        await mcp_instance.initialize()
+    
+    return mcp_instance
 
-dynamic_mcp = FullyDynamicMCP(llm_config)
+@app.route('/process', methods=['POST'])
+def process_request():
+    """處理用戶請求"""
+    try:
+        data = request.get_json()
+        user_input = data.get('input', '')
+        
+        if not user_input:
+            return jsonify({"error": "缺少輸入內容"}), 400
+        
+        # 使用asyncio運行異步處理
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            mcp = loop.run_until_complete(get_mcp_instance())
+            result = loop.run_until_complete(mcp.process(user_input))
+            return jsonify(result)
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logging.error(f"請求處理失敗: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/status', methods=['GET'])
+def get_status():
+    """獲取系統狀態"""
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        
+        try:
+            mcp = loop.run_until_complete(get_mcp_instance())
+            status = mcp.get_status()
+            return jsonify(status)
+        finally:
+            loop.close()
+            
+    except Exception as e:
+        logging.error(f"狀態獲取失敗: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():
     """健康檢查"""
-    return jsonify({
-        "status": "healthy",
-        "mcp_type": "fully_dynamic",
-        "llm_provider": llm_config["provider"],
-        "total_requests": dynamic_mcp.request_count,
-        "timestamp": time.time()
-    })
-
-@app.route('/api/process', methods=['POST'])
-def process_request():
-    """處理請求 - 主要API"""
     try:
-        data = request.get_json()
-        user_input = data.get('request', '')
-        
-        if not user_input:
-            return jsonify({"error": "請求內容不能為空"}), 400
-        
-        # 執行完全動態MCP處理
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         
-        result = loop.run_until_complete(dynamic_mcp.process(user_input))
-        
-        loop.close()
-        
-        return jsonify(result)
-        
+        try:
+            mcp = loop.run_until_complete(get_mcp_instance())
+            if mcp.cloud_search_mcp:
+                health = loop.run_until_complete(mcp.cloud_search_mcp.health_check())
+                return jsonify(health)
+            else:
+                return jsonify({"healthy": False, "error": "Cloud Search MCP未初始化"})
+        finally:
+            loop.close()
+            
     except Exception as e:
-        logger.error(f"處理請求失敗: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/search', methods=['POST'])
-def cloud_search():
-    """Cloud Search MCP"""
-    try:
-        data = request.get_json()
-        user_input = data.get('request', '')
-        
-        if not user_input:
-            return jsonify({"error": "請求內容不能為空"}), 400
-        
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        result = loop.run_until_complete(dynamic_mcp.cloud_search_mcp(user_input))
-        
-        loop.close()
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        logger.error(f"搜索失敗: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/identify', methods=['POST'])
-def identify_domains():
-    """識別專業領域"""
-    try:
-        data = request.get_json()
-        user_input = data.get('request', '')
-        context = data.get('context', '')
-        
-        if not user_input:
-            return jsonify({"error": "請求內容不能為空"}), 400
-        
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        domains = loop.run_until_complete(
-            dynamic_mcp.identify_domains(user_input, context)
-        )
-        
-        loop.close()
-        
-        return jsonify({
-            "request": user_input,
-            "identified_domains": domains,
-            "domain_count": len(domains)
-        })
-        
-    except Exception as e:
-        logger.error(f"識別領域失敗: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/status', methods=['GET'])
-def get_status():
-    """獲取系統狀態"""
-    return jsonify({
-        "mcp_type": "fully_dynamic",
-        "llm_config": {
-            "provider": llm_config["provider"],
-            "model": llm_config["model"],
-            "base_url": llm_config["base_url"]
-        },
-        "performance_metrics": dynamic_mcp.performance_metrics,
-        "total_requests": dynamic_mcp.request_count,
-        "features": [
-            "cloud_search_mcp",
-            "dynamic_domain_identification", 
-            "dynamic_expert_prompt_generation",
-            "intelligent_response_aggregation"
-        ]
-    })
-
-@app.route('/api/demo', methods=['POST'])
-def demo_request():
-    """演示請求"""
-    try:
-        data = request.get_json()
-        demo_type = data.get('type', 'insurance')
-        
-        demo_requests = {
-            'insurance': "臺銀人壽保單行政作業SOP大概要花多少人處理表單，自動化比率在業界有多高，表單OCR用人來審核在整個SOP流程所佔的人月大概是多少？",
-            'technology': "保險業如何運用AI和OCR技術提升核保效率？",
-            'management': "保險公司如何優化人力配置和流程管理？",
-            'general': "請分析保險業數位轉型的趨勢和挑戰"
-        }
-        
-        user_input = demo_requests.get(demo_type, demo_requests['insurance'])
-        
-        # 處理演示請求
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        
-        result = loop.run_until_complete(dynamic_mcp.process(user_input))
-        result["demo_type"] = demo_type
-        result["demo_request"] = user_input
-        
-        loop.close()
-        
-        return jsonify(result)
-        
-    except Exception as e:
-        logger.error(f"演示請求失敗: {e}")
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"健康檢查失敗: {e}")
+        return jsonify({"healthy": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
-    logger.info("🚀 完全動態MCP服務器啟動中...")
-    logger.info(f"📋 LLM配置: {llm_config['provider']} - {llm_config['model']}")
-    logger.info("📡 API端點:")
-    logger.info("  - GET  /health          - 健康檢查")
-    logger.info("  - POST /api/process     - 完全動態處理")
-    logger.info("  - POST /api/search      - Cloud Search MCP")
-    logger.info("  - POST /api/identify    - 識別專業領域")
-    logger.info("  - GET  /api/status      - 系統狀態")
-    logger.info("  - POST /api/demo        - 演示請求")
-    logger.info("🎯 特色: 零硬編碼、完全動態、LLM驅動")
+    # 設置日誌
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
     
-    app.run(host='0.0.0.0', port=5002, debug=False)
+    print("🚀 啟動完全動態MCP服務器 v2.0")
+    print("📦 整合Cloud Search MCP組件")
+    print("🔗 支持多種LLM提供商")
+    print("📊 內建性能監控和健康檢查")
+    
+    app.run(host='0.0.0.0', port=8099, debug=True)
 
