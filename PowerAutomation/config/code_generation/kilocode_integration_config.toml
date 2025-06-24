@@ -11,7 +11,7 @@ module_type = "workflow_adapter"
 [code_generation_mcp.kilocode]
 enabled = true
 kilocode_url = "http://localhost:8080"
-kilocode_api_key = "your_kilocode_api_key_here"
+kilocode_api_key = "sk-ant-api03-[YOUR_API_KEY_HERE]"
 timeout = 30
 
 # 集成策略配置

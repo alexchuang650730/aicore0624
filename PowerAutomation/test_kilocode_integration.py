@@ -24,7 +24,7 @@ async def test_kilocode_integration():
         "kilocode": {
             "enabled": True,
             "kilocode_url": "http://localhost:8080",
-            "kilocode_api_key": "test_key",
+            "kilocode_api_key": "sk-ant-api03-[YOUR_API_KEY_HERE]",
             "timeout": 30
         },
         "use_kilocode_fallback": True,
