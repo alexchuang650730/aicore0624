@@ -3,6 +3,7 @@ PowerAutomation Local MCP Adapter - 工具註冊機制
 Tool Registration Manager Implementation
 
 負責發現本地工具並向雲端註冊中心註冊
+增強: 整合集中式註冊表，結合動態發現和靜態註冊的優勢
 """
 
 import asyncio
@@ -21,6 +22,19 @@ from pathlib import Path
 import importlib.util
 import subprocess
 import socket
+
+# 導入增強服務註冊機制
+from .enhanced_service_registry import (
+    EnhancedServiceRegistry,
+    EnhancedServiceInfo,
+    ServiceEndpoint,
+    ServiceRegistryType,
+    ServiceHealthStatus,
+    ServicePriority,
+    ServiceMetrics,
+    create_enhanced_service_registry,
+    DEFAULT_STATIC_SERVICES
+)
 
 logger = logging.getLogger(__name__)
 
@@ -482,7 +496,7 @@ class ToolDiscovery:
         return api_info
 
 class ToolRegistryManager:
-    """工具註冊管理器"""
+    """工具註冊管理器 - 增強版本，整合集中式註冊表"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
@@ -497,18 +511,32 @@ class ToolRegistryManager:
         self.running = False
         self.last_discovery = None
         
+        # 增強服務註冊表 - 新增
+        self.enhanced_registry = create_enhanced_service_registry(f"registry_{self.adapter_id}")
+        
         # 統計信息
         self.stats = {
             'total_discovered': 0,
             'total_registered': 0,
             'registration_failures': 0,
-            'last_sync_time': None
+            'last_sync_time': None,
+            'enhanced_services': 0,  # 新增
+            'static_services': 0,    # 新增
+            'dynamic_services': 0    # 新增
         }
+        
+        logger.info(f"工具註冊管理器初始化完成 - 已整合增強服務註冊表")
     
     async def start(self):
         """啟動工具註冊管理器"""
         logger.info("啟動工具註冊管理器...")
         self.running = True
+        
+        # 啟動增強服務註冊表 - 新增
+        await self.enhanced_registry.start()
+        
+        # 註冊默認靜態服務 - 新增
+        await self._register_default_static_services()
         
         # 初始工具發現和註冊
         await self.discover_and_register_tools()
@@ -522,6 +550,12 @@ class ToolRegistryManager:
         """停止工具註冊管理器"""
         logger.info("停止工具註冊管理器...")
         self.running = False
+        
+        # 停止增強服務註冊表 - 新增
+        if self.enhanced_registry:
+            await self.enhanced_registry.stop()
+        
+        logger.info("工具註冊管理器已停止")
     
     async def discover_and_register_tools(self):
         """發現並註冊工具"""
@@ -786,10 +820,191 @@ class ToolRegistryManager:
                 for tool_type in ['python', 'binary', 'service', 'api']
             }
         }
+    
+    # 增強服務註冊相關方法 - 新增
+    
+    async def _register_default_static_services(self):
+        """註冊默認靜態服務"""
+        try:
+            for service in DEFAULT_STATIC_SERVICES:
+                success = self.enhanced_registry.register_service(service)
+                if success:
+                    logger.info(f"靜態服務註冊成功: {service.name}")
+                else:
+                    logger.warning(f"靜態服務註冊失敗: {service.name}")
+            
+            # 更新統計
+            self._update_enhanced_stats()
+            
+        except Exception as e:
+            logger.error(f"註冊默認靜態服務失敗: {e}")
+    
+    def register_enhanced_service(self, service_info: EnhancedServiceInfo) -> bool:
+        """註冊增強服務"""
+        try:
+            success = self.enhanced_registry.register_service(service_info)
+            if success:
+                self._update_enhanced_stats()
+                logger.info(f"增強服務註冊成功: {service_info.name}")
+            return success
+            
+        except Exception as e:
+            logger.error(f"增強服務註冊失敗: {e}")
+            return False
+    
+    def unregister_enhanced_service(self, service_id: str) -> bool:
+        """取消註冊增強服務"""
+        try:
+            success = self.enhanced_registry.unregister_service(service_id)
+            if success:
+                self._update_enhanced_stats()
+                logger.info(f"增強服務取消註冊成功: {service_id}")
+            return success
+            
+        except Exception as e:
+            logger.error(f"增強服務取消註冊失敗: {e}")
+            return False
+    
+    def list_enhanced_services(self, 
+                              service_type: Optional[str] = None,
+                              registry_type: Optional[ServiceRegistryType] = None,
+                              health_status: Optional[ServiceHealthStatus] = None) -> List[EnhancedServiceInfo]:
+        """列出增強服務"""
+        return self.enhanced_registry.list_services(service_type, registry_type, health_status)
+    
+    def get_enhanced_service(self, service_id: str) -> Optional[EnhancedServiceInfo]:
+        """獲取增強服務信息"""
+        return self.enhanced_registry.get_service(service_id)
+    
+    async def convert_tool_to_enhanced_service(self, tool_info: LocalToolInfo) -> Optional[EnhancedServiceInfo]:
+        """將本地工具轉換為增強服務"""
+        try:
+            # 創建服務端點
+            endpoints = []
+            if tool_info.endpoint:
+                endpoint = ServiceEndpoint(
+                    endpoint_id=f"{tool_info.tool_id}_primary",
+                    url=tool_info.endpoint.split('://')[1].split('/')[0] if '://' in tool_info.endpoint else tool_info.endpoint,
+                    protocol=tool_info.endpoint.split('://')[0] if '://' in tool_info.endpoint else 'http',
+                    path='/' if '://' not in tool_info.endpoint else '/' + '/'.join(tool_info.endpoint.split('/')[3:])
+                )
+                endpoints.append(endpoint)
+            
+            # 提取能力
+            capabilities = [cap.name for cap in tool_info.capabilities]
+            
+            # 創建增強服務信息
+            enhanced_service = EnhancedServiceInfo(
+                service_id=f"enhanced_{tool_info.tool_id}",
+                name=f"Enhanced {tool_info.name}",
+                description=f"增強服務版本: {tool_info.description}",
+                service_type=tool_info.tool_type,
+                version=tool_info.version,
+                registry_type=ServiceRegistryType.DYNAMIC,
+                priority=ServicePriority.NORMAL,
+                endpoints=endpoints,
+                capabilities=capabilities,
+                supported_actions=capabilities,  # 假設能力即為支持的動作
+                metadata={
+                    "original_tool_id": tool_info.tool_id,
+                    "executable_path": tool_info.executable_path,
+                    "config_path": tool_info.config_path,
+                    "dependencies": tool_info.dependencies,
+                    "load_metrics": {
+                        "cpu_usage": tool_info.load_metrics.cpu_usage,
+                        "memory_usage": tool_info.load_metrics.memory_usage,
+                        "active_requests": tool_info.load_metrics.active_requests,
+                        "response_time_avg": tool_info.load_metrics.response_time_avg
+                    }
+                },
+                tags=["dynamic", "tool", tool_info.tool_type]
+            )
+            
+            return enhanced_service
+            
+        except Exception as e:
+            logger.error(f"轉換工具為增強服務失敗 {tool_info.tool_id}: {e}")
+            return None
+    
+    async def sync_tools_to_enhanced_registry(self):
+        """同步工具到增強註冊表"""
+        try:
+            logger.info("開始同步工具到增強註冊表...")
+            
+            synced_count = 0
+            for tool_id, tool_info in self.registered_tools.items():
+                # 轉換為增強服務
+                enhanced_service = await self.convert_tool_to_enhanced_service(tool_info)
+                if enhanced_service:
+                    # 註冊到增強註冊表
+                    success = self.enhanced_registry.register_service(enhanced_service)
+                    if success:
+                        synced_count += 1
+                        logger.debug(f"工具同步成功: {tool_info.name}")
+                    else:
+                        logger.warning(f"工具同步失敗: {tool_info.name}")
+            
+            # 更新統計
+            self._update_enhanced_stats()
+            
+            logger.info(f"工具同步完成: {synced_count}/{len(self.registered_tools)} 個工具")
+            
+        except Exception as e:
+            logger.error(f"同步工具到增強註冊表失敗: {e}")
+    
+    def _update_enhanced_stats(self):
+        """更新增強服務統計"""
+        try:
+            services = self.enhanced_registry.list_services()
+            self.stats['enhanced_services'] = len(services)
+            self.stats['static_services'] = len([
+                s for s in services if s.registry_type == ServiceRegistryType.STATIC
+            ])
+            self.stats['dynamic_services'] = len([
+                s for s in services if s.registry_type == ServiceRegistryType.DYNAMIC
+            ])
+            
+        except Exception as e:
+            logger.error(f"更新增強服務統計失敗: {e}")
+    
+    def get_enhanced_registry_status(self) -> Dict[str, Any]:
+        """獲取增強註冊表狀態"""
+        try:
+            return self.enhanced_registry.get_registry_status()
+        except Exception as e:
+            logger.error(f"獲取增強註冊表狀態失敗: {e}")
+            return {"error": str(e)}
+    
+    async def health_check_enhanced_services(self) -> Dict[str, Any]:
+        """健康檢查增強服務"""
+        try:
+            services = self.enhanced_registry.list_services()
+            results = {}
+            
+            for service in services:
+                health_result = await self.enhanced_registry.check_service_health(service.service_id)
+                results[service.service_id] = {
+                    "name": service.name,
+                    "healthy": health_result,
+                    "status": service.health_status.value,
+                    "last_check": service.last_health_check.isoformat() if service.last_health_check else None
+                }
+            
+            return {
+                "total_services": len(services),
+                "healthy_count": len([r for r in results.values() if r["healthy"]]),
+                "results": results
+            }
+            
+        except Exception as e:
+            logger.error(f"健康檢查增強服務失敗: {e}")
+            return {"error": str(e)}
 
 # 創建工具註冊管理器的工廠函數
 def create_tool_registry_manager(config: Dict[str, Any]) -> ToolRegistryManager:
     """創建工具註冊管理器實例"""
+    return ToolRegistryManager(config)
+
     return ToolRegistryManager(config)
 
 # 導出主要類和函數

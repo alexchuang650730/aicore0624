@@ -1,7 +1,7 @@
 """
 完全動態MCP服務器 - 零硬編碼版本
-整合Cloud Search MCP + 大模型識別領域 + 動態專家
-Updated: 使用獨立的Cloud Search MCP組件
+整合Cloud Search MCP + 大模型識別領域 + 動態專家 + Web管理界面
+Updated: 使用獨立的Cloud Search MCP組件和Web管理界面
 """
 
 from flask import Flask, request, jsonify
@@ -18,8 +18,9 @@ from typing import List, Dict, Any
 # 添加組件路徑
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'components'))
 
-# 導入Cloud Search MCP組件
+# 導入Cloud Search MCP組件和Web管理界面
 from cloud_search_mcp import CloudSearchMCP, create_cloud_search_mcp
+from web_management_interface import WebManagementInterface, create_web_management_interface
 
 # 完全動態MCP核心
 class FullyDynamicMCP:
@@ -422,33 +423,37 @@ class FullyDynamicMCP:
             "timestamp": time.time()
         }
 
-# Flask應用設置
+# Flask應用初始化
 app = Flask(__name__)
 CORS(app)
 
+# 初始化Web管理界面
+web_interface = create_web_management_interface(app)
+
 # 全局MCP實例
-mcp_instance = None
+_mcp_instance = None
 
 async def get_mcp_instance():
-    """獲取MCP實例"""
-    global mcp_instance
-    if mcp_instance is None:
-        # 從環境變量或配置文件讀取LLM配置
+    """獲取MCP實例（單例模式）"""
+    global _mcp_instance
+    if _mcp_instance is None:
+        # 默認配置
         llm_config = {
-            "provider": os.getenv("LLM_PROVIDER", "mock"),
-            "model": os.getenv("LLM_MODEL", "gpt-3.5-turbo"),
-            "api_key": os.getenv("LLM_API_KEY", ""),
-            "base_url": os.getenv("LLM_BASE_URL", "")
+            "provider": "mock",  # 可選: openai, claude, ollama, mock
+            "model": "gpt-3.5-turbo",
+            "api_key": "",
+            "base_url": ""
         }
         
-        mcp_instance = FullyDynamicMCP(llm_config)
-        await mcp_instance.initialize()
+        _mcp_instance = FullyDynamicMCP(llm_config)
+        await _mcp_instance.initialize()
     
-    return mcp_instance
+    return _mcp_instance
 
 @app.route('/process', methods=['POST'])
 def process_request():
     """處理用戶請求"""
+    start_time = time.time()
     try:
         data = request.get_json()
         user_input = data.get('input', '')
@@ -463,6 +468,11 @@ def process_request():
         try:
             mcp = loop.run_until_complete(get_mcp_instance())
             result = loop.run_until_complete(mcp.process(user_input))
+            
+            # 記錄請求到Web界面
+            response_time = (time.time() - start_time) * 1000  # 轉換為毫秒
+            web_interface.record_request(response_time)
+            
             return jsonify(result)
         finally:
             loop.close()
@@ -517,10 +527,12 @@ if __name__ == '__main__':
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
     
-    print("🚀 啟動完全動態MCP服務器 v2.0")
+    print("🚀 啟動完全動態MCP服務器 v2.1")
     print("📦 整合Cloud Search MCP組件")
+    print("🌐 整合Web管理界面")
     print("🔗 支持多種LLM提供商")
     print("📊 內建性能監控和健康檢查")
+    print("💻 Web界面: http://localhost:8099")
     
     app.run(host='0.0.0.0', port=8099, debug=True)
 

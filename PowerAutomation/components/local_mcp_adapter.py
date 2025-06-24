@@ -3,6 +3,7 @@ PowerAutomation Local MCP Adapter - 主組件
 Local MCP Adapter Main Component
 
 整合工具註冊、心跳管理和智慧路由功能的端側適配器
+增強: 整合MCP協調器設計模式，實現統一的MCP通信接口
 """
 
 import asyncio
@@ -37,6 +38,18 @@ from .smart_routing_engine import (
     LoadMetrics,
     ToolHealth,
     create_smart_routing_engine
+)
+
+# 導入MCP協調器模式
+from .mcp_coordinator_pattern import (
+    MCPCoordinator,
+    MCPServiceInfo,
+    MCPServiceType,
+    MCPServiceStatus,
+    MCPRequest,
+    MCPResponse,
+    create_mcp_coordinator,
+    DEFAULT_MCP_SERVICES
 )
 
 logger = logging.getLogger(__name__)
@@ -87,12 +100,16 @@ class LocalMCPAdapter:
         self.heartbeat_manager: Optional[HeartbeatManager] = None
         self.smart_routing_engine: Optional[SmartRoutingEngine] = None
         
+        # MCP協調器 - 新增
+        self.mcp_coordinator: Optional[MCPCoordinator] = None
+        
         # 狀態管理
         self.status = {
             'adapter_status': 'stopped',
             'tool_registry_status': 'stopped',
             'heartbeat_status': 'stopped',
             'routing_status': 'stopped',
+            'coordinator_status': 'stopped',  # 新增
             'last_updated': datetime.now()
         }
         
@@ -103,7 +120,9 @@ class LocalMCPAdapter:
             'successful_requests': 0,
             'failed_requests': 0,
             'registered_tools': 0,
-            'active_connections': 0
+            'active_connections': 0,
+            'mcp_services': 0,  # 新增
+            'mcp_requests': 0   # 新增
         }
         
         # 回調函數
@@ -111,6 +130,7 @@ class LocalMCPAdapter:
         self.request_callbacks: List[Callable] = []
         
         logger.info(f"Local MCP Adapter 初始化完成 - ID: {self.adapter_id}")
+        logger.info("已整合MCP協調器設計模式")
     
     def _load_config(self, config_path: Optional[str], config_dict: Optional[Dict]) -> AdapterConfig:
         """加載配置"""
@@ -283,7 +303,15 @@ class LocalMCPAdapter:
             self.config.routing
         )
         
+        # 初始化MCP協調器 - 新增
+        self.mcp_coordinator = create_mcp_coordinator()
+        
+        # 註冊默認MCP服務
+        for service in DEFAULT_MCP_SERVICES:
+            self.mcp_coordinator.register_service(service)
+        
         logger.info("核心組件初始化完成")
+        logger.info(f"已註冊 {len(DEFAULT_MCP_SERVICES)} 個默認MCP服務")
     
     async def _start_components(self):
         """啟動組件"""
@@ -299,6 +327,11 @@ class LocalMCPAdapter:
             await self.heartbeat_manager.start()
             self.status['heartbeat_status'] = 'running'
         
+        # 啟動MCP協調器 - 新增
+        if self.mcp_coordinator:
+            await self.mcp_coordinator.start()
+            self.status['coordinator_status'] = 'running'
+        
         # 智慧路由引擎無需啟動（無狀態）
         self.status['routing_status'] = 'running'
         
@@ -307,6 +340,11 @@ class LocalMCPAdapter:
     async def _stop_components(self):
         """停止組件"""
         logger.info("停止核心組件...")
+        
+        # 停止MCP協調器 - 新增
+        if self.mcp_coordinator:
+            await self.mcp_coordinator.stop()
+            self.status['coordinator_status'] = 'stopped'
         
         # 停止心跳管理器
         if self.heartbeat_manager:
