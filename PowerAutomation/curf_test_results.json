@@ -1,0 +1,22 @@
+{
+    "test_suite": "Fully Integrated Intelligent System curf Tests",
+    "timestamp": "2025-06-23 00:41:08",
+    "summary": {
+        "total_tests": 14,
+        "passed": 0
+0,
+        "failed": 14,
+        "warnings": 0
+0,
+        "success_rate": 0
+0
+    },
+    "test_results": [
+        {"test_name":"系統健康檢查","status":"FAIL","response_time":.007628399,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"系統狀態檢查","status":"FAIL","response_time":.007344036,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"可用工具列表","status":"FAIL","response_time":.007148669,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"系統統計信息","status":"FAIL","response_time":.007016113,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"臺銀人壽SOP人力分析","status":"FAIL","response_time":.007402928,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"OCR技術成本效益分析","status":"FAIL","response_time":.007079395,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"數位轉型策略分析","status":"FAIL","response_time":.007273470,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"法規合規要求分析","status":"FAIL","response_time":.007251035,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"並發測試請求 1","status":"FAIL","response_time":.007121648,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"並發測試請求 2","status":"FAIL","response_time":.007005235,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"並發測試請求 3","status":"FAIL","response_time":.007224150,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"空請求邊界測試","status":"FAIL","response_time":.007090448,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"長文本處理測試","status":"FAIL","response_time":.006926756,"details":"Connection failed","timestamp":"2025-06-23 00:41:08"},{"test_name":"公網訪問測試","status":"FAIL","response_time":0,"details":"HTTP 502","timestamp":"2025-06-23 00:41:08"}
+    ],
+    "system_info": {
+        "base_url": "http://127.0.0.1:5004",
+        "public_url": "https://5004-im7yx9pempr8evkfdhxbr-1ce18e5a.manusvm.computer",
+        "test_environment": "sandbox"
+    }
+}

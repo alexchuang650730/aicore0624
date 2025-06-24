@@ -1,0 +1,16 @@
+{
+  "total_tests": 8,
+  "failures": 1,
+  "errors": 0,
+  "success_rate": 0.875,
+  "execution_time": 1750656219.8220425,
+  "details": {
+    "failures": [
+      {
+        "test": "test_07_search_functionality (__main__.DataStorageTestSuite.test_07_search_functionality)",
+        "error": "Traceback (most recent call last):\n  File \"/home/ubuntu/data_storage_test.py\", line 733, in test_07_search_functionality\n    self.assertGreater(len(results), 0, \"搜尋結果為空\")\nAssertionError: 0 not greater than 0 : 搜尋結果為空\n"
+      }
+    ],
+    "errors": []
+  }
+}

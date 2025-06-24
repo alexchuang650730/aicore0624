@@ -1,0 +1,86 @@
+[
+  {
+    "test_name": "健康檢查",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:27:22.705903",
+    "response_data": null
+  },
+  {
+    "test_name": "系統狀態檢查",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:27:32.796180",
+    "response_data": null
+  },
+  {
+    "test_name": "系統啟動",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:27:42.823156",
+    "response_data": null
+  },
+  {
+    "test_name": "TRAE狀態檢查",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:27:52.853548",
+    "response_data": null
+  },
+  {
+    "test_name": "TRAE消息發送",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=30)",
+    "timestamp": "2025-06-23T00:28:22.910310",
+    "response_data": null
+  },
+  {
+    "test_name": "TRAE數據同步",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=60)",
+    "timestamp": "2025-06-23T00:29:22.982525",
+    "response_data": null
+  },
+  {
+    "test_name": "Manus連接",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:29:33.001997",
+    "response_data": null
+  },
+  {
+    "test_name": "Manus任務列表",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:29:43.041918",
+    "response_data": null
+  },
+  {
+    "test_name": "對話分析",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:29:53.059768",
+    "response_data": null
+  },
+  {
+    "test_name": "智能介入",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=30)",
+    "timestamp": "2025-06-23T00:30:23.116508",
+    "response_data": null
+  },
+  {
+    "test_name": "倉庫列表",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:30:33.137733",
+    "response_data": null
+  },
+  {
+    "test_name": "系統自檢",
+    "success": false,
+    "details": "請求失敗: HTTPSConnectionPool(host='5000-ix26p5t2zg9wvybtyg5fx-df129213.manusvm.computer', port=443): Read timed out. (read timeout=30)",
+    "timestamp": "2025-06-23T00:31:03.180159",
+    "response_data": null
+  }
+]

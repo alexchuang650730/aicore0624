@@ -1,0 +1,7 @@
+nohup: ignoring input
+Traceback (most recent call last):
+  File "/home/ubuntu/aicore0622/simplified_agent/unified_intelligent_system.py", line 18, in <module>
+    from core.enhanced_agent_core import EnhancedAgentCore, AgentRequest, AgentResponse, Priority
+  File "/home/ubuntu/aicore0622/simplified_agent/core/enhanced_agent_core.py", line 17, in <module>
+    from ..tools.enhanced_tool_registry import EnhancedToolRegistry
+ImportError: attempted relative import beyond top-level package

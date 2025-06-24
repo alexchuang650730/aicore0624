@@ -1,0 +1,362 @@
+{
+  "test_suite": "TC002-TC006",
+  "execution_time": "2025-06-23T03:49:16.472820",
+  "total_tests": 5,
+  "passed": 3,
+  "partial": 1,
+  "failed": 1,
+  "results": [
+    {
+      "test_case": "TC002",
+      "name": "信息發送功能測試",
+      "start_time": "2025-06-23T03:49:04.584370",
+      "steps": [
+        {
+          "step": 1,
+          "description": "發送text類型消息",
+          "status": "success",
+          "response_time": 0.7294510049232135
+        },
+        {
+          "step": 2,
+          "description": "發送question類型消息",
+          "status": "success",
+          "response_time": 0.9452511076013952
+        },
+        {
+          "step": 3,
+          "description": "發送code類型消息",
+          "status": "success",
+          "response_time": 0.8991867213500002
+        },
+        {
+          "step": 4,
+          "description": "發送long_text類型消息",
+          "status": "failed",
+          "error": "網絡超時"
+        }
+      ],
+      "status": "partial_success",
+      "success_rate": 0.75,
+      "end_time": "2025-06-23T03:49:09.336266",
+      "duration": 4.751896
+    },
+    {
+      "test_case": "TC003",
+      "name": "對話歷史獲取測試",
+      "start_time": "2025-06-23T03:49:09.336394",
+      "steps": [
+        {
+          "step": 1,
+          "description": "獲取對話列表",
+          "status": "success",
+          "data": {
+            "conversation_count": 3
+          }
+        },
+        {
+          "step": 2,
+          "description": "獲取對話 conv_001 詳情",
+          "status": "success",
+          "data": {
+            "conversation_id": "conv_001",
+            "message_count": 4,
+            "title": "PowerAutomation項目討論"
+          }
+        },
+        {
+          "step": 3,
+          "description": "獲取對話 conv_002 詳情",
+          "status": "success",
+          "data": {
+            "conversation_id": "conv_002",
+            "message_count": 2,
+            "title": "測試案例設計與實施"
+          }
+        },
+        {
+          "step": 4,
+          "description": "驗證數據完整性",
+          "status": "success",
+          "data": {
+            "total_messages": 8
+          }
+        }
+      ],
+      "status": "success",
+      "end_time": "2025-06-23T03:49:10.338625",
+      "duration": 1.002231
+    },
+    {
+      "test_case": "TC004",
+      "name": "對話內容智能分類測試",
+      "start_time": "2025-06-23T03:49:10.338683",
+      "steps": [
+        {
+          "step": 1,
+          "description": "分析對話內容並進行分類",
+          "status": "success",
+          "data": {
+            "classified_count": 3
+          }
+        },
+        {
+          "step": 2,
+          "description": "計算分類準確率",
+          "status": "success",
+          "data": {
+            "accuracy": 0.0,
+            "correct": 0,
+            "total": 3
+          }
+        },
+        {
+          "step": 3,
+          "description": "評估分類質量",
+          "status": "success",
+          "data": {
+            "quality_rating": "poor"
+          }
+        }
+      ],
+      "status": "failed",
+      "classification_accuracy": 0.0,
+      "end_time": "2025-06-23T03:49:11.341129",
+      "duration": 1.002446
+    },
+    {
+      "test_case": "TC005",
+      "name": "任務列表遍歷測試",
+      "start_time": "2025-06-23T03:49:11.341203",
+      "steps": [
+        {
+          "step": 1,
+          "description": "獲取任務列表",
+          "status": "success",
+          "data": {
+            "task_count": 3
+          }
+        },
+        {
+          "step": 2,
+          "description": "遍歷任務 task_001",
+          "status": "success",
+          "data": {
+            "id": "task_001",
+            "title": "完成Manus登錄自動化測試",
+            "status": "completed",
+            "file_count": 3,
+            "category": "自動化測試"
+          }
+        },
+        {
+          "step": 3,
+          "description": "遍歷任務 task_002",
+          "status": "success",
+          "data": {
+            "id": "task_002",
+            "title": "實施數據存儲驗證系統",
+            "status": "in_progress",
+            "file_count": 2,
+            "category": "數據驗證"
+          }
+        },
+        {
+          "step": 4,
+          "description": "遍歷任務 task_003",
+          "status": "success",
+          "data": {
+            "id": "task_003",
+            "title": "開發智能分類算法",
+            "status": "pending",
+            "file_count": 1,
+            "category": "算法開發"
+          }
+        },
+        {
+          "step": 5,
+          "description": "統計任務狀態分佈",
+          "status": "success",
+          "data": {
+            "status_distribution": {
+              "completed": 1,
+              "in_progress": 1,
+              "pending": 1
+            }
+          }
+        },
+        {
+          "step": 6,
+          "description": "驗證任務數據完整性",
+          "status": "success",
+          "data": {
+            "total_files": 6
+          }
+        }
+      ],
+      "status": "success",
+      "traversed_tasks": [
+        {
+          "id": "task_001",
+          "title": "完成Manus登錄自動化測試",
+          "status": "completed",
+          "file_count": 3,
+          "category": "自動化測試"
+        },
+        {
+          "id": "task_002",
+          "title": "實施數據存儲驗證系統",
+          "status": "in_progress",
+          "file_count": 2,
+          "category": "數據驗證"
+        },
+        {
+          "id": "task_003",
+          "title": "開發智能分類算法",
+          "status": "pending",
+          "file_count": 1,
+          "category": "算法開發"
+        }
+      ],
+      "end_time": "2025-06-23T03:49:12.945120",
+      "duration": 1.603917
+    },
+    {
+      "test_case": "TC006",
+      "name": "任務文件檔案獲取測試",
+      "start_time": "2025-06-23T03:49:12.945211",
+      "steps": [
+        {
+          "step": 1,
+          "description": "獲取文件列表",
+          "status": "success",
+          "data": {
+            "file_count": 4
+          }
+        },
+        {
+          "step": 2,
+          "description": "按類型分類文件",
+          "status": "success",
+          "data": {
+            "categories": [
+              "報告",
+              "代碼",
+              "文檔",
+              "截圖"
+            ]
+          }
+        },
+        {
+          "step": 3,
+          "description": "下載文件 PowerAutomation_Complete_Test_Report.pdf",
+          "status": "success",
+          "data": {
+            "file_name": "PowerAutomation_Complete_Test_Report.pdf",
+            "file_size": "3.2MB",
+            "download_time": 1.080592089374473
+          }
+        },
+        {
+          "step": 4,
+          "description": "下載文件 manus_test_controller_v2.py",
+          "status": "success",
+          "data": {
+            "file_name": "manus_test_controller_v2.py",
+            "file_size": "25KB",
+            "download_time": 0.5369454515564008
+          }
+        },
+        {
+          "step": 5,
+          "description": "下載文件 test_case_specifications.md",
+          "status": "success",
+          "data": {
+            "file_name": "test_case_specifications.md",
+            "file_size": "15KB",
+            "download_time": 0.5902420833046891
+          }
+        },
+        {
+          "step": 6,
+          "description": "驗證文件完整性",
+          "status": "success",
+          "data": {
+            "valid_files": 3,
+            "total_checked": 3
+          }
+        }
+      ],
+      "status": "success",
+      "download_success_rate": 1.0,
+      "file_categories": {
+        "報告": [
+          {
+            "id": "file_001",
+            "name": "PowerAutomation_Complete_Test_Report.pdf",
+            "type": "pdf",
+            "size": "3.2MB",
+            "category": "報告",
+            "upload_date": "2025-06-23",
+            "path": "/files/reports/PowerAutomation_Complete_Test_Report.pdf",
+            "tags": [
+              "測試報告",
+              "完整版",
+              "PowerAutomation"
+            ]
+          }
+        ],
+        "代碼": [
+          {
+            "id": "file_002",
+            "name": "manus_test_controller_v2.py",
+            "type": "python",
+            "size": "25KB",
+            "category": "代碼",
+            "upload_date": "2025-06-23",
+            "path": "/files/code/manus_test_controller_v2.py",
+            "tags": [
+              "自動化",
+              "測試控制器",
+              "Python"
+            ]
+          }
+        ],
+        "文檔": [
+          {
+            "id": "file_003",
+            "name": "test_case_specifications.md",
+            "type": "markdown",
+            "size": "15KB",
+            "category": "文檔",
+            "upload_date": "2025-06-22",
+            "path": "/files/docs/test_case_specifications.md",
+            "tags": [
+              "測試案例",
+              "規格",
+              "文檔"
+            ]
+          }
+        ],
+        "截圖": [
+          {
+            "id": "file_004",
+            "name": "login_test_screenshots.zip",
+            "type": "archive",
+            "size": "5.8MB",
+            "category": "截圖",
+            "upload_date": "2025-06-23",
+            "path": "/files/screenshots/login_test_screenshots.zip",
+            "tags": [
+              "截圖",
+              "登錄測試",
+              "視覺記錄"
+            ]
+          }
+        ]
+      },
+      "end_time": "2025-06-23T03:49:16.472751",
+      "duration": 3.52754
+    }
+  ]
+}
