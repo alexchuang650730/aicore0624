@@ -198,6 +198,73 @@ import asyncio
 from examples.enhanced_demo import quick_analysis
 result = asyncio.run(quick_analysis('測試分析'))
 print(result)
+
+## 📚 學習資源
+
+### 🎓 MCP架構學習路徑
+
+為了幫助開發者深入理解PowerAutomation的MCP架構設計，我們提供了完整的學習路徑：
+
+**📍 學習材料位置：** `docs/examples/mcp_learning_path/`
+
+#### 🚀 快速開始學習
+
+```bash
+cd docs/examples/mcp_learning_path/
+python minimal_mcp.py  # 第一步：理解基本概念
+```
+
+#### 📖 完整學習路徑
+
+| 步驟 | 文件 | 學習時間 | 目標 |
+|------|------|----------|------|
+| 1️⃣ | `minimal_mcp.py` | 5分鐘 | 理解MCP基本概念 |
+| 2️⃣ | `ultra_simple_mcp.py` | 15分鐘 | 學習架構設計基礎 |
+| 3️⃣ | `simple_mcp_final.py` | 30分鐘 | 掌握完整處理流程 |
+| 4️⃣ | `ultra_simple_mcp_llm.py` | 45分鐘 | 了解LLM API集成 |
+
+#### 📋 學習指南
+
+- **[完整學習指南](docs/examples/mcp_learning_path/LEARNING_GUIDE.md)** - 詳細的學習路徑和練習
+- **[README](docs/examples/mcp_learning_path/README.md)** - 快速入門和概覽
+
+#### 🎯 學習成果
+
+完成學習路徑後，您將能夠：
+- ✅ 理解MCP的核心設計原理
+- ✅ 掌握專家系統的工作機制
+- ✅ 學會LLM API集成方法
+- ✅ 理解從簡單到複雜的架構演進
+- ✅ 為貢獻AICore 3.0做好準備
+
+#### 🔗 與生產系統的關係
+
+```
+學習路徑 (教學) → AICore 3.0 (生產)
+簡化版MCP架構 → 完整的6階段處理流程
+靜態專家庫 → 動態專家註冊中心
+基礎聚合 → 智能建議聚合器
+```
+
+### 📖 技術文檔
+
+- **[架構設計文檔](docs/architecture.md)** - 系統架構詳細說明
+- **[API參考文檔](docs/api_reference.md)** - 完整的API文檔
+- **[開發者指南](docs/developer_guide.md)** - 開發最佳實踐
+- **[部署指南](docs/deployment_guide.md)** - 生產環境部署
+
+### 🎥 視頻教程
+
+- **MCP架構原理講解** (計劃中)
+- **從零開始構建MCP系統** (計劃中)
+- **AICore 3.0深度解析** (計劃中)
+
+### 💡 最佳實踐
+
+1. **新開發者入門**：從學習路徑開始，逐步深入
+2. **架構理解**：對比學習示例和生產代碼
+3. **實踐練習**：完成學習指南中的所有練習
+4. **代碼貢獻**：理解架構後參與實際開發
 "
 ```
 
