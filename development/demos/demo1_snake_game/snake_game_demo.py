@@ -8,13 +8,18 @@ import sys
 import os
 import asyncio
 import sys
+import toml
 from pathlib import Path
 
 # 添加PowerAutomation到Python路径
-powerautomation_dir = Path(__file__).parent.parent.parent / "PowerAutomation"
+current_dir = Path(__file__).parent
+project_root = current_dir.parent.parent.parent
+powerautomation_dir = project_root / "PowerAutomation"
 sys.path.insert(0, str(powerautomation_dir))
+sys.path.insert(0, str(project_root))
 
-from components.code_generation_mcp import CodeGenerationMcprom core.aicore3 import AICore3
+from components.code_generation_mcp import CodeGenerationMcp
+from core.aicore3 import AICore3
 
 class SnakeGameDemo:
     """贪吃蛇游戏演示类"""

@@ -21,44 +21,51 @@ show_load_distribution = true
 enable_real_time_updates = true
 
 [routing_config]
-max_routing_time = 100  # 毫秒
+max_routing_time = 100
 min_confidence_threshold = 0.8
 enable_fallback_routing = true
 routing_algorithm = "weighted_round_robin"
 
 [coordination_config]
-max_coordination_time = 5000  # 毫秒
+max_coordination_time = 5000
 enable_parallel_execution = true
 coordination_strategy = "pipeline"
 failure_handling = "graceful_degradation"
 
 [monitoring_config]
-metrics_collection_interval = 1000  # 毫秒
-performance_threshold = {
-    cpu_usage = 80.0,
-    memory_usage = 85.0,
-    response_time = 200.0,
-    error_rate = 1.0
-}
+metrics_collection_interval = 1000
 enable_alerting = false
+
+[monitoring_config.performance_threshold]
+cpu_usage = 80.0
+memory_usage = 85.0
+response_time = 200.0
+error_rate = 1.0
 
 [load_balancing_config]
 balancing_algorithm = "least_connections"
 max_tasks_per_expert = 10
 enable_priority_queuing = true
-rebalancing_interval = 5000  # 毫秒
+rebalancing_interval = 5000
 
 [simulation_config]
-# 智能路由模拟
-routing_test_tasks = [
-    {task_type = "code_generation", complexity = "high", language = "python"},
-    {task_type = "testing", test_type = "integration", complexity = "medium"},
-    {task_type = "optimization", target = "performance", complexity = "low"}
-]
-
-# 负载均衡模拟
 load_balancing_tasks_count = 10
 high_priority_tasks_ratio = 0.3
+
+[[simulation_config.routing_test_tasks]]
+task_type = "code_generation"
+complexity = "high"
+language = "python"
+
+[[simulation_config.routing_test_tasks]]
+task_type = "testing"
+test_type = "integration"
+complexity = "medium"
+
+[[simulation_config.routing_test_tasks]]
+task_type = "optimization"
+target = "performance"
+complexity = "low"
 
 [output_config]
 save_performance_report = true
@@ -73,7 +80,6 @@ features_order = [
     "performance_monitoring", 
     "load_balancing"
 ]
-
 pause_between_features = false
 auto_generate_report = true
 show_summary_statistics = true

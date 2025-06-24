@@ -12,8 +12,12 @@ from pathlib import Path
 from datetime import datetime
 import json
 
-# 添加PowerAutomation路径
-sys.path.append(os.path.join(os.path.dirname(__file__), '../../PowerAutomation'))
+# 添加PowerAutomation到Python路径
+current_dir = Path(__file__).parent
+project_root = current_dir.parent.parent.parent
+powerautomation_dir = project_root / "PowerAutomation"
+sys.path.insert(0, str(powerautomation_dir))
+sys.path.insert(0, str(project_root))
 
 from components.mcp_coordinator_pattern import MCPCoordinator
 from components.smart_routing_engine import SmartRoutingEngine

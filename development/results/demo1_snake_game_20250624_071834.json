@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo1_snake_game",
+  "start_time": "2025-06-24T07:18:34.478465",
+  "end_time": "2025-06-24T07:18:34.771542",
+  "duration": 0.293077,
+  "success": true,
+  "return_code": 0,
+  "stdout": "🎮 Snake Game Generation Demo\n============================================================\n📋 描述: 完整的贪吃蛇游戏生成演示\n🎯 目标: 客户演示、技术展示\n\n🚀 第一步: 初始化AICore系统\n❌ 演示过程中发生错误: No module named 'components.smartinvention_adapter_mcp'\n📄 演示报告已生成: /home/ubuntu/aicore0624/development/demos/demo1_snake_game/output/demo_report.md\n",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/aicore0624/development/demos/demo1_snake_game/snake_game_demo.py\", line 75, in run_demo\n    aicore = AICore3()\n             ^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/PowerAutomation/core/aicore3.py\", line 371, in __init__\n    from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP\nModuleNotFoundError: No module named 'components.smartinvention_adapter_mcp'\n"
+}

@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo3_mcp_showcase",
+  "start_time": "2025-06-24T07:20:09.177809",
+  "end_time": "2025-06-24T07:20:09.385391",
+  "duration": 0.207582,
+  "success": true,
+  "return_code": 0,
+  "stdout": "🎭 MCP Coordination Showcase\n============================================================\n📋 描述: MCP协调和集成能力展示\n\n🔧 初始化MCP协调系统...\n❌ 展示过程中发生错误: No module named 'components.smartinvention_adapter_mcp'\n",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/aicore0624/development/demos/demo3_mcp_showcase/mcp_showcase_demo.py\", line 76, in run_demo\n    aicore = AICore3()\n             ^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/PowerAutomation/core/aicore3.py\", line 371, in __init__\n    from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP\nModuleNotFoundError: No module named 'components.smartinvention_adapter_mcp'\n"
+}

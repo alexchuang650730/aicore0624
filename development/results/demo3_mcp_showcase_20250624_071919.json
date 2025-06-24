@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo3_mcp_showcase",
+  "start_time": "2025-06-24T07:19:19.399706",
+  "end_time": "2025-06-24T07:19:19.622225",
+  "duration": 0.222519,
+  "success": false,
+  "return_code": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/aicore0624/development/demos/demo3_mcp_showcase/mcp_showcase_demo.py\", line 509, in <module>\n    asyncio.run(main())\n  File \"/usr/lib/python3.11/asyncio/runners.py\", line 188, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/asyncio/runners.py\", line 120, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/asyncio/base_events.py\", line 650, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/development/demos/demo3_mcp_showcase/mcp_showcase_demo.py\", line 505, in main\n    demo = MCPShowcaseDemo()\n           ^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/development/demos/demo3_mcp_showcase/mcp_showcase_demo.py\", line 32, in __init__\n    self.config = self._load_config()\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/development/demos/demo3_mcp_showcase/mcp_showcase_demo.py\", line 42, in _load_config\n    return toml.load(f)\n           ^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/dist-packages/toml/decoder.py\", line 156, in load\n    return loads(f.read(), _dict, decoder)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.11/dist-packages/toml/decoder.py\", line 213, in loads\n    raise TomlDecodeError(\"Key name found without value.\"\ntoml.decoder.TomlDecodeError: Key name found without value. Reached end of line. (line 42 column 2 char 1002)\n"
+}
