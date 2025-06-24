@@ -19,9 +19,9 @@ from enum import Enum
 # 導入 AICore 3.0 組件
 from core.aicore3 import AICore3, UserRequest, ProcessingResult
 from components.enhanced_smartinvention_mcp_v2 import EnhancedSmartinventionAdapterMCP
-from components.dynamic_expert_registry import DynamicExpertRegistry, ExpertConfig
-from components.smart_routing_engine import SmartRoutingEngine, RoutingRule
-from tools.tool_registry import ToolRegistry, ToolConfig, ToolType, ToolCapability
+from components.dynamic_expert_registry import DynamicExpertRegistry, ExpertProfile, ExpertCapability, ExpertType, ExpertStatus
+from components.smart_routing_engine import SmartRoutingEngine, RoutingRequest, RoutingDecision
+from tools.tool_registry import ToolRegistry, ToolInfo, ToolType, ToolCapability
 
 # 設置日誌
 logging.basicConfig(level=logging.INFO)
@@ -257,18 +257,37 @@ class ManusExpertCoordinator:
         
         # 註冊 Manus 專家到 AICore 動態專家系統
         for config in manus_expert_configs:
-            expert_config = ExpertConfig(
-                expert_id=config["expert_id"],
-                domain=config["domain"],
-                scenario_type=config["scenario_type"],
-                skill_requirements=config["skill_requirements"],
-                knowledge_sources=config["knowledge_sources"],
-                performance_metrics=config["performance_metrics"]
+            # 創建專家能力
+            capabilities = []
+            for skill in config["skill_requirements"]:
+                capability = ExpertCapability(
+                    name=skill,
+                    description=f"Manus expertise in {skill}",
+                    skill_level="advanced",
+                    domain=config["domain"],
+                    keywords=[skill],
+                    confidence=0.9,
+                    source="manus_adapter"
+                )
+                capabilities.append(capability)
+            
+            # 創建專家檔案
+            expert_profile = ExpertProfile(
+                id=config["expert_id"],
+                name=config["expert_id"].replace("_", " ").title(),
+                type=ExpertType.DYNAMIC_EXPERT,
+                status=ExpertStatus.ACTIVE,
+                capabilities=capabilities,
+                specializations=[config["domain"]],
+                knowledge_base=config["knowledge_sources"],
+                performance_metrics=config["performance_metrics"],
+                usage_history=[],
+                metadata={"source": "manus_adapter", "scenario_type": config["scenario_type"]}
             )
             
-            success = await self.expert_registry.register_expert(expert_config)
+            success = await self.expert_registry.register_expert_directly(expert_profile)
             if success:
-                self.manus_experts[config["expert_id"]] = expert_config
+                self.manus_experts[config["expert_id"]] = expert_profile
                 logger.info(f"✅ 註冊 Manus 專家: {config['expert_id']}")
             else:
                 logger.error(f"❌ 註冊 Manus 專家失敗: {config['expert_id']}")

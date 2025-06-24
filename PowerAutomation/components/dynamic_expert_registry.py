@@ -88,6 +88,35 @@ class DynamicExpertRegistry:
             await self._initialize_base_experts()
             self.base_experts_initialized = True
     
+    async def register_expert_directly(self, expert: ExpertProfile) -> ExpertProfile:
+        """直接註冊專家（用於預定義的專家）"""
+        logger.info(f"🔧 直接註冊專家: {expert.id}")
+        
+        try:
+            # 檢查是否已存在
+            if expert.id in self.experts:
+                logger.info(f"專家已存在，更新現有專家: {expert.id}")
+                existing_expert = self.experts[expert.id]
+                # 更新現有專家的信息
+                existing_expert.capabilities = expert.capabilities
+                existing_expert.knowledge_base = expert.knowledge_base
+                existing_expert.metadata.update(expert.metadata)
+                existing_expert.last_used = datetime.now()
+                return existing_expert
+            
+            # 註冊到系統
+            await self._register_expert_to_system(expert)
+            
+            # 更新索引
+            await self._update_expert_indices(expert)
+            
+            logger.info(f"🎉 專家直接註冊完成: {expert.name} ({expert.id})")
+            return expert
+            
+        except Exception as e:
+            logger.error(f"❌ 專家直接註冊失敗: {e}")
+            raise
+    
     async def register_dynamic_expert(self, registration_request: ExpertRegistrationRequest) -> ExpertProfile:
         """註冊動態專家"""
         logger.info(f"🔧 註冊動態專家: {registration_request.domain}")
@@ -198,154 +227,117 @@ class DynamicExpertRegistry:
     
     async def update_expert_performance(self, expert_id: str, performance_data: Dict):
         """更新專家性能數據"""
-        if expert_id not in self.experts:
-            logger.warning(f"專家不存在: {expert_id}")
-            return
-        
-        expert = self.experts[expert_id]
-        
-        # 更新性能指標
-        await self.performance_tracker.update_performance(expert, performance_data)
-        
-        # 更新使用歷史
-        expert.usage_history.append({
-            "timestamp": datetime.now(),
-            "performance": performance_data,
-            "context": performance_data.get("context", {})
-        })
-        
-        # 更新最後使用時間
-        expert.last_used = datetime.now()
-        
-        # 檢查是否需要更新專家狀態
-        await self._evaluate_expert_status(expert)
-        
-        logger.info(f"📊 更新專家性能: {expert_id}")
+        if expert_id in self.experts:
+            expert = self.experts[expert_id]
+            await self.performance_tracker.update_performance(expert, performance_data)
+            expert.last_used = datetime.now()
+            logger.info(f"更新專家性能: {expert_id}")
     
-    async def cleanup_inactive_experts(self):
-        """清理非活躍專家"""
-        logger.info("🧹 開始清理非活躍專家")
-        
-        current_time = datetime.now()
-        inactive_threshold = timedelta(days=30)  # 30天未使用視為非活躍
-        
-        experts_to_remove = []
-        
-        for expert_id, expert in self.experts.items():
-            # 跳過基礎專家
-            if expert.type == ExpertType.BASE_EXPERT:
-                continue
-            
-            # 檢查最後使用時間
-            if expert.last_used and (current_time - expert.last_used) > inactive_threshold:
-                # 檢查性能指標
-                if expert.performance_metrics.get("success_rate", 0) < 0.5:
-                    experts_to_remove.append(expert_id)
-                    logger.info(f"標記移除非活躍專家: {expert.name} ({expert_id})")
-        
-        # 移除專家
-        for expert_id in experts_to_remove:
-            await self._remove_expert(expert_id)
-        
-        logger.info(f"🧹 清理完成，移除 {len(experts_to_remove)} 位專家")
+    async def get_expert_by_id(self, expert_id: str) -> Optional[ExpertProfile]:
+        """根據ID獲取專家"""
+        return self.experts.get(expert_id)
     
-    async def get_expert_statistics(self) -> Dict[str, Any]:
+    async def get_experts_by_domain(self, domain: str) -> List[ExpertProfile]:
+        """根據領域獲取專家"""
+        if domain in self.expert_index:
+            return [self.experts[expert_id] for expert_id in self.expert_index[domain] 
+                   if expert_id in self.experts]
+        return []
+    
+    async def get_experts_by_capability(self, capability: str) -> List[ExpertProfile]:
+        """根據能力獲取專家"""
+        if capability in self.capability_index:
+            return [self.experts[expert_id] for expert_id in self.capability_index[capability]
+                   if expert_id in self.experts]
+        return []
+    
+    def get_all_experts(self) -> List[ExpertProfile]:
+        """獲取所有專家"""
+        return list(self.experts.values())
+    
+    def get_expert_statistics(self) -> Dict[str, Any]:
         """獲取專家統計信息"""
-        stats = {
-            "total_experts": len(self.experts),
-            "by_type": {},
-            "by_status": {},
-            "by_domain": {},
-            "performance_summary": {},
-            "usage_summary": {}
+        total_experts = len(self.experts)
+        active_experts = len([e for e in self.experts.values() if e.status == ExpertStatus.ACTIVE])
+        
+        return {
+            "total_experts": total_experts,
+            "active_experts": active_experts,
+            "domains": len(self.expert_index),
+            "capabilities": len(self.capability_index),
+            "expert_types": {
+                "base": len([e for e in self.experts.values() if e.type == ExpertType.BASE_EXPERT]),
+                "dynamic": len([e for e in self.experts.values() if e.type == ExpertType.DYNAMIC_EXPERT]),
+                "hybrid": len([e for e in self.experts.values() if e.type == ExpertType.HYBRID_EXPERT])
+            }
         }
-        
-        # 按類型統計
-        for expert in self.experts.values():
-            expert_type = expert.type.value
-            stats["by_type"][expert_type] = stats["by_type"].get(expert_type, 0) + 1
-            
-            expert_status = expert.status.value
-            stats["by_status"][expert_status] = stats["by_status"].get(expert_status, 0) + 1
-        
-        # 按領域統計
-        for domain, expert_ids in self.expert_index.items():
-            stats["by_domain"][domain] = len(expert_ids)
-        
-        # 性能統計
-        total_success_rate = sum(e.performance_metrics.get("success_rate", 0) for e in self.experts.values())
-        stats["performance_summary"]["average_success_rate"] = total_success_rate / len(self.experts) if self.experts else 0
-        
-        return stats
     
     # 私有方法
-    def _generate_expert_id(self, request: ExpertRegistrationRequest) -> str:
+    async def _generate_expert_id(self, request: ExpertRegistrationRequest) -> str:
         """生成專家ID"""
-        content = f"{request.domain}_{request.scenario_type}_{datetime.now().isoformat()}"
-        return f"expert_{hashlib.md5(content.encode()).hexdigest()[:8]}"
-    
-    def _generate_expert_name(self, request: ExpertRegistrationRequest) -> str:
-        """生成專家名稱"""
-        domain_name = request.domain.replace("_", " ").title()
-        scenario_name = request.scenario_type.replace("_", " ").title()
-        return f"{domain_name} {scenario_name} Specialist"
+        content = f"{request.domain}_{request.scenario_type}_{request.requester}"
+        return hashlib.md5(content.encode()).hexdigest()[:12]
     
     async def _find_similar_expert(self, request: ExpertRegistrationRequest) -> Optional[ExpertProfile]:
-        """尋找類似的現有專家"""
+        """尋找類似的專家"""
         for expert in self.experts.values():
-            if (expert.type == ExpertType.DYNAMIC_EXPERT and 
-                request.domain in expert.specializations):
-                # 檢查技能重疊度
-                expert_skills = set()
-                for cap in expert.capabilities:
-                    expert_skills.update(cap.keywords)
-                
-                request_skills = set(request.skill_requirements)
-                overlap = len(expert_skills.intersection(request_skills))
-                
-                if overlap / len(request_skills) > 0.7:  # 70%重疊度
-                    return expert
-        
+            if (request.domain in expert.specializations and 
+                expert.type == ExpertType.DYNAMIC_EXPERT):
+                return expert
         return None
     
-    async def _update_existing_expert(self, expert: ExpertProfile, request: ExpertRegistrationRequest) -> ExpertProfile:
+    async def _update_existing_expert(self, expert: ExpertProfile, 
+                                    request: ExpertRegistrationRequest) -> ExpertProfile:
         """更新現有專家"""
-        # 合併新的知識源
+        # 更新知識庫
         new_knowledge = await self.knowledge_synthesizer.synthesize_knowledge(
             request.knowledge_sources, request.domain
         )
-        
-        # 更新知識庫
         expert.knowledge_base.update(new_knowledge)
         
-        # 添加新能力
+        # 更新能力
         new_capabilities = await self._generate_expert_capabilities(request, new_knowledge)
         expert.capabilities.extend(new_capabilities)
         
         # 更新元數據
-        expert.metadata["last_updated"] = datetime.now()
+        expert.metadata["last_updated"] = datetime.now().isoformat()
         expert.metadata["update_count"] = expert.metadata.get("update_count", 0) + 1
         
         return expert
     
     async def _generate_expert_capabilities(self, request: ExpertRegistrationRequest, 
-                                         knowledge_base: Dict) -> List[ExpertCapability]:
+                                          knowledge_base: Dict) -> List[ExpertCapability]:
         """生成專家能力"""
         capabilities = []
         
         for skill in request.skill_requirements:
             capability = ExpertCapability(
                 name=skill,
-                description=f"Expertise in {skill} for {request.domain}",
+                description=f"Dynamic capability in {skill}",
                 skill_level=self._determine_skill_level(skill, knowledge_base),
                 domain=request.domain,
                 keywords=self._extract_keywords_for_skill(skill, knowledge_base),
                 confidence=self._calculate_capability_confidence(skill, knowledge_base),
-                source="search_based"
+                source="dynamic_search"
             )
             capabilities.append(capability)
         
         return capabilities
+    
+    def _generate_expert_name(self, request: ExpertRegistrationRequest) -> str:
+        """生成專家名稱"""
+        return f"{request.domain.title()} Expert"
+    
+    async def _validate_expert_capabilities(self, expert: ExpertProfile) -> Dict[str, Any]:
+        """驗證專家能力"""
+        # 簡單驗證邏輯
+        if len(expert.capabilities) == 0:
+            return {"valid": False, "reason": "No capabilities defined"}
+        
+        if not expert.specializations:
+            return {"valid": False, "reason": "No specializations defined"}
+        
+        return {"valid": True, "reason": "All validations passed"}
     
     def _determine_skill_level(self, skill: str, knowledge_base: Dict) -> str:
         """確定技能等級"""
@@ -398,31 +390,6 @@ class DynamicExpertRegistry:
             "usage_count": 0          # 使用次數
         }
     
-    async def _validate_expert_capabilities(self, expert: ExpertProfile) -> Dict[str, Any]:
-        """驗證專家能力"""
-        # 簡化的驗證邏輯
-        validation_score = 0
-        
-        # 檢查能力數量
-        if len(expert.capabilities) >= 2:
-            validation_score += 0.3
-        
-        # 檢查知識庫豐富度
-        if len(expert.knowledge_base.get("content", [])) >= 3:
-            validation_score += 0.4
-        
-        # 檢查專業領域覆蓋
-        if len(expert.specializations) >= 1:
-            validation_score += 0.3
-        
-        is_valid = validation_score >= 0.7
-        
-        return {
-            "valid": is_valid,
-            "score": validation_score,
-            "reason": "Insufficient capabilities" if not is_valid else "Validation passed"
-        }
-    
     async def _register_expert_to_system(self, expert: ExpertProfile):
         """將專家註冊到系統"""
         self.experts[expert.id] = expert
@@ -454,7 +421,7 @@ class DynamicExpertRegistry:
                 continue
             
             # 檢查性能指標
-            if expert.performance_metrics.get("success_rate", 0) < 0.6:
+            if expert.performance_metrics.get("success_rate", 0) < 0.5:
                 continue
             
             filtered.append(expert)
@@ -465,16 +432,16 @@ class DynamicExpertRegistry:
                                          scenario_context: Dict) -> List[ExpertProfile]:
         """按適合度排序專家"""
         def calculate_suitability_score(expert: ExpertProfile) -> float:
-            score = 0
+            score = 0.0
             
-            # 性能權重
+            # 性能分數
             score += expert.performance_metrics.get("success_rate", 0) * 0.4
-            score += expert.performance_metrics.get("accuracy", 0) * 0.3
-            score += expert.performance_metrics.get("user_satisfaction", 0) * 0.2
+            score += (1.0 - expert.performance_metrics.get("response_time", 1.0)) * 0.2
+            score += expert.performance_metrics.get("user_satisfaction", 0) * 0.3
             
-            # 使用頻率權重
+            # 使用頻率分數
             usage_count = expert.performance_metrics.get("usage_count", 0)
-            score += min(0.1, usage_count * 0.01)  # 最多加0.1分
+            score += min(0.1, usage_count * 0.01)
             
             return score
         
@@ -482,42 +449,13 @@ class DynamicExpertRegistry:
     
     def _determine_max_experts(self, complexity_level: str) -> int:
         """確定最大專家數量"""
-        mapping = {
-            "LOW": 2,
-            "MEDIUM": 3,
-            "HIGH": 4,
-            "CRITICAL": 5
+        complexity_mapping = {
+            "LOW": 1,
+            "MEDIUM": 2,
+            "HIGH": 3,
+            "CRITICAL": 4
         }
-        return mapping.get(complexity_level, 3)
-    
-    async def _evaluate_expert_status(self, expert: ExpertProfile):
-        """評估專家狀態"""
-        success_rate = expert.performance_metrics.get("success_rate", 0)
-        usage_count = expert.performance_metrics.get("usage_count", 0)
-        
-        if success_rate < 0.3 and usage_count > 5:
-            expert.status = ExpertStatus.DEPRECATED
-        elif success_rate > 0.8 and usage_count > 10:
-            expert.status = ExpertStatus.ACTIVE
-    
-    async def _remove_expert(self, expert_id: str):
-        """移除專家"""
-        if expert_id in self.experts:
-            expert = self.experts[expert_id]
-            
-            # 從索引中移除
-            for domain in expert.specializations:
-                if domain in self.expert_index:
-                    self.expert_index[domain].discard(expert_id)
-            
-            for capability in expert.capabilities:
-                if capability.name in self.capability_index:
-                    self.capability_index[capability.name].discard(expert_id)
-            
-            # 從專家列表中移除
-            del self.experts[expert_id]
-            
-            logger.info(f"專家已移除: {expert_id}")
+        return complexity_mapping.get(complexity_level, 2)
     
     async def _initialize_base_experts(self):
         """初始化基礎專家"""
