@@ -1,0 +1,193 @@
+{
+  "timestamp": "1750762884.0996037",
+  "summary": {
+    "total_checks": 5,
+    "passed_checks": 4,
+    "success_rate": 80.0
+  },
+  "results": {
+    "Python版本": true,
+    "Python包": true,
+    "PowerAutomation结构": false,
+    "Deployment结构": true,
+    "文件权限": true
+  },
+  "detailed_results": [
+    {
+      "category": "python",
+      "item": "version",
+      "status": true,
+      "message": "Python版本 3.11.0 符合要求 (>= 3.8)",
+      "details": {
+        "version": "3.11.0",
+        "required": ">= 3.8"
+      }
+    },
+    {
+      "category": "packages",
+      "item": "asyncio",
+      "status": true,
+      "message": "asyncio 已安装",
+      "required": true
+    },
+    {
+      "category": "packages",
+      "item": "toml",
+      "status": true,
+      "message": "toml 已安装",
+      "required": true
+    },
+    {
+      "category": "packages",
+      "item": "pathlib",
+      "status": true,
+      "message": "pathlib 已安装",
+      "required": true
+    },
+    {
+      "category": "packages",
+      "item": "json",
+      "status": true,
+      "message": "json 已安装",
+      "required": true
+    },
+    {
+      "category": "packages",
+      "item": "datetime",
+      "status": true,
+      "message": "datetime 已安装",
+      "required": true
+    },
+    {
+      "category": "packages",
+      "item": "subprocess",
+      "status": true,
+      "message": "subprocess 已安装",
+      "required": true
+    },
+    {
+      "category": "packages",
+      "item": "argparse",
+      "status": true,
+      "message": "argparse 已安装",
+      "required": true
+    },
+    {
+      "category": "packages",
+      "item": "aiohttp",
+      "status": true,
+      "message": "aiohttp 已安装",
+      "required": false
+    },
+    {
+      "category": "packages",
+      "item": "numpy",
+      "status": true,
+      "message": "numpy 已安装",
+      "required": false
+    },
+    {
+      "category": "packages",
+      "item": "requests",
+      "status": true,
+      "message": "requests 已安装",
+      "required": false
+    },
+    {
+      "category": "structure",
+      "item": "dir_components",
+      "status": true,
+      "message": "components 目录存在"
+    },
+    {
+      "category": "structure",
+      "item": "dir_core",
+      "status": true,
+      "message": "core 目录存在"
+    },
+    {
+      "category": "structure",
+      "item": "dir_config",
+      "status": true,
+      "message": "config 目录存在"
+    },
+    {
+      "category": "structure",
+      "item": "dir_tools",
+      "status": true,
+      "message": "tools 目录存在"
+    },
+    {
+      "category": "structure",
+      "item": "file_core_aicore3.py",
+      "status": true,
+      "message": "core/aicore3.py 文件存在"
+    },
+    {
+      "category": "structure",
+      "item": "file_components_code_generation_mcp.py",
+      "status": true,
+      "message": "components/code_generation_mcp.py 文件存在"
+    },
+    {
+      "category": "structure",
+      "item": "file_components_enhanced_test_flow_mcp_v4.py",
+      "status": false,
+      "message": "components/enhanced_test_flow_mcp_v4.py 文件不存在"
+    },
+    {
+      "category": "deployment",
+      "item": "dir_demos",
+      "status": true,
+      "message": "demos 目录存在"
+    },
+    {
+      "category": "deployment",
+      "item": "dir_scripts",
+      "status": true,
+      "message": "scripts 目录存在"
+    },
+    {
+      "category": "deployment",
+      "item": "dir_config",
+      "status": true,
+      "message": "config 目录存在"
+    },
+    {
+      "category": "deployment",
+      "item": "dir_templates",
+      "status": true,
+      "message": "templates 目录存在"
+    },
+    {
+      "category": "deployment",
+      "item": "demo_demos_demo1_snake_game",
+      "status": true,
+      "message": "demos/demo1_snake_game 演示完整性检查"
+    },
+    {
+      "category": "deployment",
+      "item": "demo_demos_demo2_code_generation",
+      "status": true,
+      "message": "demos/demo2_code_generation 演示完整性检查"
+    },
+    {
+      "category": "deployment",
+      "item": "demo_demos_demo3_mcp_showcase",
+      "status": true,
+      "message": "demos/demo3_mcp_showcase 演示完整性检查"
+    },
+    {
+      "category": "permissions",
+      "item": "demo_runner.py",
+      "status": true,
+      "message": "demo_runner.py 权限检查"
+    },
+    {
+      "category": "permissions",
+      "item": "environment_checker.py",
+      "status": true,
+      "message": "environment_checker.py 权限检查"
+    }
+  ]
+}
