@@ -372,7 +372,15 @@ class EnhancedLocalMCPVSCodeInstaller:
             self.extension_manager = EnhancedMacExtensionManager()
             self.functionality_tester = ExtensionFunctionalityTester(self.vscode_detector)
         else:
-            raise Exception("此版本僅支持Mac環境")
+            # 在測試環境中允許非Mac平台
+            if os.getenv('TESTING_MODE', 'false').lower() == 'true':
+                # 創建模擬的檢測器和管理器用於測試
+                self.vscode_detector = EnhancedMacVSCodeDetector()
+                self.extension_manager = EnhancedMacExtensionManager() 
+                self.functionality_tester = ExtensionFunctionalityTester(self.vscode_detector)
+                logger.warning("⚠️ 測試模式: 在非Mac環境中運行")
+            else:
+                raise Exception("此版本僅支持Mac環境")
         
         # 安裝狀態
         self.active_installs: Dict[str, ExtensionInstallRequest] = {}

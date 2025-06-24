@@ -1,0 +1,83 @@
+{
+  "timestamp": "2025-06-24T00:22:44.360074",
+  "component_name": "Enhanced VSCode Installer MCP",
+  "registration_steps": {
+    "import_components": {
+      "success": true,
+      "imported_modules": [
+        "LocalMCPAdapter",
+        "EnhancedLocalMCPVSCodeInstaller",
+        "create_enhanced_vscode_installer",
+        "ToolRegistryManager",
+        "LocalToolInfo",
+        "ToolStatus"
+      ],
+      "message": "組件導入成功"
+    },
+    "create_adapter": {
+      "success": true,
+      "adapter": "<PowerAutomation.components.local_mcp_adapter.LocalMCPAdapter object at 0x7f857a5a5890>",
+      "adapter_id": "local_adapter_c168ca4694ff_1750738964",
+      "message": "Local MCP Adapter創建成功"
+    },
+    "create_installer": {
+      "success": true,
+      "installer": "<PowerAutomation.components.enhanced_vscode_installer_mcp.EnhancedLocalMCPVSCodeInstaller object at 0x7f857a590290>",
+      "tool_id": "enhanced_vscode_installer",
+      "version": "2.0.0",
+      "message": "Enhanced VSCode Installer創建成功"
+    },
+    "verify_registration": {
+      "success": false,
+      "registry_manager_available": false,
+      "message": "工具註冊管理器未初始化"
+    },
+    "generate_config": {
+      "success": true,
+      "config_file": "enhanced_vscode_installer_mcp_registration_config_20250624_002244.json",
+      "config": {
+        "enhanced_vscode_installer_mcp": {
+          "tool_id": "enhanced_vscode_installer",
+          "tool_name": "Enhanced VSCode Extension Installer",
+          "version": "2.0.0",
+          "description": "增強的Mac端VSCode擴展安裝和驗證工具",
+          "capabilities": [
+            "mac_vscode_detection",
+            "extension_installation",
+            "functionality_testing",
+            "performance_testing",
+            "real_cli_integration"
+          ],
+          "endpoint": "http://localhost:8080/api/v1/vscode/install",
+          "platform": "Mac",
+          "registration_status": "ready",
+          "registration_timestamp": "2025-06-24T00:22:44.489895"
+        },
+        "local_mcp_adapter": {
+          "adapter_id": "local_adapter_c168ca4694ff_1750738964",
+          "status": "initialized",
+          "tool_registry_manager": false,
+          "heartbeat_manager": false,
+          "smart_routing_engine": false
+        },
+        "registration_instructions": {
+          "manual_registration": "通過Local MCP Adapter啟動來完成實際註冊",
+          "startup_command": "await adapter.start()",
+          "verification_command": "adapter.tool_registry_manager.get_registered_tools()",
+          "notes": [
+            "Enhanced VSCode Installer MCP組件已準備就緒",
+            "所有必要的註冊機制都已實現",
+            "需要通過Local MCP Adapter啟動來完成實際註冊"
+          ]
+        }
+      },
+      "message": "註冊配置文件生成成功"
+    }
+  },
+  "overall_result": {
+    "success": false,
+    "message": "Enhanced VSCode Installer MCP註冊部分成功",
+    "registered_tool_id": "enhanced_vscode_installer",
+    "registration_complete": false
+  }
+}
