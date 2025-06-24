@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo2_code_generation",
+  "start_time": "2025-06-24T07:18:39.054261",
+  "end_time": "2025-06-24T07:18:39.139022",
+  "duration": 0.084761,
+  "success": false,
+  "return_code": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/aicore0624/development/demos/demo2_code_generation/code_generation_demo.py\", line 17, in <module>\n    from components.code_generation_mcp import CodeGenerationMcp\nModuleNotFoundError: No module named 'components'\n"
+}

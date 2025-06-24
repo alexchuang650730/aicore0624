@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo1_snake_game",
+  "start_time": "2025-06-24T07:16:44.127994",
+  "end_time": "2025-06-24T07:16:44.293242",
+  "duration": 0.165248,
+  "success": false,
+  "return_code": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/aicore0624/development/demos/demo1_snake_game/snake_game_demo.py\", line 17, in <module>\n    from components.code_generation_mcp import CodeGenerationMcp\nModuleNotFoundError: No module named 'components'\n"
+}
