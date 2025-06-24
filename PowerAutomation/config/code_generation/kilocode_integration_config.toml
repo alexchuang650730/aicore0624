@@ -1,0 +1,51 @@
+# KiloCode集成配置示例
+# PowerAutomation Code Generation MCP with KiloCode Integration
+
+[code_generation_mcp]
+# 基本配置
+name = "CodeGenerationMcp"
+version = "1.1.0"
+module_type = "workflow_adapter"
+
+# KiloCode集成配置
+[code_generation_mcp.kilocode]
+enabled = true
+kilocode_url = "http://localhost:8080"
+kilocode_api_key = "your_kilocode_api_key_here"
+timeout = 30
+
+# 集成策略配置
+[code_generation_mcp.integration]
+use_kilocode_fallback = true
+quality_threshold = 0.7
+prefer_kilocode_for_types = ["api", "backend"]
+prefer_template_for_types = ["frontend", "script"]
+
+# 性能配置
+[code_generation_mcp.performance]
+max_concurrent_generations = 5
+cache_enabled = true
+cache_ttl = 3600
+
+# 日志配置
+[code_generation_mcp.logging]
+level = "INFO"
+log_kilocode_calls = true
+log_quality_comparisons = true
+
+# 质量评估配置
+[code_generation_mcp.quality]
+enable_quality_check = true
+quality_metrics = [
+    "syntax_correctness",
+    "code_complexity", 
+    "documentation_coverage",
+    "error_handling"
+]
+
+# 备选方案配置
+[code_generation_mcp.fallback]
+max_retries = 3
+retry_delay = 1.0
+fallback_order = ["template", "kilocode", "custom"]
+
