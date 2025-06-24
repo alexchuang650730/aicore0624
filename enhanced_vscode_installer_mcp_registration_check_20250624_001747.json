@@ -1,0 +1,62 @@
+{
+  "timestamp": "2025-06-24T00:17:46.846504",
+  "component_name": "Enhanced VSCode Installer MCP",
+  "checks": {
+    "file_existence": {
+      "success": true,
+      "files": {
+        "PowerAutomation/components/enhanced_vscode_installer_mcp.py": {
+          "exists": true,
+          "size": 36100
+        },
+        "PowerAutomation/components/tool_registry_manager.py": {
+          "exists": true,
+          "size": 31132
+        },
+        "PowerAutomation/components/local_mcp_adapter.py": {
+          "exists": true,
+          "size": 21921
+        }
+      },
+      "message": "所有必需文件存在"
+    },
+    "import_capability": {
+      "success": true,
+      "imported_components": [
+        "EnhancedMacVSCodeDetector",
+        "EnhancedMacExtensionManager",
+        "ExtensionFunctionalityTester",
+        "EnhancedLocalMCPVSCodeInstaller",
+        "ToolRegistryManager",
+        "LocalToolInfo",
+        "ToolStatus"
+      ],
+      "message": "所有組件導入成功"
+    },
+    "tool_registry_integration": {
+      "success": true,
+      "installer_has_register_method": true,
+      "registry_has_register_method": true,
+      "message": "工具註冊集成正常"
+    },
+    "local_mcp_adapter_integration": {
+      "success": false,
+      "has_tool_registry_attribute": false,
+      "has_start_registry_method": false,
+      "message": "Local MCP Adapter集成有問題"
+    },
+    "tool_registration_status": {
+      "success": false,
+      "error": "LocalMCPAdapter.__init__() got an unexpected keyword argument 'adapter_id'",
+      "message": "工具註冊狀態檢查失敗"
+    }
+  },
+  "overall_status": {
+    "status": "partially_registered",
+    "success_rate": 0.6,
+    "successful_checks": 3,
+    "total_checks": 5,
+    "message": "Enhanced VSCode Installer MCP部分註冊，需要修復",
+    "icon": "🔧"
+  }
+}

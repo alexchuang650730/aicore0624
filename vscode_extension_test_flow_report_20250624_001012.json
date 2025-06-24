@@ -1,0 +1,65 @@
+{
+  "test_suite": "VSCode Extension System Test with Enhanced Test Flow MCP v4",
+  "execution_time": "2025-06-24T00:10:12.737008",
+  "total_scenarios": 5,
+  "successful_scenarios": 0,
+  "failed_scenarios": 5,
+  "success_rate": 0.0,
+  "test_results": [
+    {
+      "scenario_id": "vscode_installer_basic_test",
+      "scenario_name": "VSCode擴展安裝器基本功能測試",
+      "success": false,
+      "execution_time": 0.0004971027374267578,
+      "error_message": "'int' object is not iterable",
+      "stages_completed": [],
+      "final_stage": null,
+      "confidence_score": 0.0
+    },
+    {
+      "scenario_id": "vscode_verification_system_test",
+      "scenario_name": "VSCode擴展驗證系統測試",
+      "success": false,
+      "execution_time": 0.0004734992980957031,
+      "error_message": "'int' object is not iterable",
+      "stages_completed": [],
+      "final_stage": null,
+      "confidence_score": 0.0
+    },
+    {
+      "scenario_id": "local_mcp_integration_test",
+      "scenario_name": "Local MCP集成測試",
+      "success": false,
+      "execution_time": 0.00041484832763671875,
+      "error_message": "'int' object is not iterable",
+      "stages_completed": [],
+      "final_stage": null,
+      "confidence_score": 0.0
+    },
+    {
+      "scenario_id": "e2e_workflow_test",
+      "scenario_name": "端到端工作流測試",
+      "success": false,
+      "execution_time": 0.00041174888610839844,
+      "error_message": "'int' object is not iterable",
+      "stages_completed": [],
+      "final_stage": null,
+      "confidence_score": 0.0
+    },
+    {
+      "scenario_id": "performance_stress_test",
+      "scenario_name": "性能壓力測試",
+      "success": false,
+      "execution_time": 0.00046253204345703125,
+      "error_message": "'int' object is not iterable",
+      "stages_completed": [],
+      "final_stage": null,
+      "confidence_score": 0.0
+    }
+  ],
+  "summary": {
+    "overall_success": false,
+    "average_confidence": 0.0,
+    "total_execution_time": 0.0022597312927246094
+  }
+}

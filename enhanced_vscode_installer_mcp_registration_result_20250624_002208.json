@@ -1,0 +1,34 @@
+{
+  "timestamp": "2025-06-24T00:22:08.462302",
+  "component_name": "Enhanced VSCode Installer MCP",
+  "registration_steps": {
+    "import_components": {
+      "success": true,
+      "imported_modules": [
+        "LocalMCPAdapter",
+        "EnhancedLocalMCPVSCodeInstaller",
+        "create_enhanced_vscode_installer",
+        "ToolRegistryManager",
+        "LocalToolInfo",
+        "ToolStatus"
+      ],
+      "message": "組件導入成功"
+    },
+    "create_adapter": {
+      "success": true,
+      "adapter": "<PowerAutomation.components.local_mcp_adapter.LocalMCPAdapter object at 0x7f67d12a59d0>",
+      "adapter_id": "local_adapter_c168ca4694ff_1750738928",
+      "message": "Local MCP Adapter創建成功"
+    },
+    "create_installer": {
+      "success": false,
+      "error": "此版本僅支持Mac環境",
+      "message": "Enhanced VSCode Installer創建失敗"
+    }
+  },
+  "overall_result": {
+    "success": false,
+    "message": "Enhanced VSCode Installer創建失敗",
+    "registration_complete": false
+  }
+}
