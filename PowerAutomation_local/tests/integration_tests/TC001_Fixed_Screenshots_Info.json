@@ -1,0 +1,113 @@
+{
+  "test_name": "TC001 Manus登錄驗證測試 - 修正版",
+  "test_date": "2025-06-23",
+  "test_time_range": "01:51:21 - 01:53:29",
+  "total_screenshots": 13,
+  "key_achievement": "成功解決登錄模式切換問題",
+  "screenshots": [
+    {
+      "step": 1,
+      "filename": "manus_im_2025-06-23_01-51-21_1286.webp",
+      "timestamp": "1286",
+      "description": "重新導航到Manus平台 - 確認重定向行為",
+      "file_size": 18012,
+      "is_breakthrough": false
+    },
+    {
+      "step": 2,
+      "filename": "manus_im_2025-06-23_01-51-28_2947.webp",
+      "timestamp": "2947",
+      "description": "滾動到頁面底部 - 查看完整頁面結構",
+      "file_size": 15642,
+      "is_breakthrough": false
+    },
+    {
+      "step": 3,
+      "filename": "manus_im_2025-06-23_01-51-42_5930.webp",
+      "timestamp": "5930",
+      "description": "JavaScript搜索登錄元素 - 第1次嘗試",
+      "file_size": 15642,
+      "is_breakthrough": false
+    },
+    {
+      "step": 4,
+      "filename": "manus_im_2025-06-23_01-51-47_8131.webp",
+      "timestamp": "8131",
+      "description": "JavaScript搜索登錄元素 - 第2次嘗試",
+      "file_size": 15642,
+      "is_breakthrough": false
+    },
+    {
+      "step": 5,
+      "filename": "manus_im_2025-06-23_01-51-58_1397.webp",
+      "timestamp": "1397",
+      "description": "JavaScript搜索登錄元素 - 第3次嘗試",
+      "file_size": 15642,
+      "is_breakthrough": false
+    },
+    {
+      "step": 6,
+      "filename": "manus_im_2025-06-23_01-52-02_6883.webp",
+      "timestamp": "6883",
+      "description": "JavaScript搜索登錄元素 - 第4次嘗試",
+      "file_size": 15642,
+      "is_breakthrough": false
+    },
+    {
+      "step": 7,
+      "filename": "manus_im_2025-06-23_01-52-09_2936.webp",
+      "timestamp": "2936",
+      "description": "JavaScript搜索登錄元素 - 第5次嘗試",
+      "file_size": 15310,
+      "is_breakthrough": false
+    },
+    {
+      "step": 8,
+      "filename": "manus_im_2025-06-23_01-52-16_4385.webp",
+      "timestamp": "4385",
+      "description": "🎯 成功切換到登錄模式 - 重大突破！",
+      "file_size": 16320,
+      "is_breakthrough": true
+    },
+    {
+      "step": 9,
+      "filename": "manus_im_2025-06-23_01-52-51_7417.webp",
+      "timestamp": "7417",
+      "description": "填入Email憑證 - chuang.hsiaoyen@gmail.com",
+      "file_size": 18690,
+      "is_breakthrough": false
+    },
+    {
+      "step": 10,
+      "filename": "manus_im_2025-06-23_01-53-02_4863.webp",
+      "timestamp": "4863",
+      "description": "填入Password憑證 - 密碼已遮罩",
+      "file_size": 17022,
+      "is_breakthrough": false
+    },
+    {
+      "step": 11,
+      "filename": "manus_im_2025-06-23_01-53-11_2161.webp",
+      "timestamp": "2161",
+      "description": "點擊Sign in按鈕 - 提交登錄表單",
+      "file_size": 17022,
+      "is_breakthrough": false
+    },
+    {
+      "step": 12,
+      "filename": "manus_im_2025-06-23_01-53-22_5214.webp",
+      "timestamp": "5214",
+      "description": "等待登錄響應 - 處理中",
+      "file_size": 18280,
+      "is_breakthrough": false
+    },
+    {
+      "step": 13,
+      "filename": "manus_im_2025-06-23_01-53-29_8179.webp",
+      "timestamp": "8179",
+      "description": "最終狀態檢查 - 測試完成",
+      "file_size": 17022,
+      "is_breakthrough": false
+    }
+  ]
+}

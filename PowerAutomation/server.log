@@ -1,0 +1,13 @@
+nohup: ignoring input
+INFO:__main__:🚀 參數化MCP服務器啟動中...
+INFO:__main__:📋 已配置專家: ['保險', '行政', '核保', '理賠']
+INFO:__main__:📡 API端點:
+INFO:__main__:  - GET  /health          - 健康檢查
+INFO:__main__:  - POST /api/process     - 處理請求
+INFO:__main__:  - GET  /api/experts     - 獲取專家列表
+INFO:__main__:  - POST /api/identify    - 識別專家
+INFO:__main__:  - POST /api/demo        - 演示請求
+ * Serving Flask app 'parameterized_mcp_server'
+ * Debug mode: off
+Address already in use
+Port 5001 is in use by another program. Either identify and stop that program, or start the server with a different port.

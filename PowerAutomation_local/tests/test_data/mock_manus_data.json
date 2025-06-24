@@ -1,0 +1,224 @@
+{
+  "conversations": [
+    {
+      "id": "conv_001",
+      "title": "PowerAutomation項目討論",
+      "date": "2025-06-23",
+      "messages": [
+        {
+          "id": "msg_001",
+          "role": "user",
+          "content": "請幫我分析這個自動化測試項目的架構",
+          "timestamp": "2025-06-23T10:30:00Z"
+        },
+        {
+          "id": "msg_002",
+          "role": "assistant",
+          "content": "我來幫您分析PowerAutomation測試項目。這個項目包含了完整的Manus平台自動化測試方案，主要組件包括：1) 登錄驗證模組 2) 數據存儲驗證 3) 搜尋功能測試 4) 文件管理系統。",
+          "timestamp": "2025-06-23T10:31:15Z"
+        },
+        {
+          "id": "msg_003",
+          "role": "user",
+          "content": "能否詳細說明登錄驗證模組的實現方案？",
+          "timestamp": "2025-06-23T10:32:00Z"
+        },
+        {
+          "id": "msg_004",
+          "role": "assistant",
+          "content": "登錄驗證模組採用了多層次的解決方案：1) 智能元素定位 - 使用多種選擇器策略 2) 輸入問題解決 - JavaScript直接設置值避免重複字符 3) CAPTCHA繞過 - Google OAuth登錄方案 4) 錯誤處理 - 完整的重試機制",
+          "timestamp": "2025-06-23T10:33:30Z"
+        }
+      ],
+      "category": "技術討論",
+      "tags": [
+        "自動化",
+        "測試",
+        "登錄"
+      ],
+      "status": "active"
+    },
+    {
+      "id": "conv_002",
+      "title": "測試案例設計與實施",
+      "date": "2025-06-22",
+      "messages": [
+        {
+          "id": "msg_005",
+          "role": "user",
+          "content": "需要設計完整的測試案例覆蓋所有Manus功能",
+          "timestamp": "2025-06-22T14:20:00Z"
+        },
+        {
+          "id": "msg_006",
+          "role": "assistant",
+          "content": "我建議設計以下測試案例：TC001-登錄驗證、TC002-信息發送、TC003-對話歷史獲取、TC004-智能分類、TC005-任務列表遍歷、TC006-文件檔案獲取。每個案例都包含詳細的步驟和驗證點。",
+          "timestamp": "2025-06-22T14:21:45Z"
+        }
+      ],
+      "category": "測試設計",
+      "tags": [
+        "測試案例",
+        "設計",
+        "規劃"
+      ],
+      "status": "completed"
+    },
+    {
+      "id": "conv_003",
+      "title": "數據存儲和搜尋功能",
+      "date": "2025-06-21",
+      "messages": [
+        {
+          "id": "msg_007",
+          "role": "user",
+          "content": "如何實現高效的數據存儲和搜尋功能？",
+          "timestamp": "2025-06-21T09:15:00Z"
+        },
+        {
+          "id": "msg_008",
+          "role": "assistant",
+          "content": "建議採用分層存儲架構：1) 按日期組織對話 2) 按類型分類文件 3) 建立多重索引 4) 實現全文搜尋。這樣可以確保數據的高效存取和搜尋。",
+          "timestamp": "2025-06-21T09:16:30Z"
+        }
+      ],
+      "category": "數據管理",
+      "tags": [
+        "存儲",
+        "搜尋",
+        "索引"
+      ],
+      "status": "active"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task_001",
+      "title": "完成Manus登錄自動化測試",
+      "description": "實現完整的登錄自動化流程，包括CAPTCHA處理和錯誤恢復",
+      "status": "completed",
+      "priority": "high",
+      "created_date": "2025-06-20",
+      "completed_date": "2025-06-23",
+      "files": [
+        {
+          "name": "manus_advanced_test_controller.py",
+          "type": "python",
+          "size": "25KB",
+          "path": "/tasks/task_001/manus_advanced_test_controller.py"
+        },
+        {
+          "name": "login_test_results.json",
+          "type": "json",
+          "size": "5KB",
+          "path": "/tasks/task_001/login_test_results.json"
+        },
+        {
+          "name": "login_screenshots.zip",
+          "type": "archive",
+          "size": "2MB",
+          "path": "/tasks/task_001/login_screenshots.zip"
+        }
+      ],
+      "category": "自動化測試"
+    },
+    {
+      "id": "task_002",
+      "title": "實施數據存儲驗證系統",
+      "description": "建立完整的數據存儲驗證機制，確保數據完整性和可搜尋性",
+      "status": "in_progress",
+      "priority": "high",
+      "created_date": "2025-06-21",
+      "files": [
+        {
+          "name": "data_storage_test.py",
+          "type": "python",
+          "size": "18KB",
+          "path": "/tasks/task_002/data_storage_test.py"
+        },
+        {
+          "name": "storage_verification_report.md",
+          "type": "markdown",
+          "size": "12KB",
+          "path": "/tasks/task_002/storage_verification_report.md"
+        }
+      ],
+      "category": "數據驗證"
+    },
+    {
+      "id": "task_003",
+      "title": "開發智能分類算法",
+      "description": "實現對話內容的智能分類功能，提高數據組織效率",
+      "status": "pending",
+      "priority": "medium",
+      "created_date": "2025-06-22",
+      "files": [
+        {
+          "name": "classification_algorithm.py",
+          "type": "python",
+          "size": "8KB",
+          "path": "/tasks/task_003/classification_algorithm.py"
+        }
+      ],
+      "category": "算法開發"
+    }
+  ],
+  "files": [
+    {
+      "id": "file_001",
+      "name": "PowerAutomation_Complete_Test_Report.pdf",
+      "type": "pdf",
+      "size": "3.2MB",
+      "category": "報告",
+      "upload_date": "2025-06-23",
+      "path": "/files/reports/PowerAutomation_Complete_Test_Report.pdf",
+      "tags": [
+        "測試報告",
+        "完整版",
+        "PowerAutomation"
+      ]
+    },
+    {
+      "id": "file_002",
+      "name": "manus_test_controller_v2.py",
+      "type": "python",
+      "size": "25KB",
+      "category": "代碼",
+      "upload_date": "2025-06-23",
+      "path": "/files/code/manus_test_controller_v2.py",
+      "tags": [
+        "自動化",
+        "測試控制器",
+        "Python"
+      ]
+    },
+    {
+      "id": "file_003",
+      "name": "test_case_specifications.md",
+      "type": "markdown",
+      "size": "15KB",
+      "category": "文檔",
+      "upload_date": "2025-06-22",
+      "path": "/files/docs/test_case_specifications.md",
+      "tags": [
+        "測試案例",
+        "規格",
+        "文檔"
+      ]
+    },
+    {
+      "id": "file_004",
+      "name": "login_test_screenshots.zip",
+      "type": "archive",
+      "size": "5.8MB",
+      "category": "截圖",
+      "upload_date": "2025-06-23",
+      "path": "/files/screenshots/login_test_screenshots.zip",
+      "tags": [
+        "截圖",
+        "登錄測試",
+        "視覺記錄"
+      ]
+    }
+  ]
+}

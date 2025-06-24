@@ -1,0 +1,10 @@
+{
+  "test_suite": "VSCode Extension Installation and Verification",
+  "start_time": "2025-06-23T23:33:49.841857",
+  "success": false,
+  "test_results": [],
+  "summary": {},
+  "total_execution_time": 410.3908932209015,
+  "error_message": "測試環境設置失敗",
+  "end_time": "2025-06-23T23:40:40.232761"
+}

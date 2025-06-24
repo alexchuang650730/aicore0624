@@ -1,0 +1,71 @@
+{
+  "name": "powerautomation-local",
+  "displayName": "PowerAutomation Local",
+  "description": "PowerAutomation Local MCP Extension",
+  "version": "1.0.0",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": ["*"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "powerautomation.login",
+        "title": "Login to Manus",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.sendMessage",
+        "title": "Send Message",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.getConversations",
+        "title": "Get Conversations",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.getTasks",
+        "title": "Get Tasks",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.runTest",
+        "title": "Run Test",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.viewStatus",
+        "title": "View Status",
+        "category": "PowerAutomation"
+      }
+    ],
+    "configuration": {
+      "title": "PowerAutomation",
+      "properties": {
+        "powerautomation.serverUrl": {
+          "type": "string",
+          "default": "http://localhost:5000",
+          "description": "PowerAutomation Server URL"
+        },
+        "powerautomation.autoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Auto start PowerAutomation"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "14.x",
+    "typescript": "^4.4.4"
+  }
+}
