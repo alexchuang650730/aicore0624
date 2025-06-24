@@ -1,0 +1,23 @@
+{
+  "environment": "staging",
+  "service_name": "aicore",
+  "service_type": "api_service",
+  "version": "3.1.0",
+  "port": 8001,
+  "host": "0.0.0.0",
+  "workers": 4,
+  "timeout": 30,
+  "max_memory": "512M",
+  "health_check_path": "/health",
+  "environment_variables": {
+    "ENVIRONMENT": "staging",
+    "LOG_LEVEL": "DEBUG",
+    "WORKERS": "4"
+  },
+  "dependencies": [
+    "python:3.11",
+    "fastapi",
+    "uvicorn",
+    "asyncio"
+  ]
+}

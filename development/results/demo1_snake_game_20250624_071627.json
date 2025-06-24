@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo1_snake_game",
+  "start_time": "2025-06-24T07:16:27.193907",
+  "end_time": "2025-06-24T07:16:27.206791",
+  "duration": 0.012884,
+  "success": false,
+  "return_code": 1,
+  "stdout": "",
+  "stderr": "  File \"/home/ubuntu/aicore0624/development/demos/demo1_snake_game/snake_game_demo.py\", line 17\n    from components.code_generation_mcp import CodeGenerationMcprom core.aicore3 import AICore3\n                                                                    ^^^^\nSyntaxError: invalid syntax\n"
+}

@@ -1,0 +1,97 @@
+[demo_settings]
+name = "Multi-Scenario Code Generation Demo"
+description = "多场景代码生成能力展示"
+target_audience = "技术团队、客户演示、产品展示"
+version = "1.0.0"
+author = "AICore Team"
+
+[scenarios]
+api_generation = true
+frontend_components = true
+backend_services = true
+database_schemas = true
+mobile_apps = false
+desktop_apps = false
+
+[languages]
+python = true
+javascript = true
+typescript = true
+java = false
+csharp = false
+go = false
+
+[frameworks]
+# Python框架
+fastapi = true
+flask = true
+django = false
+
+# JavaScript/TypeScript框架
+react = true
+vue = false
+angular = false
+
+# 数据库
+postgresql = true
+mysql = false
+mongodb = false
+
+[quality_requirements]
+min_quality_score = 7.5
+max_generation_time = 45
+code_style = "standard"
+documentation_level = "comprehensive"
+
+[output_config]
+save_all_outputs = true
+output_directory = "output"
+generate_summary_report = true
+include_performance_metrics = true
+
+[api_generation]
+default_framework = "fastapi"
+include_authentication = true
+include_validation = true
+include_documentation = true
+include_testing = false
+
+[frontend_generation]
+default_framework = "react"
+default_language = "typescript"
+styling_framework = "tailwindcss"
+include_responsive_design = true
+include_accessibility = true
+include_testing = false
+
+[backend_generation]
+default_framework = "flask"
+include_database_integration = true
+include_logging = true
+include_error_handling = true
+include_configuration = true
+
+[database_generation]
+default_database = "postgresql"
+include_indexes = true
+include_constraints = true
+include_triggers = false
+include_views = true
+
+[visualization]
+show_generation_progress = true
+show_code_analysis = true
+show_performance_metrics = true
+enable_step_by_step = true
+
+[demo_flow]
+scenarios_order = [
+    "api_generation",
+    "frontend_components", 
+    "backend_services",
+    "database_schemas"
+]
+
+pause_between_scenarios = false
+auto_generate_report = true
+

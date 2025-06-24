@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo3_mcp_showcase",
+  "start_time": "2025-06-24T07:19:01.848896",
+  "end_time": "2025-06-24T07:19:01.930377",
+  "duration": 0.081481,
+  "success": false,
+  "return_code": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/aicore0624/development/demos/demo3_mcp_showcase/mcp_showcase_demo.py\", line 18, in <module>\n    from components.mcp_coordinator_pattern import MCPCoordinator\nModuleNotFoundError: No module named 'components'\n"
+}

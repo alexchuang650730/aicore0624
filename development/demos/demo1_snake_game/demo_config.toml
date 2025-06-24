@@ -1,0 +1,60 @@
+[demo_settings]
+name = "Snake Game Generation Demo"
+description = "完整的贪吃蛇游戏生成演示"
+target_audience = "客户演示、技术展示"
+version = "1.0.0"
+author = "AICore Team"
+
+[generation_config]
+game_type = "snake"
+language = "python"
+framework = "pygame"
+complexity_level = "intermediate"
+window_size = [800, 600]
+grid_size = 20
+initial_speed = 5
+
+[display_config]
+show_generation_process = true
+show_code_analysis = true
+show_performance_metrics = true
+show_step_by_step = true
+enable_logging = true
+
+[output_config]
+save_generated_code = true
+save_demo_report = true
+output_directory = "output"
+code_filename = "snake_game.py"
+report_filename = "demo_report.md"
+
+[quality_requirements]
+min_quality_score = 8.0
+max_generation_time = 30
+required_features = [
+    "游戏窗口和界面",
+    "蛇的移动控制", 
+    "食物生成和碰撞检测",
+    "分数系统",
+    "游戏结束检测",
+    "重新开始功能",
+    "暂停功能",
+    "最高分记录"
+]
+
+[demo_flow]
+steps = [
+    "初始化AICore系统",
+    "配置代码生成参数", 
+    "生成贪吃蛇游戏代码",
+    "分析代码质量",
+    "测试游戏功能",
+    "生成演示报告"
+]
+
+[visualization]
+show_generation_progress = true
+show_quality_metrics = true
+show_performance_charts = false
+enable_real_time_feedback = true
+
