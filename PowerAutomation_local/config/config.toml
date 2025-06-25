@@ -1,0 +1,206 @@
+# PowerAutomation Local MCP Adapter v3.1.1 配置文件
+# 新一代AI驅動自動化平台 - 基於TOML格式的統一配置管理
+# Version: 3.1.1 (重構版本)
+# Date: 2025-06-25
+# 重構說明: 更新路徑配置以適應新的目錄結構
+
+[server]
+# Local Server組件配置
+host = "0.0.0.0"                    # 服務器監聽地址
+port = 5000                         # HTTP API端口
+websocket_port = 5001               # WebSocket端口
+debug = false                       # 調試模式
+cors_enabled = true                 # 跨域請求支持
+max_workers = 4                     # 最大工作線程數
+request_timeout = 30                # 請求超時時間(秒)
+max_request_size = "10MB"           # 最大請求大小
+
+[manus]
+# Manus集成配置
+base_url = "https://manus.im"       # Manus平台基礎URL
+app_url = "https://manus.im/app/uuX3KzwzsthCSgqmbQbgOz"  # 應用URL
+login_email = "chuang.hsiaoyen@gmail.com"  # 登錄郵箱
+login_password = "silentfleet#1234"  # 登錄密碼
+login_timeout = 30                  # 登錄超時時間(秒)
+retry_attempts = 3                  # 重試次數
+session_timeout = 3600              # 會話超時時間(秒)
+auto_login = true                   # 自動登錄
+keep_alive = true                   # 保持會話活躍
+
+[automation]
+# 自動化測試配置
+browser = "chromium"                # 瀏覽器類型
+headless = false                    # 無頭模式
+screenshot_enabled = true           # 截圖功能
+video_recording = true              # 視頻錄製
+test_timeout = 300                  # 測試超時時間(秒)
+retry_on_failure = true             # 失敗時重試
+max_retry_attempts = 3              # 最大重試次數
+screenshot_quality = 90             # 截圖質量(1-100)
+video_fps = 30                      # 視頻幀率
+
+[storage]
+# 數據存儲配置
+base_path = "/home/ubuntu/powerautomation_data"  # 基礎存儲路徑
+index_enabled = true                # 搜索索引
+backup_enabled = true               # 備份功能
+cleanup_days = 30                   # 清理天數
+compression_enabled = true          # 壓縮功能
+max_file_size = "100MB"            # 最大文件大小
+allowed_extensions = [".pdf", ".png", ".jpg", ".jpeg", ".txt", ".md", ".json", ".csv"]
+
+# 存儲路徑配置
+[storage.paths]
+tasks = "tasks"                     # 任務存儲路徑
+conversations = "conversations"      # 對話存儲路徑
+files = "files"                     # 文件存儲路徑
+screenshots = "screenshots"         # 截圖存儲路徑
+videos = "videos"                   # 視頻存儲路徑
+logs = "logs"                       # 日誌存儲路徑
+backups = "backups"                 # 備份存儲路徑
+temp = "temp"                       # 臨時文件路徑
+
+[extension]
+# VSCode Extension組件配置 (v3.1.1)
+auto_start = true                   # 自動啟動
+sidebar_enabled = true              # 側邊欄功能
+notifications_enabled = true        # 通知功能
+theme = "dark"                      # 主題(dark/light)
+auto_refresh = true                 # 自動刷新
+refresh_interval = 30               # 刷新間隔(秒)
+max_history_items = 100             # 最大歷史記錄數
+
+# 三角色權限系統配置
+[extension.auth]
+enable_role_system = true           # 啟用角色系統
+admin_key_prefix = "admin_"         # 管理員 Key 前綴
+developer_key_prefix = "dev_"       # 開發者 Key 前綴
+user_key_prefix = "user_"           # 用戶 Key 前綴
+auto_generate_user_keys = true      # 自動生成用戶 Key
+session_timeout = 3600              # 會話超時時間(秒)
+
+# Extension命令配置
+[extension.commands]
+login = "powerautomation.login"
+send_message = "powerautomation.sendMessage"
+get_conversations = "powerautomation.getConversations"
+get_tasks = "powerautomation.getTasks"
+run_test = "powerautomation.runTest"
+view_status = "powerautomation.viewStatus"
+open_settings = "powerautomation.openSettings"
+# 新增角色相關命令
+switch_role = "powerautomation.switchRole"
+manage_users = "powerautomation.manageUsers"
+view_permissions = "powerautomation.viewPermissions"
+
+[paths]
+# 重構後的路徑配置
+core_dir = "core"                   # 核心組件目錄
+server_dir = "core/server"          # 服務器組件目錄
+shared_dir = "core/shared"          # 共享工具目錄
+extension_dir = "extension"         # 擴展管理器目錄
+vscode_extension_dir = "vscode-extension"  # VS Code 擴展目錄
+tests_dir = "tests"                 # 測試目錄
+scripts_dir = "scripts"             # 腳本目錄
+docs_dir = "docs"                   # 文檔目錄
+config_dir = "config"               # 配置目錄
+
+# 腳本路徑配置
+[paths.scripts]
+deploy_dir = "scripts/deploy"       # 部署腳本目錄
+dev_dir = "scripts/dev"             # 開發工具目錄
+installer = "scripts/deploy/install.sh"  # 安裝腳本
+deployer = "scripts/deploy/vsix_auto_deployer.py"  # 部署器
+packager = "scripts/deploy/package_project.sh"  # 打包腳本
+
+[logging]
+# 日誌配置
+level = "INFO"                      # 日誌級別(DEBUG/INFO/WARNING/ERROR)
+file_enabled = true                 # 文件日誌
+console_enabled = true              # 控制台日誌
+max_file_size = "10MB"             # 最大日誌文件大小
+backup_count = 5                    # 日誌文件備份數量
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# 日誌文件配置 (更新路徑)
+[logging.files]
+main = "powerautomation_mcp.log"
+server = "server.log"
+extension = "extension.log"
+manus = "manus.log"
+automation = "automation.log"
+error = "error.log"
+# 日誌存儲在 storage.paths.logs 指定的目錄
+
+[security]
+# 安全配置 (增強版)
+api_key_required = true             # API密鑰驗證 (啟用)
+jwt_secret = "powerautomation_secret_key_2025_v311"  # JWT密鑰 (更新)
+token_expiry = 3600                 # Token過期時間(秒)
+max_login_attempts = 5              # 最大登錄嘗試次數
+lockout_duration = 300              # 鎖定時間(秒)
+encrypt_sensitive_data = true       # 敏感數據加密
+# 新增角色權限配置
+role_based_access = true            # 基於角色的訪問控制
+admin_only_endpoints = ["/admin", "/users", "/system"]  # 管理員專用端點
+developer_endpoints = ["/api", "/debug", "/tools"]  # 開發者端點
+
+[performance]
+# 性能配置
+cache_enabled = true                # 緩存功能
+cache_size = "100MB"               # 緩存大小
+cache_ttl = 3600                   # 緩存生存時間(秒)
+connection_pool_size = 10          # 連接池大小
+max_concurrent_requests = 50       # 最大並發請求數
+request_queue_size = 100           # 請求隊列大小
+
+[monitoring]
+# 監控配置
+health_check_enabled = true         # 健康檢查
+health_check_interval = 60          # 健康檢查間隔(秒)
+metrics_enabled = true              # 指標收集
+metrics_interval = 300              # 指標收集間隔(秒)
+alert_enabled = true                # 告警功能
+alert_threshold = 0.8               # 告警閾值
+
+# 監控指標配置
+[monitoring.metrics]
+cpu_usage = true                    # CPU使用率
+memory_usage = true                 # 內存使用率
+disk_usage = true                   # 磁盤使用率
+network_io = true                   # 網絡IO
+response_time = true                # 響應時間
+error_rate = true                   # 錯誤率
+
+[development]
+# 開發配置
+debug_mode = false                  # 調試模式
+hot_reload = false                  # 熱重載
+test_mode = false                   # 測試模式
+mock_data = false                   # 模擬數據
+profiling_enabled = false           # 性能分析
+verbose_logging = false             # 詳細日誌
+
+[features]
+# 功能開關 (v3.1.1)
+manus_integration = true            # Manus集成
+automation_testing = true          # 自動化測試
+data_storage = true                 # 數據存儲
+search_indexing = true              # 搜索索引
+file_management = true              # 文件管理
+video_recording = true              # 視頻錄製
+screenshot_capture = true           # 截圖捕獲
+real_time_monitoring = true         # 實時監控
+# 新增功能
+three_role_auth = true              # 三角色認證系統
+smart_login = true                  # 智慧登錄
+web_interface = false               # 網頁界面 (待整合)
+
+[version]
+# 版本信息
+current = "3.1.1"
+previous = "3.1.0"
+release_date = "2025-06-25"
+refactor_date = "2025-06-25"
+changelog = "重構項目結構，實現三角色權限系統"
+

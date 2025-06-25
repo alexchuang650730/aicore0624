@@ -1,0 +1,87 @@
+{
+  "database_path": "human_loop_integration.db",
+  "human_loop_mcp_url": "http://localhost:8096",
+  "aicore_api_url": "http://localhost:8080",
+  "decision_thresholds": {
+    "complexity_threshold": 0.7,
+    "risk_threshold": 0.6,
+    "confidence_threshold": 0.8
+  },
+  "expert_mapping": {
+    "deployment": "technical",
+    "api_integration": "api",
+    "business_logic": "business",
+    "data_processing": "data",
+    "system_integration": "integration",
+    "security_review": "security",
+    "performance_optimization": "performance"
+  },
+  "workflow_type_complexity": {
+    "deployment": 0.8,
+    "configuration": 0.6,
+    "testing": 0.4,
+    "monitoring": 0.3,
+    "maintenance": 0.5,
+    "unknown": 0.7
+  },
+  "environment_settings": {
+    "development": {
+      "complexity": 0.2,
+      "risk": 0.1
+    },
+    "testing": {
+      "complexity": 0.4,
+      "risk": 0.2
+    },
+    "staging": {
+      "complexity": 0.6,
+      "risk": 0.5
+    },
+    "production": {
+      "complexity": 0.9,
+      "risk": 0.9
+    }
+  },
+  "operation_risk_levels": {
+    "read": 0.1,
+    "write": 0.4,
+    "delete": 0.8,
+    "deploy": 0.7,
+    "configure": 0.6,
+    "restart": 0.5
+  },
+  "data_sensitivity_levels": {
+    "low": 0.1,
+    "medium": 0.4,
+    "high": 0.7,
+    "critical": 0.9
+  },
+  "system_impact_levels": {
+    "low": 0.1,
+    "medium": 0.4,
+    "high": 0.7,
+    "critical": 0.9
+  },
+  "testing_framework": {
+    "enabled_tests": ["unit", "integration", "security", "performance"],
+    "test_timeout": 30,
+    "minimum_success_rate": 0.8
+  },
+  "human_loop_settings": {
+    "session_timeout": 300,
+    "retry_attempts": 3,
+    "default_interaction_type": "confirmation"
+  },
+  "expert_system_settings": {
+    "minimum_confidence": 0.7,
+    "fallback_to_human": true,
+    "expert_timeout": 60
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "human_loop_integration.log",
+    "max_size": "10MB",
+    "backup_count": 5
+  }
+}
+

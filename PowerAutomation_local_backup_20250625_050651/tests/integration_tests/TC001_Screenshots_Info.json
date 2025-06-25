@@ -1,0 +1,84 @@
+{
+  "test_name": "TC001 Manus登錄驗證測試",
+  "test_date": "2025-06-23",
+  "total_screenshots": 11,
+  "screenshots": [
+    {
+      "step": 1,
+      "filename": "manus_im_2025-06-23_01-35-44_1025.webp",
+      "timestamp": "1025",
+      "description": "初始導航到Manus平台",
+      "file_size": 18012
+    },
+    {
+      "step": 2,
+      "filename": "manus_im_2025-06-23_01-36-06_6978.webp",
+      "timestamp": "6978",
+      "description": "頁面滾動查看完整內容",
+      "file_size": 15642
+    },
+    {
+      "step": 3,
+      "filename": "manus_im_2025-06-23_01-36-15_5846.webp",
+      "timestamp": "5846",
+      "description": "嘗試點擊Sign in鏈接",
+      "file_size": 15642
+    },
+    {
+      "step": 4,
+      "filename": "manus_im_2025-06-23_01-36-23_2803.webp",
+      "timestamp": "2803",
+      "description": "重新導航嘗試登錄模式",
+      "file_size": 14504
+    },
+    {
+      "step": 5,
+      "filename": "manus_im_2025-06-23_01-37-19_2418.webp",
+      "timestamp": "2418",
+      "description": "再次導航到應用頁面",
+      "file_size": 18002
+    },
+    {
+      "step": 6,
+      "filename": "manus_im_2025-06-23_01-37-38_7679.webp",
+      "timestamp": "7679",
+      "description": "滾動並查看頁面元素",
+      "file_size": 15642
+    },
+    {
+      "step": 7,
+      "filename": "manus_im_2025-06-23_01-37-45_3841.webp",
+      "timestamp": "3841",
+      "description": "使用JavaScript查找Sign in鏈接 (執行前)",
+      "file_size": 15642
+    },
+    {
+      "step": 8,
+      "filename": "manus_im_2025-06-23_01-37-53_8890.webp",
+      "timestamp": "8890",
+      "description": "使用JavaScript查找Sign in鏈接 (執行中)",
+      "file_size": 15642
+    },
+    {
+      "step": 9,
+      "filename": "manus_im_2025-06-23_01-37-57_4664.webp",
+      "timestamp": "4664",
+      "description": "使用JavaScript查找Sign in鏈接 (執行後)",
+      "file_size": 15642
+    },
+    {
+      "step": 10,
+      "filename": "manus_im_2025-06-23_01-38-08_4734.webp",
+      "timestamp": "4734",
+      "description": "填入登錄憑證 - Email",
+      "file_size": 16772
+    },
+    {
+      "step": 11,
+      "filename": "manus_im_2025-06-23_01-38-20_1275.webp",
+      "timestamp": "1275",
+      "description": "填入登錄憑證 - Password",
+      "file_size": 16304
+    }
+  ]
+}
