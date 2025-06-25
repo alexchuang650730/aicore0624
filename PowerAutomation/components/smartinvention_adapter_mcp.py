@@ -953,6 +953,113 @@ class SmartinventionAdapterMCP(MCPComponent):
         """獲取同步狀態"""
         return await self.data_sync_manager.get_sync_status()
     
+    # 數據獲取方法 - 修復缺失的方法
+    async def get_tasks_data(self) -> Dict:
+        """獲取任務數據 - 修復缺失的方法"""
+        try:
+            self.logger.info("獲取任務數據")
+            
+            # 模擬任務數據 - 實際實施時可以從數據庫或其他數據源獲取
+            tasks_data = {
+                "success": True,
+                "tasks": [
+                    {
+                        "id": "task_001",
+                        "title": "系統測試覆蓋率分析",
+                        "content": "分析當前系統的測試覆蓋率並提供改進建議",
+                        "status": "active",
+                        "priority": "high",
+                        "created_at": datetime.now().isoformat(),
+                        "tags": ["testing", "coverage", "analysis"]
+                    },
+                    {
+                        "id": "task_002", 
+                        "title": "代碼品質檢查",
+                        "content": "執行代碼品質檢查和靜態分析",
+                        "status": "pending",
+                        "priority": "medium",
+                        "created_at": datetime.now().isoformat(),
+                        "tags": ["code_quality", "static_analysis"]
+                    },
+                    {
+                        "id": "task_003",
+                        "title": "效能優化建議",
+                        "content": "分析系統效能並提供優化建議",
+                        "status": "completed",
+                        "priority": "medium",
+                        "created_at": datetime.now().isoformat(),
+                        "tags": ["performance", "optimization"]
+                    }
+                ],
+                "total_count": 3,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return tasks_data
+            
+        except Exception as e:
+            self.logger.error(f"獲取任務數據失敗: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "tasks": [],
+                "total_count": 0,
+                "timestamp": datetime.now().isoformat()
+            }
+    
+    async def get_files_data(self) -> Dict:
+        """獲取文件數據 - 修復缺失的方法"""
+        try:
+            self.logger.info("獲取文件數據")
+            
+            # 模擬文件數據 - 實際實施時可以從文件系統或數據庫獲取
+            files_data = {
+                "success": True,
+                "files": [
+                    {
+                        "id": "file_001",
+                        "name": "test_flow_mcp_integration.py",
+                        "path": "/PowerAutomation/tests/testcases/requirement_analysis/test_requirement_analysis_integration.py",
+                        "type": "python",
+                        "size": 15420,
+                        "modified_at": datetime.now().isoformat(),
+                        "tags": ["test", "integration", "mcp"]
+                    },
+                    {
+                        "id": "file_002",
+                        "name": "smartinvention_adapter_mcp.py", 
+                        "path": "/PowerAutomation/components/smartinvention_adapter_mcp.py",
+                        "type": "python",
+                        "size": 28650,
+                        "modified_at": datetime.now().isoformat(),
+                        "tags": ["component", "adapter", "mcp"]
+                    },
+                    {
+                        "id": "file_003",
+                        "name": "TEST_FLOW_MCP_SOP.md",
+                        "path": "/TEST_FLOW_MCP_SOP.md",
+                        "type": "markdown",
+                        "size": 45230,
+                        "modified_at": datetime.now().isoformat(),
+                        "tags": ["documentation", "sop", "guide"]
+                    }
+                ],
+                "total_count": 3,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return files_data
+            
+        except Exception as e:
+            self.logger.error(f"獲取文件數據失敗: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "files": [],
+                "total_count": 0,
+                "timestamp": datetime.now().isoformat()
+            }
+    
     # MCP接口實現
     def get_capabilities(self) -> Dict:
         """獲取MCP能力"""
