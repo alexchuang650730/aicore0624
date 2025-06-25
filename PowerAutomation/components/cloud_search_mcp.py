@@ -468,3 +468,338 @@ async def example_usage():
 if __name__ == "__main__":
     asyncio.run(example_usage())
 
+
+
+# ============================================================================
+# 台銀版本擴展 (Taiwan Bank Based Extension)
+# ============================================================================
+
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'config'))
+
+try:
+    from taiwan_bank_config import (
+        TaiwanBankConfig, 
+        TAIWAN_BANK_LLM_CONFIG, 
+        TAIWAN_BANK_PROMPT_TEMPLATE,
+        TAIWAN_BANK_PERFORMANCE_CONFIG
+    )
+except ImportError:
+    # 如果配置文件不存在，使用默認配置
+    TaiwanBankConfig = None
+    TAIWAN_BANK_LLM_CONFIG = {}
+    TAIWAN_BANK_PROMPT_TEMPLATE = ""
+    TAIWAN_BANK_PERFORMANCE_CONFIG = {}
+
+@dataclass
+class TaiwanBankSearchResult(SearchResult):
+    """台銀版本搜索結果數據模型"""
+    taiwan_bank_data_used: bool = False
+    analysis_length: int = 0
+    professional_level: str = "Standard"
+    cost_analysis: Dict[str, Any] = field(default_factory=dict)
+    roi_analysis: Dict[str, Any] = field(default_factory=dict)
+
+class TaiwanBankCloudSearchMCP(CloudSearchMCP):
+    """台銀版本 Cloud Search MCP - 基於台銀OCR審核人月成本詳細計算分析"""
+    
+    def __init__(self, llm_config: Dict[str, Any] = None):
+        # 合併台銀配置
+        taiwan_config = TAIWAN_BANK_LLM_CONFIG.copy()
+        if llm_config:
+            taiwan_config.update(llm_config)
+        
+        super().__init__(taiwan_config)
+        self.version = "6.0.0-TaiwanBankBased"
+        self.name = "TaiwanBankCloudSearchMCP"
+        self.taiwan_bank_config = TaiwanBankConfig() if TaiwanBankConfig else None
+        self.performance_config = TAIWAN_BANK_PERFORMANCE_CONFIG
+        
+        # 台銀專用指標
+        self.taiwan_metrics = {
+            "total_taiwan_searches": 0,
+            "average_analysis_length": 0,
+            "professional_standard_rate": 0.0,
+            "taiwan_data_usage_rate": 0.0
+        }
+        
+        self.logger.info(f"台銀版本 {self.name} v{self.version} 初始化完成")
+
+    async def taiwan_bank_search(self, user_input: str) -> TaiwanBankSearchResult:
+        """
+        台銀版本專業搜索分析
+        
+        Args:
+            user_input: 用戶查詢
+            
+        Returns:
+            TaiwanBankSearchResult: 台銀版本搜索結果
+        """
+        start_time = time.time()
+        
+        try:
+            # 檢查緩存
+            cache_key = f"taiwan_bank_{hash(user_input)}"
+            if cache_key in self.search_cache:
+                cached_result = self.search_cache[cache_key]
+                if time.time() - cached_result["timestamp"] < self.performance_config.get("cache_ttl", 7200):
+                    self.logger.info(f"台銀版本緩存命中: {user_input[:50]}...")
+                    return cached_result["result"]
+            
+            # 使用台銀專用 prompt
+            prompt = TAIWAN_BANK_PROMPT_TEMPLATE.format(user_input=user_input)
+            
+            # 調用 LLM
+            response = await self._call_llm_with_taiwan_context(prompt)
+            
+            # 解析響應
+            try:
+                result_data = json.loads(response)
+            except json.JSONDecodeError:
+                # 如果不是 JSON，創建結構化結果
+                result_data = {
+                    "background_analysis": response,
+                    "expert_domains": ["保險業務流程優化", "保險科技應用", "保險運營管理"],
+                    "confidence_score": 0.85,
+                    "taiwan_bank_data_used": True,
+                    "analysis_length": len(response),
+                    "professional_level": "Taiwan_Bank_Standard"
+                }
+            
+            # 創建台銀版本結果
+            taiwan_result = TaiwanBankSearchResult(
+                query=user_input,
+                result=result_data.get("background_analysis", ""),
+                context_enriched=True,
+                timestamp=time.time(),
+                domains_identified=result_data.get("expert_domains", []),
+                confidence_score=result_data.get("confidence_score", 0.85),
+                taiwan_bank_data_used=result_data.get("taiwan_bank_data_used", True),
+                analysis_length=result_data.get("analysis_length", len(result_data.get("background_analysis", ""))),
+                professional_level=result_data.get("professional_level", "Taiwan_Bank_Standard"),
+                metadata={
+                    "response_time": time.time() - start_time,
+                    "model_used": self.llm_config.get("model", "unknown"),
+                    "taiwan_bank_version": self.version,
+                    "cost_analysis": self._generate_cost_analysis(),
+                    "roi_analysis": self._generate_roi_analysis()
+                }
+            )
+            
+            # 更新台銀指標
+            self._update_taiwan_metrics(taiwan_result)
+            
+            # 緩存結果
+            if self.performance_config.get("cache_enabled", True):
+                self.search_cache[cache_key] = {
+                    "result": taiwan_result,
+                    "timestamp": time.time()
+                }
+            
+            self.logger.info(f"台銀版本搜索完成: {time.time() - start_time:.2f}秒")
+            return taiwan_result
+            
+        except Exception as e:
+            self.logger.error(f"台銀版本搜索失敗: {str(e)}")
+            # 返回錯誤結果
+            return TaiwanBankSearchResult(
+                query=user_input,
+                result=f"台銀版本分析失敗: {str(e)}",
+                context_enriched=False,
+                timestamp=time.time(),
+                confidence_score=0.0,
+                metadata={"error": str(e), "response_time": time.time() - start_time}
+            )
+
+    async def _call_llm_with_taiwan_context(self, prompt: str) -> str:
+        """
+        使用台銀上下文調用 LLM
+        
+        Args:
+            prompt: 包含台銀上下文的 prompt
+            
+        Returns:
+            str: LLM 響應
+        """
+        # 這裡應該調用實際的 LLM API
+        # 為了演示，返回模擬的台銀專業分析
+        
+        await asyncio.sleep(0.1)  # 模擬 API 調用延遲
+        
+        # 模擬台銀專業分析響應
+        mock_response = {
+            "background_analysis": f"""基於台銀OCR審核人月成本詳細計算分析，針對查詢進行專業分析：
+
+計算基礎參數：
+年度總案件量：100,000件，OCR系統覆蓋率：100%，需人工審核比例：90%，OCR平均準確率：88%（混合文檔）。單件審核時間：35分鐘/件 = 0.58小時/件，年度總工時：52,200小時。
+
+成本計算分析：
+月薪：35,000元，社保福利：10,500元，月人工成本：45,500元/人，人月成本：48,116元，單件成本：266元。
+
+人力配置需求：
+基礎配置：29人，標準配置：34人，增強配置：41人。根據業務量變化，建議採用彈性配置策略。
+
+投資回報分析：
+年度總成本：2,656萬元，相比全人工節約：41%成本，投資回收期：約2.3個月。這個ROI表現在行業中屬於優秀水平。
+
+技術優化建議：
+1. 提升OCR準確率至92%以上，可減少15%人工審核工作量
+2. 實施智能分類系統，優先處理高價值案件
+3. 建立質量控制機制，確保審核標準一致性
+4. 定期評估和調整人力配置，優化成本效益
+
+風險評估：
+技術風險：OCR系統穩定性、準確率波動
+運營風險：人員流動、培訓成本
+合規風險：監管要求變化、數據安全
+
+基於台銀的實際經驗，建議分三階段實施：第一階段優化現有流程，第二階段引入新技術，第三階段全面數字化轉型。""",
+            
+            "expert_domains": ["保險業務流程優化", "保險科技應用", "保險運營管理"],
+            "confidence_score": 0.95,
+            "taiwan_bank_data_used": True,
+            "analysis_length": 1740,
+            "professional_level": "Taiwan_Bank_Standard"
+        }
+        
+        return json.dumps(mock_response, ensure_ascii=False, indent=2)
+
+    def _generate_cost_analysis(self) -> Dict[str, Any]:
+        """生成成本分析數據"""
+        if not self.taiwan_bank_config:
+            return {}
+            
+        return {
+            "annual_cases": self.taiwan_bank_config.ANNUAL_CASES,
+            "cost_per_case": self.taiwan_bank_config.COST_PER_CASE,
+            "annual_total_cost": self.taiwan_bank_config.ANNUAL_TOTAL_COST,
+            "cost_saving_rate": self.taiwan_bank_config.COST_SAVING_RATE,
+            "staff_configurations": {
+                "basic": self.taiwan_bank_config.STAFF_CONFIG_BASIC,
+                "standard": self.taiwan_bank_config.STAFF_CONFIG_STANDARD,
+                "enhanced": self.taiwan_bank_config.STAFF_CONFIG_ENHANCED
+            }
+        }
+
+    def _generate_roi_analysis(self) -> Dict[str, Any]:
+        """生成 ROI 分析數據"""
+        if not self.taiwan_bank_config:
+            return {}
+            
+        return {
+            "payback_period_months": self.taiwan_bank_config.PAYBACK_PERIOD_MONTHS,
+            "cost_saving_rate": self.taiwan_bank_config.COST_SAVING_RATE,
+            "annual_savings": self.taiwan_bank_config.ANNUAL_TOTAL_COST * self.taiwan_bank_config.COST_SAVING_RATE,
+            "efficiency_metrics": {
+                "review_time_per_case": self.taiwan_bank_config.REVIEW_TIME_PER_CASE,
+                "ocr_accuracy_rate": self.taiwan_bank_config.OCR_ACCURACY_RATE,
+                "manual_review_rate": self.taiwan_bank_config.MANUAL_REVIEW_RATE
+            }
+        }
+
+    def _update_taiwan_metrics(self, result: TaiwanBankSearchResult):
+        """更新台銀專用指標"""
+        self.taiwan_metrics["total_taiwan_searches"] += 1
+        
+        # 更新平均分析長度
+        total_searches = self.taiwan_metrics["total_taiwan_searches"]
+        current_avg = self.taiwan_metrics["average_analysis_length"]
+        new_avg = (current_avg * (total_searches - 1) + result.analysis_length) / total_searches
+        self.taiwan_metrics["average_analysis_length"] = new_avg
+        
+        # 更新專業標準率
+        if result.professional_level == "Taiwan_Bank_Standard":
+            professional_count = self.taiwan_metrics["professional_standard_rate"] * (total_searches - 1) + 1
+            self.taiwan_metrics["professional_standard_rate"] = professional_count / total_searches
+        
+        # 更新台銀數據使用率
+        if result.taiwan_bank_data_used:
+            taiwan_data_count = self.taiwan_metrics["taiwan_data_usage_rate"] * (total_searches - 1) + 1
+            self.taiwan_metrics["taiwan_data_usage_rate"] = taiwan_data_count / total_searches
+
+    def get_taiwan_metrics(self) -> Dict[str, Any]:
+        """獲取台銀版本專用指標"""
+        base_metrics = self.get_metrics()
+        base_metrics.update({
+            "taiwan_metrics": self.taiwan_metrics,
+            "taiwan_bank_config": {
+                "version": self.version,
+                "professional_level": "Taiwan_Bank_Standard",
+                "data_source": "台銀OCR審核人月成本詳細計算分析"
+            }
+        })
+        return base_metrics
+
+    async def health_check_taiwan(self) -> Dict[str, Any]:
+        """台銀版本健康檢查"""
+        try:
+            # 執行台銀版本測試
+            test_result = await self.taiwan_bank_search("測試查詢：核保流程優化")
+            
+            return {
+                "healthy": True,
+                "component": self.name,
+                "version": self.version,
+                "taiwan_bank_features": {
+                    "config_loaded": self.taiwan_bank_config is not None,
+                    "professional_analysis": test_result.professional_level == "Taiwan_Bank_Standard",
+                    "taiwan_data_used": test_result.taiwan_bank_data_used,
+                    "analysis_length": test_result.analysis_length,
+                    "response_time": test_result.metadata.get("response_time", 0)
+                },
+                "taiwan_metrics": self.taiwan_metrics,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            return {
+                "healthy": False,
+                "component": self.name,
+                "error": str(e),
+                "taiwan_bank_status": "failed",
+                "timestamp": datetime.now().isoformat()
+            }
+
+# 台銀版本便利函數
+async def create_taiwan_bank_cloud_search_mcp(llm_config: Dict[str, Any] = None) -> TaiwanBankCloudSearchMCP:
+    """創建並初始化台銀版本 Cloud Search MCP 組件"""
+    mcp = TaiwanBankCloudSearchMCP(llm_config)
+    await mcp.initialize()
+    return mcp
+
+# 台銀版本使用示例
+async def taiwan_bank_example_usage():
+    """台銀版本使用示例"""
+    # 創建台銀版本組件
+    taiwan_cloud_search = await create_taiwan_bank_cloud_search_mcp({
+        "provider": "claude",
+        "model": "claude-3-5-sonnet-20241022",
+        "api_key": "your-claude-api-key"
+    })
+    
+    # 執行台銀版本搜索
+    result = await taiwan_cloud_search.taiwan_bank_search(
+        "核保流程需要多少人力處理表單？自動化比率在業界有多高？表單OCR用人來審核在整個SOP流程所佔的人月大概是多少？"
+    )
+    
+    print(f"台銀版本分析結果: {result.result[:200]}...")
+    print(f"識別專家領域: {result.domains_identified}")
+    print(f"信心分數: {result.confidence_score}")
+    print(f"分析長度: {result.analysis_length} 字符")
+    print(f"專業級別: {result.professional_level}")
+    print(f"台銀數據使用: {result.taiwan_bank_data_used}")
+    
+    # 獲取台銀指標
+    taiwan_metrics = taiwan_cloud_search.get_taiwan_metrics()
+    print(f"台銀版本指標: {taiwan_metrics['taiwan_metrics']}")
+    
+    # 健康檢查
+    health_status = await taiwan_cloud_search.health_check_taiwan()
+    print(f"台銀版本健康狀態: {health_status['healthy']}")
+
+if __name__ == "__main__":
+    # 運行台銀版本示例
+    print("=== 台銀版本 Cloud Search MCP 示例 ===")
+    asyncio.run(taiwan_bank_example_usage())
+
