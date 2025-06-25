@@ -1,0 +1,111 @@
+{
+  "test_session": {
+    "start_time": "2025-06-25T04:09:34.481774",
+    "end_time": "2025-06-25T04:09:39.503167",
+    "total_tests": 5,
+    "passed_tests": 1,
+    "failed_tests": 4
+  },
+  "test_results": [
+    {
+      "test_name": "服務器連接性測試",
+      "success": true,
+      "timestamp": "2025-06-25T04:09:34.485709",
+      "details": {
+        "status_code": 200,
+        "response": {
+          "components": {
+            "action_executor": {
+              "stats": {
+                "failed_executions": 0,
+                "mcp_executions": 0,
+                "mcp_usage_rate": 0.0,
+                "success_rate": 0.0,
+                "successful_executions": 0,
+                "total_executions": 0
+              },
+              "status": "active"
+            },
+            "agent_core": {
+              "stats": {
+                "average_response_time": 0.0,
+                "failed_requests": 0,
+                "mcp_calls": 0,
+                "mcp_integration": true,
+                "success_rate": 0.0,
+                "successful_requests": 0,
+                "total_requests": 0
+              },
+              "status": "active"
+            },
+            "tool_registry": {
+              "available_tools": 2,
+              "status": "active"
+            }
+          },
+          "features": [
+            "dynamic_mcp_integration",
+            "cloud_search_mcp",
+            "intelligent_expert_consultation",
+            "zero_hardcoded_responses",
+            "multi_component_integration"
+          ],
+          "integration_level": "full",
+          "system_stats": {
+            "integration_level": "full",
+            "smartinvention_enabled": true,
+            "system_start_time": 1750838866.8017488,
+            "test_flow_mcp_enabled": true,
+            "total_requests": 0
+          },
+          "system_type": "fully_integrated_intelligent_system",
+          "uptime_seconds": 107.68284463882446
+        }
+      }
+    },
+    {
+      "test_name": "API Key 認證測試",
+      "success": false,
+      "timestamp": "2025-06-25T04:09:35.492312",
+      "details": {
+        "no_key_status": 401,
+        "with_key_status": 401,
+        "with_key_response": "{\"error\":\"Invalid API Key\"}\n"
+      }
+    },
+    {
+      "test_name": "需求分析工作流測試",
+      "success": false,
+      "timestamp": "2025-06-25T04:09:36.495998",
+      "details": {
+        "status_code": 401,
+        "error_response": "{\"error\":\"Invalid API Key\"}\n"
+      }
+    },
+    {
+      "test_name": "test_flow_mcp 集成測試",
+      "success": false,
+      "timestamp": "2025-06-25T04:09:37.499446",
+      "details": {
+        "status_code": 401,
+        "error_response": "{\"error\":\"Invalid API Key\"}\n"
+      }
+    },
+    {
+      "test_name": "開發者與使用者角色區分測試",
+      "success": false,
+      "timestamp": "2025-06-25T04:09:38.502633",
+      "details": {
+        "developer_test": {
+          "status_code": 401,
+          "identified_role": null,
+          "is_correct_role": false
+        }
+      }
+    }
+  ],
+  "server_config": {
+    "server_url": "http://127.0.0.1:8080",
+    "api_key_used": "dev_VIKppQ1c..."
+  }
+}

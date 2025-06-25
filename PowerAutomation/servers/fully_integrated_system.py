@@ -12,14 +12,188 @@ import asyncio
 import logging
 import time
 import json
+import sys
+import os
+import hashlib
+import secrets
 from typing import Dict, List, Any, Optional, Union
 from datetime import datetime
 from dataclasses import dataclass, asdict
 from enum import Enum
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from functools import wraps
+
+# 添加組件路徑
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'components'))
+
+# 導入 SmartInvention-Manus HITL 中間件
+try:
+    from smartinvention_manus_hitl_middleware import (
+        SmartInventionManusMiddleware, 
+        VSIXRequest, 
+        SmartInventionResponse,
+        create_smartinvention_manus_middleware
+    )
+    SMARTINVENTION_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"SmartInvention-Manus 中間件導入失敗: {e}")
+    SMARTINVENTION_AVAILABLE = False
+
+# 導入 Enhanced Test Flow MCP v4.0
+try:
+    from enhanced_test_flow_mcp_v4 import (
+        EnhancedTestFlowMCP,
+        UserMode,
+        ProcessingStage,
+        DeveloperRequest
+    )
+    TEST_FLOW_MCP_AVAILABLE = True
+except ImportError as e:
+    logging.warning(f"Enhanced Test Flow MCP 導入失敗: {e}")
+    TEST_FLOW_MCP_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
+
+# ==================== API Key 管理系統 ====================
+
+class UserRole(Enum):
+    DEVELOPER = "developer"
+    USER = "user"
+    ADMIN = "admin"
+
+@dataclass
+class APIKeyInfo:
+    key: str
+    role: UserRole
+    name: str
+    created_at: float
+    last_used: float = 0.0
+    usage_count: int = 0
+    active: bool = True
+
+class APIKeyManager:
+    """API Key 管理系統 - 區分開發者和使用者"""
+    
+    def __init__(self):
+        self.api_keys: Dict[str, APIKeyInfo] = {}
+        self._initialize_default_keys()
+    
+    def _initialize_default_keys(self):
+        """初始化默認 API Keys"""
+        # 開發者 API Key
+        dev_key = "dev_" + secrets.token_urlsafe(32)
+        self.api_keys[dev_key] = APIKeyInfo(
+            key=dev_key,
+            role=UserRole.DEVELOPER,
+            name="Default Developer",
+            created_at=time.time()
+        )
+        
+        # 使用者 API Key
+        user_key = "user_" + secrets.token_urlsafe(32)
+        self.api_keys[user_key] = APIKeyInfo(
+            key=user_key,
+            role=UserRole.USER,
+            name="Default User",
+            created_at=time.time()
+        )
+        
+        # 管理員 API Key
+        admin_key = "admin_" + secrets.token_urlsafe(32)
+        self.api_keys[admin_key] = APIKeyInfo(
+            key=admin_key,
+            role=UserRole.ADMIN,
+            name="System Admin",
+            created_at=time.time()
+        )
+        
+        logger.info(f"✅ 初始化 API Keys:")
+        logger.info(f"   開發者 Key: {dev_key}")
+        logger.info(f"   使用者 Key: {user_key}")
+        logger.info(f"   管理員 Key: {admin_key}")
+    
+    def validate_api_key(self, api_key: str) -> Optional[APIKeyInfo]:
+        """驗證 API Key 並返回用戶信息"""
+        if not api_key:
+            return None
+        
+        key_info = self.api_keys.get(api_key)
+        if key_info and key_info.active:
+            # 更新使用統計
+            key_info.last_used = time.time()
+            key_info.usage_count += 1
+            return key_info
+        
+        return None
+    
+    def create_api_key(self, role: UserRole, name: str) -> str:
+        """創建新的 API Key"""
+        prefix = role.value
+        new_key = f"{prefix}_" + secrets.token_urlsafe(32)
+        
+        self.api_keys[new_key] = APIKeyInfo(
+            key=new_key,
+            role=role,
+            name=name,
+            created_at=time.time()
+        )
+        
+        logger.info(f"✅ 創建新 API Key: {new_key} ({role.value} - {name})")
+        return new_key
+    
+    def revoke_api_key(self, api_key: str) -> bool:
+        """撤銷 API Key"""
+        if api_key in self.api_keys:
+            self.api_keys[api_key].active = False
+            logger.info(f"🚫 撤銷 API Key: {api_key}")
+            return True
+        return False
+    
+    def get_all_keys(self) -> List[Dict[str, Any]]:
+        """獲取所有 API Keys 信息（不包含完整 key）"""
+        return [
+            {
+                'key_prefix': key_info.key[:12] + "...",
+                'role': key_info.role.value,
+                'name': key_info.name,
+                'created_at': key_info.created_at,
+                'last_used': key_info.last_used,
+                'usage_count': key_info.usage_count,
+                'active': key_info.active
+            }
+            for key_info in self.api_keys.values()
+        ]
+
+# 全局 API Key 管理器
+api_key_manager = APIKeyManager()
+
+def require_api_key(allowed_roles: List[UserRole] = None):
+    """API Key 驗證裝飾器"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # 從 Header 或 Query Parameter 獲取 API Key
+            api_key = request.headers.get('X-API-Key') or request.args.get('api_key')
+            
+            if not api_key:
+                return jsonify({'error': 'API Key is required'}), 401
+            
+            # 驗證 API Key
+            key_info = api_key_manager.validate_api_key(api_key)
+            if not key_info:
+                return jsonify({'error': 'Invalid API Key'}), 401
+            
+            # 檢查角色權限
+            if allowed_roles and key_info.role not in allowed_roles:
+                return jsonify({'error': f'Access denied. Required roles: {[r.value for r in allowed_roles]}'}), 403
+            
+            # 將用戶信息添加到請求上下文
+            request.user_info = key_info
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 # ==================== 核心數據結構 ====================
 
@@ -659,6 +833,23 @@ class FullyIntegratedIntelligentSystem:
         self.tool_registry = IntegratedToolRegistry(self.config.get('tool_registry', {}))
         self.action_executor = IntegratedActionExecutor(self.config.get('action_executor', {}))
         
+        # 初始化 SmartInvention-Manus HITL 中間件
+        self.smartinvention_middleware = None
+        self.smartinvention_init_task = None
+        if SMARTINVENTION_AVAILABLE:
+            # 延遲初始化，在第一次使用時進行
+            pass
+        
+        # 初始化 Enhanced Test Flow MCP v4.0
+        self.test_flow_mcp = None
+        if TEST_FLOW_MCP_AVAILABLE:
+            try:
+                self.test_flow_mcp = EnhancedTestFlowMCP()
+                logger.info("Enhanced Test Flow MCP v4.0 initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize Test Flow MCP: {e}")
+                self.test_flow_mcp = None
+        
         # 設置組件間依賴
         self.action_executor.set_tool_registry(self.tool_registry)
         
@@ -666,21 +857,238 @@ class FullyIntegratedIntelligentSystem:
         self.system_stats = {
             'system_start_time': time.time(),
             'total_requests': 0,
-            'integration_level': 'full'
+            'integration_level': 'full',
+            'smartinvention_enabled': SMARTINVENTION_AVAILABLE,
+            'test_flow_mcp_enabled': TEST_FLOW_MCP_AVAILABLE and self.test_flow_mcp is not None
         }
         
         logger.info("Fully Integrated Intelligent System initialized")
     
-    async def process_request(self, user_request: str, context: Dict[str, Any] = None) -> Dict[str, Any]:
-        """處理用戶請求 - 完全整合流程"""
+    async def _ensure_smartinvention_initialized(self):
+        """確保 SmartInvention 中間件已初始化"""
+        if self.smartinvention_middleware is None:
+            await self._initialize_smartinvention_middleware()
+    
+    async def _initialize_smartinvention_middleware(self):
+        """異步初始化 SmartInvention 中間件"""
+        try:
+            middleware_config = self.config.get('smartinvention_middleware', {
+                "hitl_enabled": True,
+                "auto_approve_threshold": 0.8,
+                "review_timeout": 300
+            })
+            
+            # 簡化版本的中間件初始化，避免複雜的依賴
+            from smartinvention_manus_hitl_middleware import SmartInventionManusMiddleware
+            self.smartinvention_middleware = SmartInventionManusMiddleware(middleware_config)
+            
+            logger.info("✅ SmartInvention-Manus HITL 中間件初始化成功")
+            
+        except Exception as e:
+            logger.error(f"❌ SmartInvention 中間件初始化失敗: {e}")
+            self.smartinvention_middleware = None
+    
+    async def process_request(self, user_request: str, context: Dict[str, Any] = None, user_role: UserRole = UserRole.USER) -> Dict[str, Any]:
+        """處理用戶請求 - 完全整合流程，支持 VSIX SmartInvention 流程和用戶角色"""
         self.system_stats['total_requests'] += 1
+        context = context or {}
         
+        # 根據用戶角色調整上下文
+        context['user_role'] = user_role.value
+        context['is_developer'] = user_role == UserRole.DEVELOPER
+        context['is_admin'] = user_role == UserRole.ADMIN
+        
+        # 檢查是否為 VSIX 請求
+        is_vsix_request = (
+            context.get('source') == 'vscode_vsix' or 
+            context.get('client') == 'vsix' or
+            'vsix' in context.get('user_agent', '').lower()
+        )
+        
+        # 如果是 VSIX 請求且 SmartInvention 中間件可用，使用 SmartInvention 流程
+        if is_vsix_request and SMARTINVENTION_AVAILABLE:
+            # 確保 SmartInvention 中間件已初始化
+            if not self.smartinvention_middleware:
+                await self._ensure_smartinvention_initialized()
+            
+            if self.smartinvention_middleware:
+                return await self._process_vsix_request(user_request, context, user_role)
+            else:
+                logger.warning("SmartInvention 中間件初始化失敗，使用常規流程")
+                return await self._process_regular_request(user_request, context, user_role)
+        
+        # 否則使用原有的處理流程
+        return await self._process_regular_request(user_request, context, user_role)
+    
+    async def _process_vsix_request(self, user_request: str, context: Dict[str, Any], user_role: UserRole) -> Dict[str, Any]:
+        """處理 VSIX 請求 - 根據用戶角色選擇處理流程"""
+        logger.info(f"🎯 處理 VSIX 請求 ({user_role.value}): {user_request[:100]}...")
+        
+        try:
+            # 根據用戶角色選擇處理流程
+            if user_role == UserRole.DEVELOPER and self.test_flow_mcp is not None:
+                # 開發者角色 - 使用 test_flow_mcp 流程
+                return await self._process_developer_request_with_test_flow(user_request, context)
+            else:
+                # 使用者角色 - 使用 SmartInvention-Manus HITL 流程
+                return await self._process_user_request_with_smartinvention(user_request, context)
+                
+        except Exception as e:
+            logger.error(f"❌ VSIX 請求處理失敗: {e}")
+            return {
+                'request_id': f"vsix_error_{int(time.time())}",
+                'success': False,
+                'result': None,
+                'error': f"請求處理失敗: {str(e)}",
+                'execution_time': 0.0,
+                'tools_used': [],
+                'confidence': 0.0,
+                'metadata': {
+                    'system_type': 'error',
+                    'request_source': 'vscode_vsix',
+                    'user_role': user_role.value,
+                    'error_type': 'processing_failure'
+                }
+            }
+    
+    async def _process_developer_request_with_test_flow(self, user_request: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """處理開發者請求 - 使用 test_flow_mcp 流程"""
+        logger.info(f"🔧 開發者模式: 使用 test_flow_mcp 處理請求")
+        
+        try:
+            # 創建開發者請求對象
+            developer_request = DeveloperRequest(
+                request_id=f"dev_{int(time.time())}_{self.system_stats['total_requests']}",
+                content=user_request,
+                context=context,
+                user_mode=UserMode.DEVELOPER,
+                timestamp=time.time()
+            )
+            
+            # 使用 test_flow_mcp 處理
+            test_flow_response = await self.test_flow_mcp.process_developer_request(developer_request)
+            
+            return {
+                'request_id': test_flow_response.get('request_id', developer_request.request_id),
+                'success': test_flow_response.get('success', True),
+                'result': {
+                    'test_flow_analysis': test_flow_response.get('analysis', {}),
+                    'recommendations': test_flow_response.get('recommendations', []),
+                    'code_fixes': test_flow_response.get('code_fixes', []),
+                    'evaluation_report': test_flow_response.get('evaluation_report', {}),
+                    'processing_stages': test_flow_response.get('processing_stages', [])
+                },
+                'error': test_flow_response.get('error'),
+                'execution_time': test_flow_response.get('execution_time', 0.0),
+                'tools_used': ['test_flow_mcp', 'requirement_sync', 'comparison_analysis', 'code_fix_adapter'],
+                'confidence': test_flow_response.get('confidence', 0.8),
+                'metadata': {
+                    'system_type': 'test_flow_mcp_integrated',
+                    'request_source': 'vscode_vsix',
+                    'user_role': 'developer',
+                    'processing_mode': 'developer_mode',
+                    'test_flow_enabled': True,
+                    'stages_completed': len(test_flow_response.get('processing_stages', [])),
+                    'fixes_generated': len(test_flow_response.get('code_fixes', []))
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ test_flow_mcp 處理失敗: {e}")
+            return {
+                'request_id': f"dev_error_{int(time.time())}",
+                'success': False,
+                'result': None,
+                'error': f"test_flow_mcp 處理失敗: {str(e)}",
+                'execution_time': 0.0,
+                'tools_used': ['test_flow_mcp'],
+                'confidence': 0.0,
+                'metadata': {
+                    'system_type': 'test_flow_mcp_error',
+                    'request_source': 'vscode_vsix',
+                    'user_role': 'developer',
+                    'error_type': 'test_flow_processing_failure'
+                }
+            }
+    
+    async def _process_user_request_with_smartinvention(self, user_request: str, context: Dict[str, Any]) -> Dict[str, Any]:
+        """處理使用者請求 - 使用 SmartInvention-Manus HITL 流程"""
+        logger.info(f"👤 使用者模式: 使用 SmartInvention-Manus HITL 處理請求")
+        
+        try:
+            # 確保 SmartInvention 中間件已初始化
+            await self._ensure_smartinvention_initialized()
+            
+            # 創建 VSIX 請求對象
+            vsix_request = VSIXRequest(
+                request_id=f"vsix_{int(time.time())}_{self.system_stats['total_requests']}",
+                content=user_request,
+                context=context,
+                timestamp=time.time(),
+                source="vscode_vsix"
+            )
+            
+            # 使用 SmartInvention 中間件處理
+            smartinvention_response = await self.smartinvention_middleware.process_vsix_request(vsix_request)
+            
+            # 轉換為標準響應格式 - 突出 Manus 原始回覆
+            primary_response = smartinvention_response.get_primary_response()
+            
+            return {
+                'request_id': smartinvention_response.request_id,
+                'success': smartinvention_response.success,
+                'result': {
+                    'primary_response': primary_response,  # 主要回覆（優先 Manus）
+                    'manus_direct_response': smartinvention_response.manus_original_response,  # Manus 直接回覆
+                    'smartinvention_analysis': {
+                        'conversation_history': asdict(smartinvention_response.conversation_history) if smartinvention_response.conversation_history else None,
+                        'incremental_comparison': asdict(smartinvention_response.incremental_comparison) if smartinvention_response.incremental_comparison else None,
+                        'hitl_review': asdict(smartinvention_response.hitl_review) if smartinvention_response.hitl_review else None,
+                        'final_recommendations': smartinvention_response.final_recommendations
+                    }
+                },
+                'error': smartinvention_response.error_message,
+                'execution_time': smartinvention_response.execution_time,
+                'tools_used': ['smartinvention_mcp', 'manus_adapter', 'hitl_review'],
+                'confidence': smartinvention_response.incremental_comparison.confidence_score if smartinvention_response.incremental_comparison else 0.0,
+                'metadata': {
+                    'system_type': 'smartinvention_manus_integrated',
+                    'request_source': 'vscode_vsix',
+                    'user_role': 'user',
+                    'hitl_enabled': True,
+                    'manus_direct_available': smartinvention_response.manus_original_response is not None,
+                    'response_type': primary_response['type'],
+                    'recommendations_count': len(smartinvention_response.final_recommendations),
+                    'conversation_messages': smartinvention_response.conversation_history.total_messages if smartinvention_response.conversation_history else 0
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"❌ SmartInvention 處理失敗: {e}")
+            return {
+                'request_id': f"user_error_{int(time.time())}",
+                'success': False,
+                'result': None,
+                'error': f"SmartInvention 處理失敗: {str(e)}",
+                'execution_time': 0.0,
+                'tools_used': ['smartinvention_mcp'],
+                'confidence': 0.0,
+                'metadata': {
+                    'system_type': 'smartinvention_error',
+                    'request_source': 'vscode_vsix',
+                    'user_role': 'user',
+                    'error_type': 'smartinvention_processing_failure'
+                }
+            }
+    
+    async def _process_regular_request(self, user_request: str, context: Dict[str, Any], user_role: UserRole) -> Dict[str, Any]:
+        """處理常規請求 - 原有流程"""
         # 創建Agent請求
         agent_request = AgentRequest(
             id=f"req_{int(time.time())}_{self.system_stats['total_requests']}",
             content=user_request,
             priority=Priority.MEDIUM,
-            context=context or {}
+            context=context
         )
         
         # 使用整合的Agent Core處理請求
@@ -754,7 +1162,8 @@ def health_check():
     })
 
 @app.route('/api/process', methods=['POST'])
-async def process_request():
+@require_api_key([UserRole.DEVELOPER, UserRole.USER, UserRole.ADMIN])
+def process_request():
     """處理用戶請求"""
     try:
         data = request.get_json()
@@ -764,7 +1173,19 @@ async def process_request():
         if not user_request:
             return jsonify({'error': 'Request content is required'}), 400
         
-        result = await integrated_system.process_request(user_request, context)
+        # 獲取用戶角色
+        user_role = request.user_info.role
+        
+        # 使用 asyncio.run 處理異步調用
+        result = asyncio.run(integrated_system.process_request(user_request, context, user_role))
+        
+        # 添加用戶角色信息到響應
+        result['user_role'] = user_role.value
+        result['api_key_info'] = {
+            'name': request.user_info.name,
+            'usage_count': request.user_info.usage_count
+        }
+        
         return jsonify(result)
         
     except Exception as e:
@@ -793,8 +1214,151 @@ def get_stats():
         'system_stats': integrated_system.system_stats
     })
 
+# ==================== SmartInvention HITL API 端點 ====================
+
+@app.route('/api/hitl/pending_reviews', methods=['GET'])
+@require_api_key([UserRole.DEVELOPER, UserRole.ADMIN])
+def get_pending_reviews():
+    """獲取待審核項目"""
+    try:
+        if not integrated_system.smartinvention_middleware:
+            return jsonify({'error': 'SmartInvention middleware not available'}), 503
+        
+        # 使用 asyncio.run 處理異步調用
+        pending_reviews = asyncio.run(integrated_system.smartinvention_middleware.get_pending_reviews())
+        return jsonify({
+            'success': True,
+            'pending_reviews': pending_reviews,
+            'count': len(pending_reviews)
+        })
+        
+    except Exception as e:
+        logger.error(f"獲取待審核項目失敗: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/hitl/submit_review', methods=['POST'])
+@require_api_key([UserRole.DEVELOPER, UserRole.ADMIN])
+def submit_review():
+    """提交審核結果"""
+    try:
+        if not integrated_system.smartinvention_middleware:
+            return jsonify({'error': 'SmartInvention middleware not available'}), 503
+        
+        data = request.get_json()
+        review_id = data.get('review_id')
+        status = data.get('status')  # 'approved', 'rejected', 'modified'
+        approved_recommendations = data.get('approved_recommendations', [])
+        comments = data.get('comments', '')
+        
+        if not review_id or not status:
+            return jsonify({'error': 'review_id and status are required'}), 400
+        
+        # 使用 asyncio.run 處理異步調用
+        success = asyncio.run(integrated_system.smartinvention_middleware.submit_review(
+            review_id, status, approved_recommendations, comments
+        ))
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'審核結果已提交: {review_id}',
+                'review_id': review_id,
+                'status': status
+            })
+        else:
+            return jsonify({'error': 'Failed to submit review'}), 400
+        
+    except Exception as e:
+        logger.error(f"提交審核結果失敗: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/smartinvention/status', methods=['GET'])
+@require_api_key([UserRole.DEVELOPER, UserRole.USER, UserRole.ADMIN])
+def get_smartinvention_status():
+    """獲取 SmartInvention 狀態"""
+    return jsonify({
+        'smartinvention_available': SMARTINVENTION_AVAILABLE,
+        'middleware_initialized': integrated_system.smartinvention_middleware is not None,
+        'hitl_enabled': integrated_system.smartinvention_middleware is not None,
+        'system_type': 'smartinvention_integrated',
+        'user_role': request.user_info.role.value
+    })
+
+# ==================== API Key 管理端點 ====================
+
+@app.route('/api/keys', methods=['GET'])
+@require_api_key([UserRole.ADMIN])
+def get_api_keys():
+    """獲取所有 API Keys（僅管理員）"""
+    return jsonify({
+        'api_keys': api_key_manager.get_all_keys(),
+        'total_count': len(api_key_manager.api_keys)
+    })
+
+@app.route('/api/keys', methods=['POST'])
+@require_api_key([UserRole.ADMIN])
+def create_api_key():
+    """創建新的 API Key（僅管理員）"""
+    try:
+        data = request.get_json()
+        role_str = data.get('role', 'user')
+        name = data.get('name', 'Unnamed User')
+        
+        # 驗證角色
+        try:
+            role = UserRole(role_str)
+        except ValueError:
+            return jsonify({'error': f'Invalid role: {role_str}. Valid roles: {[r.value for r in UserRole]}'}), 400
+        
+        new_key = api_key_manager.create_api_key(role, name)
+        
+        return jsonify({
+            'success': True,
+            'api_key': new_key,
+            'role': role.value,
+            'name': name,
+            'message': f'API Key created for {name} ({role.value})'
+        })
+        
+    except Exception as e:
+        logger.error(f"創建 API Key 失敗: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/keys/<api_key>', methods=['DELETE'])
+@require_api_key([UserRole.ADMIN])
+def revoke_api_key(api_key):
+    """撤銷 API Key（僅管理員）"""
+    try:
+        success = api_key_manager.revoke_api_key(api_key)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': f'API Key revoked: {api_key[:12]}...'
+            })
+        else:
+            return jsonify({'error': 'API Key not found'}), 404
+        
+    except Exception as e:
+        logger.error(f"撤銷 API Key 失敗: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/keys/info', methods=['GET'])
+@require_api_key([UserRole.DEVELOPER, UserRole.USER, UserRole.ADMIN])
+def get_current_key_info():
+    """獲取當前 API Key 信息"""
+    return jsonify({
+        'key_prefix': request.user_info.key[:12] + "...",
+        'role': request.user_info.role.value,
+        'name': request.user_info.name,
+        'created_at': request.user_info.created_at,
+        'last_used': request.user_info.last_used,
+        'usage_count': request.user_info.usage_count,
+        'active': request.user_info.active
+    })
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     logger.info("Starting Fully Integrated Intelligent System Server...")
-    app.run(host='0.0.0.0', port=5004, debug=False)
+    app.run(host='0.0.0.0', port=8080, debug=False)
 
