@@ -1,8 +1,8 @@
 {
   "name": "powerautomation-local-mcp",
-  "displayName": "PowerAutomation v3.0.0",
-  "description": "PowerAutomation v3.0.0 - Advanced AI Automation Platform with MCP Adapter",
-  "version": "3.0.0",
+  "displayName": "PowerAutomation v3.1.1 with Three-Role System",
+  "description": "PowerAutomation v3.1.1 - Advanced AI Platform with Three-Role Authentication (Admin/Developer/User)",
+  "version": "3.1.1",
   "publisher": "powerautomation",
   "repository": {
     "type": "git",
@@ -29,6 +29,21 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
+      {
+        "command": "powerautomation.showAuth",
+        "title": "Show Authentication",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.login",
+        "title": "Login",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.logout",
+        "title": "Logout",
+        "category": "PowerAutomation"
+      },
       {
         "command": "powerautomation.connectMCP",
         "title": "Connect to MCP Service",
@@ -83,24 +98,34 @@
         "command": "powerautomation.runTests",
         "title": "Run Manus Tests",
         "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.openDebugTools",
+        "title": "Open Debug Tools",
+        "category": "PowerAutomation"
       }
     ],
     "views": {
       "powerautomation-sidebar": [
         {
+          "id": "powerautomation.auth",
+          "name": "Authentication",
+          "when": "!powerautomation.authenticated"
+        },
+        {
           "id": "powerautomation.dashboard",
           "name": "Dashboard",
-          "when": "powerautomation.enabled"
+          "when": "powerautomation.authenticated && powerautomation.enabled"
         },
         {
           "id": "powerautomation.chat",
           "name": "AI Assistant",
-          "when": "powerautomation.enabled && !powerautomation.minimalMode"
+          "when": "powerautomation.authenticated && powerautomation.enabled && !powerautomation.minimalMode"
         },
         {
           "id": "powerautomation.repository",
           "name": "Repository Explorer",
-          "when": "powerautomation.enabled && !powerautomation.minimalMode"
+          "when": "powerautomation.authenticated && powerautomation.enabled && !powerautomation.minimalMode"
         }
       ]
     },
@@ -133,7 +158,7 @@
         },
         "powerautomation.mcpEndpoint": {
           "type": "string",
-          "default": "http://localhost:8080/mcp/v3",
+          "default": "http://18.212.97.173:8080",
           "description": "MCP Service endpoint URL"
         },
         "powerautomation.apiKey": {

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import axios from 'axios';
 
 export interface UserProfile {
     id: string;
@@ -7,8 +8,12 @@ export interface UserProfile {
     avatar?: string;
     provider: 'email' | 'github' | 'google' | 'microsoft' | 'phone' | 'apikey';
     subscription: 'free' | 'pro' | 'enterprise';
+    userType: 'user' | 'developer' | 'admin';
+    role: 'user' | 'developer' | 'admin';
     credits: number;
     lastLogin: Date;
+    permissions: string[];
+    interfaceType: 'user' | 'advanced'; // 新增：界面類型
 }
 
 export interface AuthProvider {
@@ -17,393 +22,430 @@ export interface AuthProvider {
     icon: string;
     color: string;
     description: string;
+    category: 'user' | 'advanced';
+}
+
+export interface UIConfiguration {
+    sidebar: string[];
+    features: string[];
+    theme: string;
+    layout: 'minimal' | 'standard' | 'advanced';
+    interfaceType: 'user' | 'advanced';
 }
 
 export class AuthenticationService {
     private _currentUser: UserProfile | null = null;
     private _isAuthenticated: boolean = false;
+    private _context: vscode.ExtensionContext;
+    
     private _authProviders: AuthProvider[] = [
+        // 用戶登錄方式
+        {
+            id: 'github',
+            name: 'GitHub 登錄',
+            icon: '🐙',
+            color: '#24292e',
+            description: '使用 GitHub 帳號登錄',
+            category: 'user'
+        },
+        {
+            id: 'google',
+            name: 'Google 登錄',
+            icon: '🔍',
+            color: '#db4437',
+            description: '使用 Google 帳號登錄',
+            category: 'user'
+        },
+        {
+            id: 'microsoft',
+            name: 'Microsoft 登錄',
+            icon: '🪟',
+            color: '#00a1f1',
+            description: '使用 Microsoft 帳號登錄',
+            category: 'user'
+        },
         {
             id: 'email',
             name: '郵箱登錄',
             icon: '📧',
-            color: '#4285f4',
-            description: '使用郵箱和密碼登錄'
+            color: '#007bff',
+            description: '使用郵箱和密碼登錄',
+            category: 'user'
         },
-        {
-            id: 'github',
-            name: 'GitHub',
-            icon: '🐙',
-            color: '#24292e',
-            description: '使用GitHub帳號登錄'
-        },
-        {
-            id: 'google',
-            name: 'Google',
-            icon: '🔍',
-            color: '#db4437',
-            description: '使用Google帳號登錄'
-        },
-        {
-            id: 'microsoft',
-            name: 'Microsoft',
-            icon: '🪟',
-            color: '#00a1f1',
-            description: '使用Microsoft帳號登錄'
-        },
-        {
-            id: 'phone',
-            name: '手機號',
-            icon: '📱',
-            color: '#25d366',
-            description: '使用手機號和驗證碼登錄'
-        },
+        
+        // 高級用戶登錄方式
         {
             id: 'apikey',
-            name: 'API Key',
+            name: 'API Key 登錄',
             icon: '🔑',
             color: '#ff6b35',
-            description: '使用API密鑰登錄（開發者）'
+            description: '使用 API Key 登錄（開發者/管理員）',
+            category: 'advanced'
         }
     ];
 
-    constructor() {
-        this._loadStoredAuth();
+    constructor(context: vscode.ExtensionContext) {
+        this._context = context;
+        this._loadStoredUser();
     }
 
-    public async login(provider: string, credentials: any): Promise<UserProfile> {
+    // 獲取用戶類型從 API Key
+    private _getUserTypeFromApiKey(apiKey: string): 'user' | 'developer' | 'admin' {
+        if (apiKey.startsWith('admin_')) return 'admin';
+        if (apiKey.startsWith('dev_')) return 'developer';
+        if (apiKey.startsWith('user_')) return 'user';
+        throw new Error('無效的 API Key 格式');
+    }
+
+    // 獲取界面類型
+    private _getInterfaceType(userType: 'user' | 'developer' | 'admin'): 'user' | 'advanced' {
+        return userType === 'user' ? 'user' : 'advanced';
+    }
+
+    // 獲取角色權限
+    private _getRolePermissions(userType: 'user' | 'developer' | 'admin'): string[] {
+        const permissions = {
+            admin: [
+                'all-features',
+                'user-management',
+                'server-management', 
+                'system-config',
+                'analytics',
+                'debug-tools',
+                'api-access',
+                'advanced-chat',
+                'file-management',
+                'history',
+                'team-management',
+                'custom-integration'
+            ],
+            developer: [
+                'api-access',
+                'debug-tools',
+                'advanced-chat',
+                'local-mode',
+                'smartinvention',
+                'code-analysis',
+                'file-management',
+                'history',
+                'advanced-settings'
+            ],
+            user: [
+                'basic-chat',
+                'file-management',
+                'history',
+                'basic-settings'
+            ]
+        };
+        
+        return permissions[userType] || permissions.user;
+    }
+
+    // 登錄方法
+    async login(provider: string, credentials: any): Promise<UserProfile> {
         try {
             let user: UserProfile;
 
             switch (provider) {
+                case 'apikey':
+                    user = await this._loginWithApiKey(credentials.apiKey, credentials.endpoint);
+                    break;
+                case 'github':
+                case 'google':
+                case 'microsoft':
+                    user = await this._loginWithOAuth(provider);
+                    break;
                 case 'email':
                     user = await this._loginWithEmail(credentials.email, credentials.password);
                     break;
-                case 'github':
-                    user = await this._loginWithGitHub();
-                    break;
-                case 'google':
-                    user = await this._loginWithGoogle();
-                    break;
-                case 'microsoft':
-                    user = await this._loginWithMicrosoft();
-                    break;
-                case 'phone':
-                    user = await this._loginWithPhone(credentials.phone, credentials.code);
-                    break;
-                case 'apikey':
-                    user = await this._loginWithApiKey(credentials.apiKey);
-                    break;
                 default:
-                    throw new Error('不支持的登錄方式');
+                    throw new Error(`不支援的登錄方式: ${provider}`);
             }
 
             this._currentUser = user;
             this._isAuthenticated = true;
-            this._saveAuth();
+            
+            // 保存用戶信息
+            await this._saveUser(user);
+            
+            // 設置 VS Code 上下文
+            await vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', true);
+            await vscode.commands.executeCommand('setContext', 'powerautomation.userType', user.userType);
+            await vscode.commands.executeCommand('setContext', 'powerautomation.interfaceType', user.interfaceType);
 
-            vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', true);
             return user;
         } catch (error) {
             throw new Error(`登錄失敗: ${error}`);
         }
     }
 
-    public async register(provider: string, userData: any): Promise<UserProfile> {
-        try {
-            let user: UserProfile;
+    // API Key 登錄
+    private async _loginWithApiKey(apiKey: string, endpoint?: string): Promise<UserProfile> {
+        // 驗證 API Key 格式
+        const userType = this._getUserTypeFromApiKey(apiKey);
+        const interfaceType = this._getInterfaceType(userType);
+        
+        // 如果提供了端點，測試連接
+        if (endpoint) {
+            try {
+                const response = await axios.post(`${endpoint}/api/auth/verify`, {}, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    }
+                });
 
-            switch (provider) {
-                case 'email':
-                    user = await this._registerWithEmail(userData);
-                    break;
-                case 'github':
-                    user = await this._registerWithGitHub();
-                    break;
-                case 'google':
-                    user = await this._registerWithGoogle();
-                    break;
-                case 'microsoft':
-                    user = await this._registerWithMicrosoft();
-                    break;
-                case 'phone':
-                    user = await this._registerWithPhone(userData);
-                    break;
-                default:
-                    throw new Error('不支持的註冊方式');
+                if (response.status !== 200) {
+                    throw new Error('API Key驗證失敗');
+                }
+
+                const userData = response.data;
+                return {
+                    id: userData.id || `${userType}_${apiKey.slice(-8)}`,
+                    username: userData.username || this._getDefaultUsername(userType),
+                    email: userData.email || this._getDefaultEmail(userType),
+                    avatar: userData.avatar,
+                    provider: 'apikey',
+                    subscription: userData.subscription || this._getDefaultSubscription(userType),
+                    userType: userType,
+                    role: userType,
+                    credits: userData.credits || this._getDefaultCredits(userType),
+                    lastLogin: new Date(),
+                    permissions: this._getRolePermissions(userType),
+                    interfaceType: interfaceType
+                };
+            } catch (error) {
+                throw new Error(`API Key驗證失敗: ${error}`);
             }
-
-            this._currentUser = user;
-            this._isAuthenticated = true;
-            this._saveAuth();
-
-            vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', true);
-            return user;
-        } catch (error) {
-            throw new Error(`註冊失敗: ${error}`);
+        } else {
+            // 本地模式
+            return {
+                id: `${userType}_${apiKey.slice(-8)}`,
+                username: this._getDefaultUsername(userType),
+                email: this._getDefaultEmail(userType),
+                provider: 'apikey',
+                subscription: this._getDefaultSubscription(userType),
+                userType: userType,
+                role: userType,
+                credits: this._getDefaultCredits(userType),
+                lastLogin: new Date(),
+                permissions: this._getRolePermissions(userType),
+                interfaceType: interfaceType
+            };
         }
     }
 
-    public async logout(): Promise<void> {
-        this._currentUser = null;
-        this._isAuthenticated = false;
-        this._clearStoredAuth();
-        vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', false);
+    // OAuth 登錄（用戶界面）
+    private async _loginWithOAuth(provider: string): Promise<UserProfile> {
+        // 模擬 OAuth 登錄，實際應該打開瀏覽器進行 OAuth 流程
+        const userId = await this._generateUserId();
+        
+        return {
+            id: userId,
+            username: `${provider}_user`,
+            email: `user@${provider}.com`,
+            provider: provider as any,
+            subscription: 'free',
+            userType: 'user',
+            role: 'user',
+            credits: 1000,
+            lastLogin: new Date(),
+            permissions: this._getRolePermissions('user'),
+            interfaceType: 'user'
+        };
     }
 
-    public getCurrentUser(): UserProfile | null {
+    // 郵箱登錄（用戶界面）
+    private async _loginWithEmail(email: string, password: string): Promise<UserProfile> {
+        // 模擬郵箱登錄驗證
+        if (!email || !password) {
+            throw new Error('請輸入郵箱和密碼');
+        }
+
+        const userId = await this._generateUserId();
+        
+        return {
+            id: userId,
+            username: email.split('@')[0],
+            email: email,
+            provider: 'email',
+            subscription: 'free',
+            userType: 'user',
+            role: 'user',
+            credits: 1000,
+            lastLogin: new Date(),
+            permissions: this._getRolePermissions('user'),
+            interfaceType: 'user'
+        };
+    }
+
+    // 生成用戶 ID 和對應的 user_ API Key
+    private async _generateUserId(): Promise<string> {
+        const timestamp = Date.now();
+        const random = Math.random().toString(36).substring(2, 18);
+        return `user_${timestamp}_${random}`;
+    }
+
+    // 獲取默認用戶名
+    private _getDefaultUsername(userType: 'user' | 'developer' | 'admin'): string {
+        const names = {
+            admin: 'System Administrator',
+            developer: 'Developer',
+            user: 'User'
+        };
+        return names[userType];
+    }
+
+    // 獲取默認郵箱
+    private _getDefaultEmail(userType: 'user' | 'developer' | 'admin'): string {
+        const emails = {
+            admin: 'admin@powerautomation.ai',
+            developer: 'developer@powerautomation.ai',
+            user: 'user@powerautomation.ai'
+        };
+        return emails[userType];
+    }
+
+    // 獲取默認訂閱
+    private _getDefaultSubscription(userType: 'user' | 'developer' | 'admin'): 'free' | 'pro' | 'enterprise' {
+        const subscriptions = {
+            admin: 'enterprise' as const,
+            developer: 'pro' as const,
+            user: 'free' as const
+        };
+        return subscriptions[userType];
+    }
+
+    // 獲取默認積分
+    private _getDefaultCredits(userType: 'user' | 'developer' | 'admin'): number {
+        const credits = {
+            admin: 999999,
+            developer: 10000,
+            user: 1000
+        };
+        return credits[userType];
+    }
+
+    // 登出
+    async logout(): Promise<void> {
+        this._currentUser = null;
+        this._isAuthenticated = false;
+        
+        // 清除存儲的用戶信息
+        await this._context.secrets.delete('powerautomation.user');
+        
+        // 清除 VS Code 上下文
+        await vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', false);
+        await vscode.commands.executeCommand('setContext', 'powerautomation.userType', undefined);
+        await vscode.commands.executeCommand('setContext', 'powerautomation.interfaceType', undefined);
+    }
+
+    // 檢查是否已認證
+    isAuthenticated(): boolean {
+        return this._isAuthenticated && this._currentUser !== null;
+    }
+
+    // 獲取當前用戶
+    getCurrentUser(): UserProfile | null {
         return this._currentUser;
     }
 
-    public isAuthenticated(): boolean {
-        return this._isAuthenticated;
+    // 獲取用戶類型
+    getUserType(): 'user' | 'developer' | 'admin' | null {
+        return this._currentUser?.userType || null;
     }
 
-    public getAuthProviders(): AuthProvider[] {
+    // 獲取界面類型
+    getInterfaceType(): 'user' | 'advanced' | null {
+        return this._currentUser?.interfaceType || null;
+    }
+
+    // 獲取用戶角色
+    getUserRole(): string | null {
+        return this._currentUser?.role || null;
+    }
+
+    // 檢查權限
+    hasPermission(permission: string): boolean {
+        if (!this._currentUser) return false;
+        return this._currentUser.permissions.includes(permission) || 
+               this._currentUser.permissions.includes('all-features');
+    }
+
+    // 獲取認證提供者
+    getAuthProviders(category?: 'user' | 'advanced'): AuthProvider[] {
+        if (category) {
+            return this._authProviders.filter(provider => provider.category === category);
+        }
         return this._authProviders;
     }
 
-    private async _loginWithEmail(email: string, password: string): Promise<UserProfile> {
-        // 模擬API調用
-        await this._delay(1000);
-        
-        if (email === 'demo@powerautomation.ai' && password === 'demo123') {
+    // 獲取 UI 配置
+    getUIConfiguration(): UIConfiguration {
+        if (!this._currentUser) {
             return {
-                id: 'user_001',
-                username: 'Demo User',
-                email: email,
-                avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=demo',
-                provider: 'email',
-                subscription: 'pro',
-                credits: 2847,
-                lastLogin: new Date()
+                sidebar: [],
+                features: [],
+                theme: 'default',
+                layout: 'minimal',
+                interfaceType: 'user'
             };
         }
+
+        const { userType, interfaceType } = this._currentUser;
         
-        throw new Error('郵箱或密碼錯誤');
+        if (interfaceType === 'advanced') {
+            return {
+                sidebar: ['dashboard', 'chat', 'repository', 'debug', 'management'],
+                features: this._currentUser.permissions,
+                theme: 'professional',
+                layout: 'advanced',
+                interfaceType: 'advanced'
+            };
+        } else {
+            return {
+                sidebar: ['chat', 'files', 'history'],
+                features: this._currentUser.permissions,
+                theme: 'simple',
+                layout: 'minimal',
+                interfaceType: 'user'
+            };
+        }
     }
 
-    private async _loginWithGitHub(): Promise<UserProfile> {
-        // 使用VSCode的GitHub認證
-        const session = await vscode.authentication.getSession('github', ['user:email'], { createIfNone: true });
-        
-        return {
-            id: `github_${session.account.id}`,
-            username: session.account.label,
-            email: session.account.id + '@github.local',
-            avatar: `https://github.com/${session.account.label}.png`,
-            provider: 'github',
-            subscription: 'free',
-            credits: 100,
-            lastLogin: new Date()
-        };
+    // 保存用戶信息
+    private async _saveUser(user: UserProfile): Promise<void> {
+        await this._context.secrets.store('powerautomation.user', JSON.stringify(user));
     }
 
-    private async _loginWithGoogle(): Promise<UserProfile> {
-        // 模擬Google OAuth流程
-        await this._delay(1500);
-        
-        return {
-            id: 'google_demo',
-            username: 'Google User',
-            email: 'user@gmail.com',
-            avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=google',
-            provider: 'google',
-            subscription: 'free',
-            credits: 50,
-            lastLogin: new Date()
-        };
-    }
-
-    private async _loginWithMicrosoft(): Promise<UserProfile> {
-        // 使用VSCode的Microsoft認證
+    // 加載存儲的用戶信息
+    private async _loadStoredUser(): Promise<void> {
         try {
-            const session = await vscode.authentication.getSession('microsoft', ['user.read'], { createIfNone: true });
-            
-            return {
-                id: `microsoft_${session.account.id}`,
-                username: session.account.label,
-                email: session.account.id,
-                avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=microsoft',
-                provider: 'microsoft',
-                subscription: 'free',
-                credits: 100,
-                lastLogin: new Date()
-            };
-        } catch (error) {
-            throw new Error('Microsoft登錄失敗');
-        }
-    }
-
-    private async _loginWithPhone(phone: string, code: string): Promise<UserProfile> {
-        // 模擬手機驗證
-        await this._delay(800);
-        
-        if (code === '123456') {
-            return {
-                id: `phone_${phone}`,
-                username: `用戶${phone.slice(-4)}`,
-                email: `${phone}@phone.local`,
-                provider: 'phone',
-                subscription: 'free',
-                credits: 20,
-                lastLogin: new Date()
-            };
-        }
-        
-        throw new Error('驗證碼錯誤');
-    }
-
-    private async _loginWithApiKey(apiKey: string): Promise<UserProfile> {
-        // 模擬API Key驗證
-        await this._delay(500);
-        
-        if (apiKey.startsWith('pa_') && apiKey.length === 32) {
-            return {
-                id: `api_${apiKey.slice(-8)}`,
-                username: 'API User',
-                email: 'api@powerautomation.ai',
-                provider: 'apikey',
-                subscription: 'enterprise',
-                credits: 10000,
-                lastLogin: new Date()
-            };
-        }
-        
-        throw new Error('無效的API Key');
-    }
-
-    private async _registerWithEmail(userData: any): Promise<UserProfile> {
-        await this._delay(1200);
-        
-        return {
-            id: `user_${Date.now()}`,
-            username: userData.username,
-            email: userData.email,
-            provider: 'email',
-            subscription: 'free',
-            credits: 100,
-            lastLogin: new Date()
-        };
-    }
-
-    private async _registerWithGitHub(): Promise<UserProfile> {
-        return this._loginWithGitHub();
-    }
-
-    private async _registerWithGoogle(): Promise<UserProfile> {
-        return this._loginWithGoogle();
-    }
-
-    private async _registerWithMicrosoft(): Promise<UserProfile> {
-        return this._loginWithMicrosoft();
-    }
-
-    private async _registerWithPhone(userData: any): Promise<UserProfile> {
-        await this._delay(1000);
-        
-        return {
-            id: `phone_${userData.phone}`,
-            username: userData.username || `用戶${userData.phone.slice(-4)}`,
-            email: `${userData.phone}@phone.local`,
-            provider: 'phone',
-            subscription: 'free',
-            credits: 50,
-            lastLogin: new Date()
-        };
-    }
-
-    private _loadStoredAuth(): void {
-        try {
-            const stored = vscode.workspace.getConfiguration('powerautomation').get('storedAuth');
-            if (stored) {
-                const authData = JSON.parse(stored as string);
-                this._currentUser = authData.user;
-                this._isAuthenticated = authData.authenticated;
+            const storedUser = await this._context.secrets.get('powerautomation.user');
+            if (storedUser) {
+                this._currentUser = JSON.parse(storedUser);
+                this._isAuthenticated = true;
                 
-                if (this._isAuthenticated) {
-                    vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', true);
-                }
+                // 設置 VS Code 上下文
+                await vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', true);
+                await vscode.commands.executeCommand('setContext', 'powerautomation.userType', this._currentUser?.userType);
+                await vscode.commands.executeCommand('setContext', 'powerautomation.interfaceType', this._currentUser?.interfaceType);
             }
         } catch (error) {
-            console.error('Failed to load stored auth:', error);
+            console.error('加載用戶信息失敗:', error);
         }
     }
 
-    private _saveAuth(): void {
-        try {
-            const authData = {
-                user: this._currentUser,
-                authenticated: this._isAuthenticated,
-                timestamp: new Date().toISOString()
-            };
-            
-            vscode.workspace.getConfiguration('powerautomation')
-                .update('storedAuth', JSON.stringify(authData), vscode.ConfigurationTarget.Global);
-        } catch (error) {
-            console.error('Failed to save auth:', error);
-        }
-    }
-
-    private _clearStoredAuth(): void {
-        try {
-            vscode.workspace.getConfiguration('powerautomation')
-                .update('storedAuth', undefined, vscode.ConfigurationTarget.Global);
-        } catch (error) {
-            console.error('Failed to clear stored auth:', error);
-        }
-    }
-
-    private _delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-
-    public async sendPhoneVerificationCode(phone: string): Promise<void> {
+    // 發送手機驗證碼
+    async sendPhoneVerificationCode(phone: string): Promise<void> {
         // 模擬發送驗證碼
-        await this._delay(500);
-        console.log(`驗證碼已發送到 ${phone}`);
+        console.log(`發送驗證碼到 ${phone}`);
     }
 
-    public async resetPassword(email: string): Promise<void> {
+    // 重置密碼
+    async resetPassword(email: string): Promise<void> {
         // 模擬重置密碼
-        await this._delay(800);
-        console.log(`密碼重置郵件已發送到 ${email}`);
-    }
-
-    public async updateProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
-        if (!this._currentUser) {
-            throw new Error('用戶未登錄');
-        }
-
-        this._currentUser = { ...this._currentUser, ...updates };
-        this._saveAuth();
-        return this._currentUser;
-    }
-
-    public async getSubscriptionInfo(): Promise<any> {
-        if (!this._currentUser) {
-            throw new Error('用戶未登錄');
-        }
-
-        return {
-            plan: this._currentUser.subscription,
-            credits: this._currentUser.credits,
-            features: this._getSubscriptionFeatures(this._currentUser.subscription),
-            nextBilling: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        };
-    }
-
-    private _getSubscriptionFeatures(plan: string): string[] {
-        switch (plan) {
-            case 'free':
-                return ['基礎OCR', '100積分/月', '社區支持'];
-            case 'pro':
-                return ['高級OCR', '1000積分/月', '優先支持', 'API訪問'];
-            case 'enterprise':
-                return ['企業OCR', '無限積分', '專屬支持', '私有部署', '自定義集成'];
-            default:
-                return [];
-        }
+        console.log(`發送重置密碼郵件到 ${email}`);
     }
 }
 
