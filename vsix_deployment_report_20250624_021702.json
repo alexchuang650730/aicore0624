@@ -1,0 +1,27 @@
+{
+  "deployment_info": {
+    "timestamp": "2025-06-24T02:17:02-04:00",
+    "deployment_id": "deploy_1750745822",
+    "status": "success"
+  },
+  "environment": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "vscode_version": "1.101.1"
+  },
+  "extension": {
+    "name": "PowerAutomation Local MCP",
+    "id": "powerautomation.powerautomation-local-mcp",
+    "version": "3.0.0",
+    "vsix_file": "PowerAutomation_local/vscode-extension/powerautomation-local-mcp-3.0.0.vsix",
+    "vsix_size": 943964
+  },
+  "verification": {
+    "installation_verified": true,
+    "extension_listed": true
+  },
+  "logs": {
+    "deployment_log": "vsix_deployment_20250624_021659.log",
+    "deployment_report": "vsix_deployment_report_20250624_021702.json"
+  }
+}

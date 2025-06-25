@@ -1,0 +1,7 @@
+INFO:__main__:啟動模擬 VSIX 部署 API 服務器: http://0.0.0.0:8394
+INFO:     Started server process [64984]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+ERROR:    [Errno 98] error while attempting to bind on address ('0.0.0.0', 8394): address already in use
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.

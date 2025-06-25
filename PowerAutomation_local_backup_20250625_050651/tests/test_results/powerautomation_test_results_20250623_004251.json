@@ -1,0 +1,86 @@
+[
+  {
+    "test_name": "健康檢查",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:39:11.306970",
+    "response_data": null
+  },
+  {
+    "test_name": "系統狀態檢查",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:39:21.319039",
+    "response_data": null
+  },
+  {
+    "test_name": "系統啟動",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:39:31.331349",
+    "response_data": null
+  },
+  {
+    "test_name": "TRAE狀態檢查",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:39:41.343441",
+    "response_data": null
+  },
+  {
+    "test_name": "TRAE消息發送",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=30)",
+    "timestamp": "2025-06-23T00:40:11.373737",
+    "response_data": null
+  },
+  {
+    "test_name": "TRAE數據同步",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=60)",
+    "timestamp": "2025-06-23T00:41:11.436223",
+    "response_data": null
+  },
+  {
+    "test_name": "Manus連接",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:41:21.448189",
+    "response_data": null
+  },
+  {
+    "test_name": "Manus任務列表",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:41:31.458178",
+    "response_data": null
+  },
+  {
+    "test_name": "對話分析",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:41:41.465504",
+    "response_data": null
+  },
+  {
+    "test_name": "智能介入",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=30)",
+    "timestamp": "2025-06-23T00:42:11.497378",
+    "response_data": null
+  },
+  {
+    "test_name": "倉庫列表",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=10)",
+    "timestamp": "2025-06-23T00:42:21.505652",
+    "response_data": null
+  },
+  {
+    "test_name": "系統自檢",
+    "success": false,
+    "details": "請求失敗: HTTPConnectionPool(host='localhost', port=5000): Read timed out. (read timeout=30)",
+    "timestamp": "2025-06-23T00:42:51.534149",
+    "response_data": null
+  }
+]

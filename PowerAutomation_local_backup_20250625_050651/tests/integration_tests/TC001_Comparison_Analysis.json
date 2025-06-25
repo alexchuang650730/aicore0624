@@ -1,0 +1,31 @@
+{
+  "comparison_title": "TC001測試 - 原版 vs 修正版對比分析",
+  "original_test": {
+    "time_range": "01:35:44 - 01:38:20",
+    "duration_minutes": 2.6,
+    "screenshots": 11,
+    "status": "失敗 - 無法切換到登錄模式",
+    "key_issues": [
+      "沒有滾動到頁面底部",
+      "未找到正確的Sign in鏈接",
+      "JavaScript搜索不完整"
+    ]
+  },
+  "fixed_test": {
+    "time_range": "01:51:21 - 01:53:29",
+    "duration_minutes": 2.1,
+    "screenshots": 13,
+    "status": "成功 - 完成登錄流程",
+    "key_improvements": [
+      "正確滾動到頁面底部",
+      "使用JavaScript找到Sign in元素",
+      "成功切換到登錄模式",
+      "完成憑證填入和表單提交"
+    ]
+  },
+  "technical_insights": {
+    "root_cause": "Manus使用動態JavaScript切換登錄/註冊模式",
+    "solution": "使用JavaScript直接操作DOM元素",
+    "lesson_learned": "需要完整頁面掃描和JavaScript交互"
+  }
+}
