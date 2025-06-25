@@ -1,0 +1,92 @@
+# PowerAutomation 測試案例模板
+# 此模板用於生成可執行的 Python 測試文件
+
+test_suite:
+  name: "需求分析集成測試"
+  description: "測試 PowerAutomation 系統的需求分析工作流和 test_flow_mcp 集成"
+  
+configuration:
+  server_url: "http://127.0.0.1:8080"
+  api_key: "dev_407CYuVKuP_s3hVqIhO4JZKqcE4-W9ocTgc_fldjxso"
+  timeout: 30
+
+test_cases:
+  - name: "服務器連接性測試"
+    description: "檢查服務器是否正常運行"
+    method: "GET"
+    endpoint: "/api/status"
+    expected_status: 200
+    validation:
+      - "response.status_code == 200"
+      - "response.json() is not None"
+
+  - name: "API Key 認證測試"
+    description: "驗證 API Key 認證機制"
+    steps:
+      - step: "無 API Key 請求"
+        method: "POST"
+        endpoint: "/api/process"
+        data: {"request": "測試", "context": {}}
+        expected_status: 401
+      - step: "有效 API Key 請求"
+        method: "POST"
+        endpoint: "/api/process"
+        headers: {"X-API-Key": "{{api_key}}"}
+        data: {"request": "測試認證", "context": {}}
+        expected_status: 200
+
+  - name: "需求分析工作流測試"
+    description: "測試需求分析的完整工作流程"
+    method: "POST"
+    endpoint: "/api/process"
+    headers: {"X-API-Key": "{{api_key}}", "Content-Type": "application/json"}
+    data:
+      request: "我想要多了解本系統的架構和功能"
+      context:
+        source: "vscode_vsix"
+        user_role: "developer"
+        workflow_type: "requirement_analysis"
+        test_scenario: "system_architecture_inquiry"
+    expected_status: 200
+    validation:
+      - "response.json().get('success') is not None"
+      - "response.json().get('user_role') == 'developer'"
+      - "len(response.json().get('message', '')) > 0"
+
+  - name: "test_flow_mcp 集成測試"
+    description: "測試 test_flow_mcp 模塊的集成功能"
+    method: "POST"
+    endpoint: "/api/process"
+    headers: {"X-API-Key": "{{api_key}}", "Content-Type": "application/json"}
+    data:
+      request: "請分析當前系統的測試覆蓋率並提供改進建議"
+      context:
+        source: "vscode_vsix"
+        user_role: "developer"
+        workflow_type: "test_flow_analysis"
+        target_component: "test_flow_mcp"
+        analysis_type: "coverage_analysis"
+    expected_status: 200
+    validation:
+      - "response.json().get('user_role') == 'developer'"
+      - "any(keyword in str(response.json()).lower() for keyword in ['test', 'coverage', 'analysis', 'mcp', 'flow'])"
+
+  - name: "角色區分測試"
+    description: "驗證系統正確識別開發者角色"
+    method: "POST"
+    endpoint: "/api/process"
+    headers: {"X-API-Key": "{{api_key}}", "Content-Type": "application/json"}
+    data:
+      request: "開發者測試請求"
+      context:
+        source: "vscode_vsix"
+    expected_status: 200
+    validation:
+      - "response.json().get('user_role') == 'developer'"
+
+output:
+  format: "json"
+  file_pattern: "test_results_{timestamp}.json"
+  include_details: true
+  save_path: "tests/results/"
+
