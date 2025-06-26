@@ -1,0 +1,229 @@
+{
+  "name": "powerautomation-local-mcp",
+  "displayName": "PowerAutomation v3.0.1",
+  "description": "PowerAutomation v3.0.1 - Advanced AI Automation Platform with MCP Adapter",
+  "version": "3.0.1",
+  "publisher": "powerautomation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alexchuang650730/aicore0623.git"
+  },
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Data Science"
+  ],
+  "keywords": [
+    "powerautomation",
+    "mcp",
+    "ai",
+    "automation",
+    "manus"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "powerautomation.connectMCP",
+        "title": "Connect to MCP Service",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.disconnectMCP",
+        "title": "Disconnect from MCP Service",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.showDashboard",
+        "title": "Show Dashboard",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.generateAPIKey",
+        "title": "Generate API Key",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.testConnection",
+        "title": "Test MCP Connection",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.showOutput",
+        "title": "Show Output",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.openDashboard",
+        "title": "Open PowerAutomation Dashboard",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.toggleMode",
+        "title": "Toggle Layout Mode",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.startMCPServer",
+        "title": "Start MCP Server",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.stopMCPServer",
+        "title": "Stop MCP Server",
+        "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.runTests",
+        "title": "Run Manus Tests",
+        "category": "PowerAutomation"
+      }
+    ],
+    "views": {
+      "powerautomation-sidebar": [
+        {
+          "id": "powerautomation.dashboard",
+          "name": "Dashboard",
+          "when": "powerautomation.enabled"
+        },
+        {
+          "id": "powerautomation.chat",
+          "name": "AI Assistant",
+          "when": "powerautomation.enabled && !powerautomation.minimalMode"
+        },
+        {
+          "id": "powerautomation.repository",
+          "name": "Repository Explorer",
+          "when": "powerautomation.enabled && !powerautomation.minimalMode"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "powerautomation-sidebar",
+          "title": "PowerAutomation",
+          "icon": "$(robot)"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "PowerAutomation",
+      "properties": {
+        "powerautomation.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable PowerAutomation extension"
+        },
+        "powerautomation.minimalMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use minimal mode when other smart editors are detected"
+        },
+        "powerautomation.autoDetectEditors": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect other smart editors and switch to minimal mode"
+        },
+        "powerautomation.mcpEndpoint": {
+          "type": "string",
+          "default": "http://localhost:8080/mcp/v3",
+          "description": "MCP Service endpoint URL"
+        },
+        "powerautomation.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for MCP Service authentication"
+        },
+        "powerautomation.enableHeartbeat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable heartbeat to maintain connection with MCP service"
+        },
+        "powerautomation.heartbeatInterval": {
+          "type": "number",
+          "default": 30,
+          "description": "Heartbeat interval in seconds"
+        },
+        "powerautomation.timeout": {
+          "type": "number",
+          "default": 30000,
+          "description": "Request timeout in milliseconds"
+        },
+        "powerautomation.retryCount": {
+          "type": "number",
+          "default": 3,
+          "description": "Number of retry attempts for failed requests"
+        },
+        "powerautomation.logLevel": {
+          "type": "string",
+          "enum": ["debug", "info", "warn", "error"],
+          "default": "info",
+          "description": "Log level for output"
+        },
+        "powerautomation.mcpServer.port": {
+          "type": "number",
+          "default": 8080,
+          "description": "MCP Server port"
+        },
+        "powerautomation.mcpServer.host": {
+          "type": "string",
+          "default": "localhost",
+          "description": "MCP Server host"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "powerautomation.openDashboard",
+        "key": "ctrl+alt+p",
+        "mac": "cmd+alt+p"
+      },
+      {
+        "command": "powerautomation.toggleMode",
+        "key": "ctrl+alt+m",
+        "mac": "cmd+alt+m"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "powerautomation.toggleMode",
+          "when": "view == powerautomation.dashboard",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "powerautomation.openDashboard",
+          "when": "powerautomation.enabled"
+        },
+        {
+          "command": "powerautomation.toggleMode",
+          "when": "powerautomation.enabled"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "ws": "^8.13.0",
+    "axios": "^1.4.0"
+  }
+}
+
