@@ -15,7 +15,7 @@ from enum import Enum
 
 # 導入現有組件
 try:
-    from components.enhanced_smartinvention_mcp import EnhancedSmartinventionAdapterMCP, TaskStorageManager
+    from .enhanced import EnhancedSmartinventionAdapterMCP, TaskStorageManager
     from components.manus_adapter_mcp import ManusAdapterMCP, ManusRequirementParser
     # 導入新的增強對比引擎
     from ..workflow.test_flow.v4.enhanced_comparison_engine import (

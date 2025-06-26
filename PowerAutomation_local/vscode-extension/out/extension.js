@@ -41,6 +41,11 @@ let outputChannel;
 let mcpServerManager;
 let authService;
 let isConnected = false;
+// 全局提供程序实例
+let dashboardProvider;
+let chatProvider;
+let repositoryProvider;
+let authProvider;
 async function activate(context) {
     // 創建輸出面板
     outputChannel = vscode.window.createOutputChannel('PowerAutomation');
@@ -56,14 +61,61 @@ async function activate(context) {
     const editorDetectionService = new EditorDetectionService_1.EditorDetectionService();
     authService = new AuthenticationService_1.AuthenticationService(context);
     // 記錄啟動信息
-    logMessage('🚀 PowerAutomation v3.0.0 已啟動');
+    logMessage('🚀 PowerAutomation v3.1.1 已啟動');
     logMessage(`📅 啟動時間: ${new Date().toLocaleString()}`);
+    // 設置初始上下文
+    vscode.commands.executeCommand('setContext', 'powerautomation.enabled', true);
+    vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', authService.isAuthenticated());
+    // 創建視圖提供者 - 確保正確初始化
+    try {
+        dashboardProvider = new DashboardProvider_1.DashboardProvider(context.extensionUri, mcpServerManager, authService);
+        chatProvider = new ChatProvider_1.ChatProvider(context.extensionUri, mcpServerManager, authService);
+        repositoryProvider = new RepositoryProvider_1.RepositoryProvider(context.extensionUri);
+        authProvider = new AuthProvider_1.AuthProvider(context.extensionUri, authService);
+        logMessage('✅ 所有視圖提供者已創建');
+    }
+    catch (error) {
+        logMessage(`❌ 創建視圖提供者失敗: ${error}`);
+        vscode.window.showErrorMessage('PowerAutomation 初始化失敗，請重新加載窗口');
+        return;
+    }
+    // 註冊視圖 - 添加錯誤處理
+    try {
+        const authViewDisposable = vscode.window.registerWebviewViewProvider('powerautomation.auth', authProvider, {
+            webviewOptions: {
+                retainContextWhenHidden: true
+            }
+        });
+        const dashboardViewDisposable = vscode.window.registerWebviewViewProvider('powerautomation.dashboard', dashboardProvider, {
+            webviewOptions: {
+                retainContextWhenHidden: true
+            }
+        });
+        const chatViewDisposable = vscode.window.registerWebviewViewProvider('powerautomation.chat', chatProvider, {
+            webviewOptions: {
+                retainContextWhenHidden: true
+            }
+        });
+        const repositoryViewDisposable = vscode.window.registerWebviewViewProvider('powerautomation.repository', repositoryProvider, {
+            webviewOptions: {
+                retainContextWhenHidden: true
+            }
+        });
+        context.subscriptions.push(authViewDisposable, dashboardViewDisposable, chatViewDisposable, repositoryViewDisposable);
+        logMessage('✅ 所有視圖已註冊');
+    }
+    catch (error) {
+        logMessage(`❌ 註冊視圖失敗: ${error}`);
+        vscode.window.showErrorMessage('PowerAutomation 視圖註冊失敗');
+    }
     // 檢查用戶登錄狀態
     if (authService.isAuthenticated()) {
         const user = authService.getCurrentUser();
         logMessage(`👋 歡迎回來，${user?.username}！`);
         logMessage(`🎭 用戶類型: ${authService.getUserType()}`);
         logMessage(`🎯 用戶角色: ${authService.getUserRole()}`);
+        // 更新認證狀態
+        vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', true);
         // 根據用戶類型自動連接MCP服務
         if (user?.userType === 'developer' || user?.provider === 'apikey') {
             setTimeout(() => {
@@ -73,6 +125,7 @@ async function activate(context) {
     }
     else {
         logMessage('🔐 用戶未登錄，請先登錄以使用完整功能');
+        vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', false);
         // 自動顯示認證面板
         setTimeout(() => {
             vscode.commands.executeCommand('powerautomation.showAuth');
@@ -86,16 +139,6 @@ async function activate(context) {
         logMessage('🔍 檢測到其他智能編輯器，切換到最小模式');
         vscode.commands.executeCommand('setContext', 'powerautomation.minimalMode', true);
     }
-    // 創建視圖提供者
-    const dashboardProvider = new DashboardProvider_1.DashboardProvider(context.extensionUri, mcpServerManager, authService);
-    const chatProvider = new ChatProvider_1.ChatProvider(context.extensionUri, mcpServerManager, authService);
-    const repositoryProvider = new RepositoryProvider_1.RepositoryProvider(context.extensionUri);
-    const authProvider = new AuthProvider_1.AuthProvider(context.extensionUri, authService);
-    // 註冊視圖
-    vscode.window.registerWebviewViewProvider('powerautomation.dashboard', dashboardProvider);
-    vscode.window.registerWebviewViewProvider('powerautomation.chat', chatProvider);
-    vscode.window.registerWebviewViewProvider('powerautomation.repository', repositoryProvider);
-    vscode.window.registerWebviewViewProvider('powerautomation.auth', authProvider);
     // 註冊命令
     const commands = [
         // 認證相關命令
@@ -109,8 +152,15 @@ async function activate(context) {
             await authService.logout();
             logMessage('👋 用戶已登出');
             vscode.window.showInformationMessage('已成功登出');
-            // authProvider.refresh(); // AuthProvider 不需要 refresh 方法
+            // 更新認證狀態
+            vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', false);
             updateStatusBar('disconnected');
+            // 刷新所有視圖
+            refreshAllViews();
+        }),
+        // 視圖刷新命令
+        vscode.commands.registerCommand('powerautomation.refreshViews', () => {
+            refreshAllViews();
         }),
         // MCP 連接相關命令
         vscode.commands.registerCommand('powerautomation.connectMCP', connectToMCP),
@@ -182,10 +232,13 @@ async function activate(context) {
     context.subscriptions.push(...commands);
     // 監聽認證狀態變化
     context.subscriptions.push(vscode.commands.registerCommand('powerautomation.onAuthStateChanged', (authenticated) => {
+        vscode.commands.executeCommand('setContext', 'powerautomation.authenticated', authenticated);
         if (authenticated) {
             const user = authService.getCurrentUser();
             logMessage(`✅ 用戶登錄成功: ${user?.username}`);
             updateStatusBar('connected');
+            // 刷新所有視圖
+            refreshAllViews();
             // 根據用戶類型自動執行相應操作
             if (user?.userType === 'developer') {
                 setTimeout(() => {
@@ -197,31 +250,52 @@ async function activate(context) {
             logMessage('🔐 用戶已登出');
             updateStatusBar('disconnected');
             isConnected = false;
+            // 刷新所有視圖
+            refreshAllViews();
         }
     }));
+    logMessage('✅ PowerAutomation 擴展初始化完成');
 }
 exports.activate = activate;
+function refreshAllViews() {
+    try {
+        if (dashboardProvider) {
+            dashboardProvider.refresh();
+        }
+        if (chatProvider) {
+            chatProvider.refresh();
+        }
+        if (repositoryProvider) {
+            repositoryProvider.refresh();
+        }
+        // AuthProvider 會自動根據認證狀態更新
+        logMessage('🔄 所有視圖已刷新');
+    }
+    catch (error) {
+        logMessage(`❌ 刷新視圖失敗: ${error}`);
+    }
+}
 function updateStatusBar(status) {
     const user = authService?.getCurrentUser();
     const userInfo = user ? ` (${user.username})` : '';
     switch (status) {
         case 'disconnected':
-            statusBarItem.text = '$(circle-outline) PowerAutomation v3.0.0';
+            statusBarItem.text = '$(circle-outline) PowerAutomation v3.1.1';
             statusBarItem.tooltip = `PowerAutomation - ${user ? '已登錄但未連接MCP服務' : '未登錄'}${userInfo}`;
             statusBarItem.backgroundColor = undefined;
             break;
         case 'connecting':
-            statusBarItem.text = '$(sync~spin) PowerAutomation v3.0.0';
+            statusBarItem.text = '$(sync~spin) PowerAutomation v3.1.1';
             statusBarItem.tooltip = `PowerAutomation - 正在連接MCP服務...${userInfo}`;
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
             break;
         case 'connected':
-            statusBarItem.text = '$(check) PowerAutomation v3.0.0';
+            statusBarItem.text = '$(check) PowerAutomation v3.1.1';
             statusBarItem.tooltip = `PowerAutomation - 已連接MCP服務${userInfo}`;
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.prominentBackground');
             break;
         case 'error':
-            statusBarItem.text = '$(error) PowerAutomation v3.0.0';
+            statusBarItem.text = '$(error) PowerAutomation v3.1.1';
             statusBarItem.tooltip = `PowerAutomation - MCP服務連接錯誤${userInfo}`;
             statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
             break;
@@ -282,13 +356,13 @@ async function connectToMCP() {
                 client: 'powerautomation',
                 user_id: user?.id,
                 user_type: user?.userType,
-                version: '3.0.0'
+                version: '3.1.1'
             }
         }, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                'User-Agent': 'PowerAutomation-VSIX/3.0.0'
+                'User-Agent': 'PowerAutomation-VSIX/3.1.1'
             },
             timeout: timeout
         });
@@ -405,23 +479,8 @@ function showDashboard() {
         });
     }
 }
-function generateAPIKey() {
-    if (!authService.hasPermission('api-access')) {
-        vscode.window.showErrorMessage('您沒有權限生成API Key');
-        return;
-    }
-    const timestamp = Date.now();
-    const random = Math.random().toString(36).substring(2, 18);
-    const hostname = require('os').hostname().substring(0, 8);
-    const apiKey = `pa_v3_${timestamp}_${random}_${hostname}`;
-    logMessage(`🔑 生成新的API Key: ${apiKey}`);
-    vscode.env.clipboard.writeText(apiKey).then(() => {
-        vscode.window.showInformationMessage(`API Key已生成並複製到剪貼板: ${apiKey.substring(0, 20)}...`, '配置設置').then(selection => {
-            if (selection === '配置設置') {
-                vscode.commands.executeCommand('workbench.action.openSettings', 'powerautomation.apiKey');
-            }
-        });
-    });
+function showOutput() {
+    outputChannel.show();
 }
 async function testConnection() {
     if (!authService.isAuthenticated()) {
@@ -432,7 +491,8 @@ async function testConnection() {
         });
         return;
     }
-    logMessage('🧪 測試MCP連接...');
+    logMessage('🧪 開始測試MCP連接...');
+    vscode.window.showInformationMessage('正在測試MCP連接，請查看輸出面板');
     const config = vscode.workspace.getConfiguration('powerautomation');
     const endpoint = config.get('mcpEndpoint', 'http://18.212.97.173:8080');
     const user = authService.getCurrentUser();
@@ -443,46 +503,49 @@ async function testConnection() {
     else {
         apiKey = config.get('apiKey', '');
     }
-    if (!apiKey || apiKey.trim() === '') {
-        vscode.window.showErrorMessage('請先配置API Key');
-        return;
-    }
     try {
         const response = await axios_1.default.get(`${endpoint}/api/health`, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
-                'User-Agent': 'PowerAutomation-VSIX/3.0.0'
+                'Content-Type': 'application/json'
             },
             timeout: 10000
         });
-        if (response.status === 200) {
-            logMessage('✅ MCP服務測試成功');
-            vscode.window.showInformationMessage('MCP服務連接測試成功！');
-        }
-        else {
-            throw new Error(`測試失敗: ${response.status}`);
-        }
+        logMessage(`✅ 連接測試成功: ${JSON.stringify(response.data)}`);
+        vscode.window.showInformationMessage('MCP服務連接測試成功');
     }
     catch (error) {
         const errorMessage = error.response?.data?.message || error.message || '未知錯誤';
-        logMessage(`❌ MCP服務測試失敗: ${errorMessage}`);
-        vscode.window.showErrorMessage(`MCP連接測試失敗: ${errorMessage}`);
+        logMessage(`❌ 連接測試失敗: ${errorMessage}`);
+        vscode.window.showErrorMessage(`連接測試失敗: ${errorMessage}`);
     }
 }
-function showOutput() {
-    outputChannel.show();
+function generateAPIKey() {
+    if (!authService.hasPermission('api-access')) {
+        vscode.window.showErrorMessage('您沒有權限生成API Key');
+        return;
+    }
+    const apiKey = `pa_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+    vscode.window.showInformationMessage(`已生成新的API Key: ${apiKey}`, '複製到剪貼板', '保存到設置').then(selection => {
+        if (selection === '複製到剪貼板') {
+            vscode.env.clipboard.writeText(apiKey);
+            vscode.window.showInformationMessage('API Key已複製到剪貼板');
+        }
+        else if (selection === '保存到設置') {
+            vscode.workspace.getConfiguration('powerautomation').update('apiKey', apiKey, true);
+            vscode.window.showInformationMessage('API Key已保存到設置');
+        }
+    });
+    logMessage(`🔑 已生成新的API Key: ${apiKey}`);
 }
 function deactivate() {
-    if (statusBarItem) {
-        statusBarItem.dispose();
-    }
+    logMessage('👋 PowerAutomation 擴展已停用');
     if (outputChannel) {
         outputChannel.dispose();
     }
-    if (mcpServerManager) {
-        mcpServerManager.stop();
+    if (statusBarItem) {
+        statusBarItem.dispose();
     }
-    logMessage('👋 PowerAutomation v3.0.0 已停用');
 }
 exports.deactivate = deactivate;
 //# sourceMappingURL=extension.js.map

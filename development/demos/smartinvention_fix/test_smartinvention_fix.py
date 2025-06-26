@@ -14,7 +14,7 @@ from datetime import datetime
 sys.path.append('/home/ubuntu/aicore0624/PowerAutomation')
 
 try:
-    from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP
+    from PowerAutomation.components.mcp.core.smartinvention.main import SmartinventionAdapterMCP
     print("✅ 成功導入 SmartinventionAdapterMCP")
 except ImportError as e:
     print(f"❌ 導入失敗: {e}")
@@ -131,7 +131,7 @@ async def test_integration_with_enhanced_aicore():
     
     try:
         from core.enhanced_aicore3 import EnhancedAICore3
-        from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP
+        from PowerAutomation.components.mcp.core.smartinvention.main import SmartinventionAdapterMCP
         
         # 創建適配器
         adapter_config = {

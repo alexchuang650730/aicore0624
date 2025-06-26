@@ -18,7 +18,7 @@ from enum import Enum
 
 # 導入 AICore 3.0 組件
 from core.aicore3 import AICore3, UserRequest, ProcessingResult
-from components.enhanced_smartinvention_mcp_v2 import EnhancedSmartinventionAdapterMCP
+from PowerAutomation.components.mcp.core.smartinvention.enhanced_v2 import EnhancedSmartinventionAdapterMCP
 from components.dynamic_expert_registry import DynamicExpertRegistry, ExpertProfile, ExpertCapability, ExpertType, ExpertStatus
 from components.smart_routing_engine import SmartRoutingEngine, RoutingRequest, RoutingDecision
 from tools.tool_registry import ToolRegistry, ToolInfo, ToolType, ToolCapability
@@ -578,7 +578,7 @@ class ManusToolDiscovery:
                     ToolCapability.DATA_RETRIEVAL,
                     ToolCapability.API_INTEGRATION
                 ],
-                "module_path": "components.enhanced_smartinvention_mcp_v2",
+                "module_path": "PowerAutomation.components.mcp.core.smartinvention.enhanced_v2",
                 "config": {"timeout": 30, "retry_count": 3}
             },
             {

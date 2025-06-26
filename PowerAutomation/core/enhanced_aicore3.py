@@ -547,7 +547,7 @@ class EnhancedAICore3(OriginalAICore3):
     async def _initialize_smartinvention_adapter(self):
         """初始化 Smartinvention Adapter"""
         if self.smartinvention_adapter is None:
-            from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP
+            from PowerAutomation.components.mcp.core.smartinvention.main import SmartinventionAdapterMCP
             smartinvention_config = {
                 'data_dir': '/tmp/smartinvention_data',
                 'sync_interval': 30,

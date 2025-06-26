@@ -879,7 +879,7 @@ class FullyIntegratedIntelligentSystem:
             })
             
             # 簡化版本的中間件初始化，避免複雜的依賴
-            from smartinvention_manus_hitl_middleware import SmartInventionManusMiddleware
+            from PowerAutomation.components.mcp.core.smartinvention.hitl_middleware import SmartInventionManusMiddleware
             self.smartinvention_middleware = SmartInventionManusMiddleware(middleware_config)
             
             logger.info("✅ SmartInvention-Manus HITL 中間件初始化成功")

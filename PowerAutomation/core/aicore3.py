@@ -368,7 +368,7 @@ class AICore3:
         self.action_executor = ActionExecutor()
         
         # Smartinvention Adapter MCP
-        from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP
+        from PowerAutomation.components.mcp.core.smartinvention.main import SmartinventionAdapterMCP
         self.smartinvention_adapter = None  # 延遲初始化
         
         # Manus Adapter MCP (新增)
@@ -400,7 +400,7 @@ class AICore3:
             
             # 初始化Smartinvention Adapter MCP
             if self.smartinvention_adapter is None:
-                from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP
+                from PowerAutomation.components.mcp.core.smartinvention.main import SmartinventionAdapterMCP
                 smartinvention_config = {
                     'data_dir': '/tmp/smartinvention_data',
                     'sync_interval': 30,
