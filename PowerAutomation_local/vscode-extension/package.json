@@ -2,7 +2,7 @@
   "name": "powerautomation-smartui",
   "displayName": "PowerAutomation SmartUI",
   "description": "智慧 UI 自動化開發助手，整合 Claude SDK 和三角色支持",
-  "version": "2025.06.26.1533",
+  "version": "4.0.0",
   "engines": {
     "vscode": "^1.74.0"
   },
