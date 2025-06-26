@@ -198,12 +198,20 @@ export class SmartUIClaudeService implements ClaudeService {
     }
 
     private initializeApiKeys(): void {
-        // 從配置中加載 API Keys
-        this.apiKeys.set(UserRole.ADMIN, 'admin_pth4jG-nVjvGaTZA2URN7SyHu-o7wBaeLOYbMrLMKkc');
-        this.apiKeys.set(UserRole.DEVELOPER, 'dev_407CYuVKuP_s3hVqIhO4JZKqcE4-W9ocTgc_fldjxso');
-        this.apiKeys.set(UserRole.USER, 'user_RcmKEIPfGCQrA6sSohzn5NDXYMsS5mkyP9jPhM3llTw');
+        // 從環境變量讀取 Claude API Key
+        const apiKey = process.env.CLAUDE_API_KEY || '';
         
-        console.log('🔑 API Keys 初始化完成');
+        if (!apiKey) {
+            console.warn('⚠️ 未設置 CLAUDE_API_KEY 環境變量，Claude 功能將無法使用');
+            return;
+        }
+        
+        // 所有角色使用相同的 API Key
+        this.apiKeys.set(UserRole.ADMIN, apiKey);
+        this.apiKeys.set(UserRole.DEVELOPER, apiKey);
+        this.apiKeys.set(UserRole.USER, apiKey);
+        
+        console.log('🔑 Claude API Key 從環境變量初始化完成');
     }
 
     private async testConnection(): Promise<void> {
