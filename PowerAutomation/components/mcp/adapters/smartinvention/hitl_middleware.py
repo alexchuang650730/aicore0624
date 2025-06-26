@@ -17,7 +17,12 @@ from enum import Enum
 try:
     from components.enhanced_smartinvention_mcp import EnhancedSmartinventionAdapterMCP, TaskStorageManager
     from components.manus_adapter_mcp import ManusAdapterMCP, ManusRequirementParser
-    from components.enhanced_test_flow_mcp_v4 import ComparisonAnalysisEngine
+    # 導入新的增強對比引擎
+    from ..workflow.test_flow.v4.enhanced_comparison_engine import (
+        EnhancedComparisonAnalysisEngine, ComparisonRequest, ComparisonType, AnalysisDepth
+    )
+    from ..shared.data_provider import DataProvider
+    from ..shared.plugin_data_access import PluginDataAccess
 except ImportError as e:
     logging.warning(f"無法導入部分組件: {e}")
 
@@ -145,8 +150,9 @@ class SmartInventionManusMiddleware:
             # 初始化 Manus 適配器
             self.manus_adapter = ManusAdapterMCP()
             
-            # 初始化比對引擎
-            self.comparison_engine = ComparisonAnalysisEngine(self.config)
+            # 初始化增強對比引擎
+            data_provider = DataProvider()
+            self.comparison_engine = EnhancedComparisonAnalysisEngine(data_provider, self.config)
             
             self.logger.info("所有組件初始化成功")
             return True
