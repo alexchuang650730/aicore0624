@@ -1,0 +1,23 @@
+{
+  "api_keys": {
+    "claude_api_key": "YOUR_CLAUDE_API_KEY_HERE",
+    "openai_api_key": "YOUR_OPENAI_API_KEY_HERE",
+    "manus_api_key": "YOUR_MANUS_API_KEY_HERE"
+  },
+  "api_endpoints": {
+    "claude_api_base": "https://api.anthropic.com",
+    "manus_api_base": "https://manus.chat/api",
+    "local_aicore_base": "http://localhost:8000"
+  },
+  "authentication": {
+    "manus_username": "YOUR_MANUS_USERNAME_HERE",
+    "manus_password": "YOUR_MANUS_PASSWORD_HERE"
+  },
+  "test_settings": {
+    "timeout_seconds": 30,
+    "retry_attempts": 3,
+    "use_real_apis": true,
+    "fallback_to_mock": false
+  }
+}
+

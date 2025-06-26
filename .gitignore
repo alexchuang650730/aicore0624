@@ -111,3 +111,15 @@ jspm_packages/
 # TernJS port file
 .tern-port
 
+
+# PowerAutomation specific
+config/api_config.json
+config/api_config_real.json
+*.secret
+*.key
+
+# Temporary verification files
+/tmp/stage*_verification_*/
+reality_check_report.txt
+powerautomation_verification_status
+
