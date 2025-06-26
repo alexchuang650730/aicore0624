@@ -1,0 +1,26 @@
+{
+  "deployment_info": {
+    "timestamp": "2025-06-24T06:21:53.368551",
+    "deployment_id": "ec2_deploy_1750746113",
+    "status": "success",
+    "platform": "EC2"
+  },
+  "environment": {
+    "os": "Linux",
+    "python_version": "3.9.22 (main, Apr 29 2025, 00:00:00) \n[GCC 11.5.0 20240719 (Red Hat 11.5.0-5)]",
+    "working_directory": "/home/ec2-user/aicore0624",
+    "ec2_instance": true
+  },
+  "components": {
+    "aicore_status": "initialized",
+    "local_adapter_status": "not_initialized",
+    "tool_registry_status": "initialized"
+  },
+  "connection_status": {},
+  "verification": {
+    "environment_check": true,
+    "component_initialization": true,
+    "connection_establishment": true,
+    "functionality_test": true
+  }
+}

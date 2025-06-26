@@ -614,7 +614,7 @@ class ToolRegistry:
                 "name": "Smartinvention_Adapter MCP",
                 "type": "mcp_component",
                 "description": "智能發明適配器MCP組件，整合EC2功能，支持端側local model連接和對話智能分析",
-                "module_path": "components.smartinvention_adapter_mcp",
+                "module_path": "PowerAutomation.components.mcp.core.smartinvention.main",
                 "class_name": "SmartinventionAdapterMCP",
                 "capabilities": [
                     {

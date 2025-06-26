@@ -368,8 +368,12 @@ class AICore3:
         self.action_executor = ActionExecutor()
         
         # Smartinvention Adapter MCP
-        from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP
+        from PowerAutomation.components.mcp.core.smartinvention.main import SmartinventionAdapterMCP
         self.smartinvention_adapter = None  # 延遲初始化
+        
+        # Manus Adapter MCP (新增)
+        from components.manus_adapter_mcp import ManusAdapterMCP
+        self.manus_adapter = None  # 延遲初始化
         
         # 統計和監控
         self.stage_statistics = {}
@@ -396,7 +400,7 @@ class AICore3:
             
             # 初始化Smartinvention Adapter MCP
             if self.smartinvention_adapter is None:
-                from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP
+                from PowerAutomation.components.mcp.core.smartinvention.main import SmartinventionAdapterMCP
                 smartinvention_config = {
                     'data_dir': '/tmp/smartinvention_data',
                     'sync_interval': 30,
@@ -407,6 +411,13 @@ class AICore3:
                 self.smartinvention_adapter = SmartinventionAdapterMCP(smartinvention_config)
                 await self.smartinvention_adapter.initialize()
                 logger.info("✅ Smartinvention Adapter MCP 初始化完成")
+            
+            # 初始化Manus Adapter MCP (新增)
+            if self.manus_adapter is None:
+                from components.manus_adapter_mcp import ManusAdapterMCP
+                self.manus_adapter = ManusAdapterMCP(aicore_instance=self)
+                await self.manus_adapter.initialize()
+                logger.info("✅ Manus Adapter MCP 初始化完成")
             
             # 初始化統計
             for stage in ProcessingStage:
@@ -1363,4 +1374,3 @@ __all__ = [
     "ProcessingStage",
     "create_aicore3"
 ]
-

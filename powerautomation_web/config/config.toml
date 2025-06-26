@@ -1,0 +1,133 @@
+# PowerAutomation Web 配置文件
+# 版本: 1.0.0
+# 日期: 2025-06-25
+
+[server]
+# 前端服務器配置
+frontend_port = 3000
+frontend_host = "0.0.0.0"
+
+# 後端服務器配置
+backend_port = 5000
+backend_host = "0.0.0.0"
+websocket_port = 5001
+
+# 開發模式配置
+dev_mode = true
+hot_reload = true
+cors_enabled = true
+
+[auth]
+# 認證配置
+jwt_secret = "powerautomation_web_secret_2025"
+jwt_expiry = 3600
+refresh_token_expiry = 604800
+
+# API Key 配置
+admin_key_prefix = "admin_"
+developer_key_prefix = "dev_"
+user_key_prefix = "user_"
+
+# OAuth 配置
+github_client_id = ""
+github_client_secret = ""
+google_client_id = ""
+google_client_secret = ""
+microsoft_client_id = ""
+microsoft_client_secret = ""
+
+[database]
+# 數據庫配置 (可選)
+type = "sqlite"
+path = "data/powerautomation_web.db"
+# 或使用 PostgreSQL/MySQL
+# type = "postgresql"
+# host = "localhost"
+# port = 5432
+# database = "powerautomation_web"
+# username = "postgres"
+# password = ""
+
+[integration]
+# PowerAutomation_local 整合
+mcp_server_url = "http://localhost:5000"
+mcp_websocket_url = "ws://localhost:5001"
+auto_connect = true
+heartbeat_interval = 30
+
+[ui]
+# 界面配置
+default_theme = "light"
+enable_dark_mode = true
+animation_enabled = true
+responsive_design = true
+
+# 三角色界面配置
+[ui.roles]
+admin_theme_color = "#dc3545"
+developer_theme_color = "#ff6b35"
+user_theme_color = "#4285f4"
+
+# 功能權限配置
+[ui.permissions]
+admin_features = ["user_management", "system_config", "data_analytics", "server_control"]
+developer_features = ["api_access", "debug_tools", "advanced_chat", "code_analysis"]
+user_features = ["basic_chat", "file_management", "history_view"]
+
+[logging]
+# 日誌配置
+level = "INFO"
+file_enabled = true
+console_enabled = true
+max_file_size = "10MB"
+backup_count = 5
+
+# 日誌文件路徑
+[logging.files]
+access = "logs/access.log"
+error = "logs/error.log"
+auth = "logs/auth.log"
+api = "logs/api.log"
+
+[security]
+# 安全配置
+rate_limit_enabled = true
+max_requests_per_minute = 100
+csrf_protection = true
+helmet_enabled = true
+
+# CORS 配置
+[security.cors]
+origin = ["http://localhost:3000", "http://localhost:5000"]
+credentials = true
+methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+
+[features]
+# 功能開關
+user_registration = true
+email_verification = false
+password_reset = true
+two_factor_auth = false
+session_management = true
+real_time_updates = true
+
+[monitoring]
+# 監控配置
+health_check_enabled = true
+metrics_enabled = true
+performance_tracking = true
+error_tracking = true
+
+[deployment]
+# 部署配置
+build_output_dir = "frontend/dist"
+static_files_dir = "public"
+upload_max_size = "10MB"
+session_store = "memory"  # memory, redis, database
+
+[version]
+# 版本信息
+current = "1.0.0"
+release_date = "2025-06-25"
+description = "PowerAutomation Web 三角色權限系統"
+

@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AuthenticationService, AuthProvider as AuthProviderType } from '../services/AuthenticationService';
+import { AuthenticationService } from '../services/AuthenticationService';
 
 export class AuthProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'powerautomation.auth';
@@ -29,78 +29,58 @@ export class AuthProvider implements vscode.WebviewViewProvider {
             async message => {
                 switch (message.type) {
                     case 'login':
-                        await this._handleLogin(message.provider, message.credentials);
-                        break;
-                    case 'register':
-                        await this._handleRegister(message.provider, message.userData);
+                        await this._handleLogin(message.data);
                         break;
                     case 'logout':
                         await this._handleLogout();
                         break;
-                    case 'sendVerificationCode':
-                        await this._handleSendVerificationCode(message.phone);
+                    case 'checkAuthStatus':
+                        this._sendAuthStatus();
                         break;
-                    case 'resetPassword':
-                        await this._handleResetPassword(message.email);
+                    case 'openSettings':
+                        vscode.commands.executeCommand('workbench.action.openSettings', 'powerautomation');
                         break;
-                    case 'switchMode':
-                        this._switchAuthMode(message.mode);
+                    case 'generateAPIKey':
+                        vscode.commands.executeCommand('powerautomation.generateAPIKey');
                         break;
                 }
             },
             undefined,
             []
         );
+
+        // 發送初始認證狀態
+        this._sendAuthStatus();
     }
 
-    public refresh() {
-        if (this._view) {
-            this._view.webview.html = this._getHtmlForWebview(this._view.webview);
-        }
-    }
-
-    private async _handleLogin(provider: string, credentials: any) {
-        if (!this._view) return;
-
+    private async _handleLogin(data: any) {
         try {
-            this._view.webview.postMessage({ type: 'loginStart' });
+            let credentials: any = {};
             
-            const user = await this._authService.login(provider, credentials);
-            
-            this._view.webview.postMessage({ 
-                type: 'loginSuccess', 
-                user: user 
-            });
+            if (data.type === 'apikey') {
+                credentials = { apiKey: data.apiKey };
+            } else if (data.type === 'oauth') {
+                credentials = { provider: data.provider };
+            } else if (data.type === 'email') {
+                credentials = { email: data.email, password: data.password };
+            }
 
-            vscode.window.showInformationMessage(`歡迎回來，${user.username}！`);
+            const user = await this._authService.login(data.type, credentials);
+
+            this._sendMessage({
+                type: 'loginSuccess',
+                user: user
+            });
+            
+            // 通知擴展認證狀態變化
+            vscode.commands.executeCommand('powerautomation.onAuthStateChanged', true);
+            
+            // 刷新視圖
             this.refresh();
-        } catch (error) {
-            this._view.webview.postMessage({ 
-                type: 'loginError', 
-                error: (error as Error).toString() 
-            });
-        }
-    }
-
-    private async _handleRegister(provider: string, userData: any) {
-        if (!this._view) return;
-
-        try {
-            this._view.webview.postMessage({ type: 'registerStart' });
-            
-            const user = await this._authService.register(provider, userData);
-            
-            this._view.webview.postMessage({ 
-                type: 'registerSuccess', 
-                user: user 
-            });
-
-            vscode.window.showInformationMessage(`註冊成功！歡迎，${user.username}！`);
-            this.refresh();
-        } catch (error) {
-            this._view.webview.postMessage({ 
-                type: 'registerError', 
-                error: (error as Error).toString() 
+        } catch (error: any) {
+            this._sendMessage({
+                type: 'loginError',
+                message: error.message || '登錄過程中發生錯誤'
             });
         }
     }
@@ -108,295 +88,59 @@ export class AuthProvider implements vscode.WebviewViewProvider {
     private async _handleLogout() {
         try {
             await this._authService.logout();
-            vscode.window.showInformationMessage('已成功登出');
+            this._sendMessage({
+                type: 'logoutSuccess'
+            });
+            
+            // 通知擴展認證狀態變化
+            vscode.commands.executeCommand('powerautomation.onAuthStateChanged', false);
+            
+            // 刷新視圖
             this.refresh();
-        } catch (error) {
-            vscode.window.showErrorMessage(`登出失敗: ${error}`);
-        }
-    }
-
-    private async _handleSendVerificationCode(phone: string) {
-        if (!this._view) return;
-
-        try {
-            await this._authService.sendPhoneVerificationCode(phone);
-            this._view.webview.postMessage({ 
-                type: 'verificationCodeSent',
-                phone: phone
-            });
-        } catch (error) {
-            this._view.webview.postMessage({ 
-                type: 'verificationCodeError', 
-                error: (error as Error).toString() 
+        } catch (error: any) {
+            this._sendMessage({
+                type: 'error',
+                message: error.message || '登出過程中發生錯誤'
             });
         }
     }
 
-    private async _handleResetPassword(email: string) {
-        if (!this._view) return;
-
-        try {
-            await this._authService.resetPassword(email);
-            this._view.webview.postMessage({ 
-                type: 'passwordResetSent',
-                email: email
-            });
-        } catch (error) {
-            this._view.webview.postMessage({ 
-                type: 'passwordResetError', 
-                error: (error as Error).toString() 
-            });
-        }
+    private _sendAuthStatus() {
+        const isAuthenticated = this._authService.isAuthenticated();
+        const user = isAuthenticated ? this._authService.getCurrentUser() : null;
+        
+        this._sendMessage({
+            type: 'authStatus',
+            authenticated: isAuthenticated,
+            user: user
+        });
     }
 
-    private _switchAuthMode(mode: 'login' | 'register') {
+    private _sendMessage(message: any) {
         if (this._view) {
-            this._view.webview.postMessage({ 
-                type: 'switchMode', 
-                mode: mode 
-            });
+            this._view.webview.postMessage(message);
+        }
+    }
+
+    public refresh() {
+        if (this._view) {
+            this._view.webview.html = this._getHtmlForWebview(this._view.webview);
+            // 發送最新認證狀態
+            this._sendAuthStatus();
         }
     }
 
     private _getHtmlForWebview(webview: vscode.Webview): string {
         const isAuthenticated = this._authService.isAuthenticated();
-        const currentUser = this._authService.getCurrentUser();
-        const authProviders = this._authService.getAuthProviders();
-
-        if (isAuthenticated && currentUser) {
-            return this._getAuthenticatedView(currentUser);
+        
+        if (isAuthenticated) {
+            return this._getAuthenticatedView();
         } else {
-            return this._getLoginView(authProviders);
+            return this._getLoginView();
         }
     }
 
-    private _getAuthenticatedView(user: any): string {
-        return `<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用戶資料</title>
-    <style>
-        body {
-            font-family: var(--vscode-font-family);
-            font-size: var(--vscode-font-size);
-            color: var(--vscode-foreground);
-            background: var(--vscode-editor-background);
-            margin: 0;
-            padding: 16px;
-        }
-
-        .user-profile {
-            text-align: center;
-            padding: 20px 0;
-        }
-
-        .user-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin: 0 auto 16px;
-            background: var(--vscode-button-background);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 32px;
-        }
-
-        .user-name {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .user-email {
-            font-size: 12px;
-            color: var(--vscode-descriptionForeground);
-            margin-bottom: 8px;
-        }
-
-        .user-subscription {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            background: var(--vscode-statusBarItem-activeBackground);
-            color: var(--vscode-statusBarItem-activeForeground);
-        }
-
-        .stats-section {
-            margin: 24px 0;
-        }
-
-        .section-title {
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--vscode-descriptionForeground);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-
-        .stat-card {
-            background: var(--vscode-input-background);
-            padding: 16px;
-            border-radius: 8px;
-            text-align: center;
-            border-left: 3px solid var(--vscode-focusBorder);
-        }
-
-        .stat-number {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--vscode-terminal-ansiGreen);
-            display: block;
-            margin-bottom: 4px;
-        }
-
-        .stat-label {
-            font-size: 10px;
-            color: var(--vscode-descriptionForeground);
-        }
-
-        .action-button {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 8px;
-            background: var(--vscode-button-secondaryBackground);
-            border: none;
-            border-radius: 6px;
-            color: var(--vscode-button-secondaryForeground);
-            font-size: 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .action-button:hover {
-            background: var(--vscode-button-secondaryHoverBackground);
-        }
-
-        .action-button.danger {
-            background: var(--vscode-statusBarItem-errorBackground);
-            color: var(--vscode-statusBarItem-errorForeground);
-        }
-
-        .provider-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            background: var(--vscode-badge-background);
-            color: var(--vscode-badge-foreground);
-            margin-top: 8px;
-        }
-
-        .last-login {
-            font-size: 10px;
-            color: var(--vscode-descriptionForeground);
-            margin-top: 16px;
-        }
-    </style>
-</head>
-<body>
-    <div class="user-profile">
-        <div class="user-avatar">
-            ${user.avatar ? `<img src="${user.avatar}" style="width:100%;height:100%;border-radius:50%;">` : '👤'}
-        </div>
-        <div class="user-name">${user.username}</div>
-        <div class="user-email">${user.email}</div>
-        <div class="user-subscription">${user.subscription}</div>
-        <div class="provider-badge">
-            ${this._getProviderIcon(user.provider)} ${this._getProviderName(user.provider)}
-        </div>
-        <div class="last-login">
-            上次登錄: ${new Date(user.lastLogin).toLocaleString()}
-        </div>
-    </div>
-
-    <div class="stats-section">
-        <div class="section-title">📊 帳戶統計</div>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <span class="stat-number">${user.credits}</span>
-                <div class="stat-label">可用積分</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">156</span>
-                <div class="stat-label">今日使用</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">$8.42</span>
-                <div class="stat-label">本月節省</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">98.7%</span>
-                <div class="stat-label">成功率</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="stats-section">
-        <div class="section-title">⚙️ 帳戶管理</div>
-        <button class="action-button" onclick="editProfile()">
-            ✏️ 編輯資料
-        </button>
-        <button class="action-button" onclick="manageSubscription()">
-            💳 管理訂閱
-        </button>
-        <button class="action-button" onclick="viewUsage()">
-            📈 使用統計
-        </button>
-        <button class="action-button" onclick="downloadData()">
-            📥 下載數據
-        </button>
-        <button class="action-button danger" onclick="logout()">
-            🚪 登出
-        </button>
-    </div>
-
-    <script>
-        const vscode = acquireVsCodeApi();
-
-        function logout() {
-            vscode.postMessage({ type: 'logout' });
-        }
-
-        function editProfile() {
-            // 實現編輯資料功能
-            console.log('編輯資料');
-        }
-
-        function manageSubscription() {
-            // 實現訂閱管理功能
-            console.log('管理訂閱');
-        }
-
-        function viewUsage() {
-            // 實現使用統計功能
-            console.log('查看使用統計');
-        }
-
-        function downloadData() {
-            // 實現數據下載功能
-            console.log('下載數據');
-        }
-    </script>
-</body>
-</html>`;
-    }
-
-    private _getLoginView(authProviders: AuthProviderType[]): string {
+    private _getLoginView(): string {
         return `<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -411,11 +155,19 @@ export class AuthProvider implements vscode.WebviewViewProvider {
             background: var(--vscode-editor-background);
             margin: 0;
             padding: 16px;
+            line-height: 1.5;
+        }
+
+        .auth-container {
+            max-width: 100%;
+            margin: 0 auto;
         }
 
         .auth-header {
             text-align: center;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--vscode-panel-border);
         }
 
         .auth-logo {
@@ -424,32 +176,35 @@ export class AuthProvider implements vscode.WebviewViewProvider {
         }
 
         .auth-title {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             margin-bottom: 4px;
+            color: #4285f4;
         }
 
         .auth-subtitle {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--vscode-descriptionForeground);
         }
 
         .auth-tabs {
             display: flex;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             background: var(--vscode-input-background);
             border-radius: 6px;
-            padding: 4px;
+            padding: 2px;
         }
 
         .auth-tab {
             flex: 1;
             padding: 8px 12px;
-            text-align: center;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
+            background: transparent;
+            border: none;
             border-radius: 4px;
+            color: var(--vscode-foreground);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
             transition: all 0.2s;
         }
 
@@ -459,7 +214,11 @@ export class AuthProvider implements vscode.WebviewViewProvider {
         }
 
         .auth-form {
-            margin-bottom: 24px;
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
         }
 
         .form-group {
@@ -468,19 +227,20 @@ export class AuthProvider implements vscode.WebviewViewProvider {
 
         .form-label {
             display: block;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 600;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
+            color: var(--vscode-foreground);
         }
 
         .form-input {
             width: 100%;
-            padding: 10px 12px;
+            padding: 8px 12px;
             background: var(--vscode-input-background);
             border: 1px solid var(--vscode-input-border);
             border-radius: 4px;
             color: var(--vscode-input-foreground);
-            font-size: 13px;
+            font-size: 12px;
             box-sizing: border-box;
         }
 
@@ -489,67 +249,97 @@ export class AuthProvider implements vscode.WebviewViewProvider {
             border-color: var(--vscode-focusBorder);
         }
 
-        .form-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        .form-row .form-input {
-            flex: 1;
-        }
-
-        .verification-button {
-            padding: 10px 16px;
-            background: var(--vscode-button-secondaryBackground);
-            border: none;
-            border-radius: 4px;
-            color: var(--vscode-button-secondaryForeground);
-            font-size: 11px;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
-        .verification-button:hover {
-            background: var(--vscode-button-secondaryHoverBackground);
-        }
-
-        .verification-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .submit-button {
+        .form-button {
             width: 100%;
-            padding: 12px;
+            padding: 10px 16px;
             background: var(--vscode-button-background);
             border: none;
-            border-radius: 6px;
+            border-radius: 4px;
             color: var(--vscode-button-foreground);
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.2s;
-            margin-bottom: 16px;
         }
 
-        .submit-button:hover {
+        .form-button:hover {
             background: var(--vscode-button-hoverBackground);
         }
 
-        .submit-button:disabled {
-            opacity: 0.5;
+        .form-button:disabled {
+            opacity: 0.6;
             cursor: not-allowed;
         }
 
-        .auth-divider {
-            text-align: center;
-            margin: 24px 0;
-            position: relative;
-            color: var(--vscode-descriptionForeground);
-            font-size: 11px;
+        .oauth-buttons {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            margin-bottom: 16px;
         }
 
-        .auth-divider::before {
+        .oauth-button {
+            padding: 10px 16px;
+            background: var(--vscode-button-secondaryBackground);
+            border: 1px solid var(--vscode-button-border);
+            border-radius: 4px;
+            color: var(--vscode-button-secondaryForeground);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .oauth-button:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .oauth-icon {
+            font-size: 14px;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 16px;
+            color: #f44336;
+            font-size: 11px;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin-bottom: 16px;
+            color: #4caf50;
+            font-size: 11px;
+            display: none;
+        }
+
+        .help-text {
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 16px 0;
+            position: relative;
+            color: var(--vscode-descriptionForeground);
+            font-size: 10px;
+        }
+
+        .divider::before {
             content: '';
             position: absolute;
             top: 50%;
@@ -559,619 +349,552 @@ export class AuthProvider implements vscode.WebviewViewProvider {
             background: var(--vscode-panel-border);
         }
 
-        .auth-divider span {
+        .divider span {
             background: var(--vscode-editor-background);
-            padding: 0 12px;
-        }
-
-        .provider-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .provider-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 10px 12px;
-            background: var(--vscode-input-background);
-            border: 1px solid var(--vscode-input-border);
-            border-radius: 6px;
-            color: var(--vscode-foreground);
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .provider-button:hover {
-            background: var(--vscode-list-hoverBackground);
-            border-color: var(--vscode-focusBorder);
-        }
-
-        .provider-icon {
-            font-size: 14px;
-        }
-
-        .forgot-password {
-            text-align: center;
-            margin-top: 16px;
-        }
-
-        .forgot-password a {
-            color: var(--vscode-textLink-foreground);
-            text-decoration: none;
-            font-size: 11px;
-        }
-
-        .forgot-password a:hover {
-            text-decoration: underline;
+            padding: 0 8px;
         }
 
         .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .error-message {
-            background: var(--vscode-statusBarItem-errorBackground);
-            color: var(--vscode-statusBarItem-errorForeground);
-            padding: 8px 12px;
-            border-radius: 4px;
+            display: none;
+            text-align: center;
+            padding: 16px;
+            color: var(--vscode-descriptionForeground);
             font-size: 11px;
-            margin-bottom: 16px;
-            display: none;
         }
 
-        .success-message {
-            background: var(--vscode-statusBarItem-activeBackground);
-            color: var(--vscode-statusBarItem-activeForeground);
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 11px;
-            margin-bottom: 16px;
-            display: none;
-        }
-
-        .register-form {
-            display: none;
-        }
-
-        .register-form.active {
+        .loading.show {
             display: block;
         }
 
-        .login-form.active {
-            display: block;
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--vscode-descriptionForeground);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
         }
 
-        .terms-checkbox {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-            margin-bottom: 16px;
-            font-size: 11px;
-        }
-
-        .terms-checkbox input {
-            margin-top: 2px;
-        }
-
-        .terms-checkbox a {
-            color: var(--vscode-textLink-foreground);
-            text-decoration: none;
-        }
-
-        .terms-checkbox a:hover {
-            text-decoration: underline;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <div class="auth-header">
-        <div class="auth-logo">🤖</div>
-        <div class="auth-title">PowerAutomation v3.0.0</div>
-        <div class="auth-subtitle">智能自動化平台 - 新一代AI驅動解決方案</div>
-    </div>
-
-    <div class="auth-tabs">
-        <div class="auth-tab active" onclick="switchTab('login')">登錄</div>
-        <div class="auth-tab" onclick="switchTab('register')">註冊</div>
-    </div>
-
-    <div class="error-message" id="errorMessage"></div>
-    <div class="success-message" id="successMessage"></div>
-
-    <!-- 登錄表單 -->
-    <div class="login-form active" id="loginForm">
-        <div class="auth-form">
-            <div class="form-group">
-                <label class="form-label">登錄方式</label>
-                <select class="form-input" id="loginProvider" onchange="switchLoginProvider()">
-                    <option value="email">📧 郵箱登錄</option>
-                    <option value="phone">📱 手機號登錄</option>
-                    <option value="apikey">🔑 API Key登錄</option>
-                </select>
-            </div>
-
-            <!-- 郵箱登錄 -->
-            <div id="emailLogin">
-                <div class="form-group">
-                    <label class="form-label">郵箱地址</label>
-                    <input type="email" class="form-input" id="loginEmail" placeholder="請輸入郵箱地址">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">密碼</label>
-                    <input type="password" class="form-input" id="loginPassword" placeholder="請輸入密碼">
-                </div>
-            </div>
-
-            <!-- 手機號登錄 -->
-            <div id="phoneLogin" style="display:none;">
-                <div class="form-group">
-                    <label class="form-label">手機號碼</label>
-                    <input type="tel" class="form-input" id="loginPhone" placeholder="請輸入手機號碼">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">驗證碼</label>
-                    <div class="form-row">
-                        <input type="text" class="form-input" id="loginCode" placeholder="請輸入驗證碼">
-                        <button class="verification-button" onclick="sendVerificationCode('login')">
-                            發送驗證碼
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- API Key登錄 -->
-            <div id="apikeyLogin" style="display:none;">
-                <div class="form-group">
-                    <label class="form-label">API Key</label>
-                    <input type="password" class="form-input" id="loginApiKey" placeholder="請輸入API Key">
-                </div>
-            </div>
-
-            <button class="submit-button" onclick="handleLogin()">
-                🚀 登錄
-            </button>
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="auth-logo">🔐</div>
+            <div class="auth-title">PowerAutomation</div>
+            <div class="auth-subtitle">智能編程助手 - 登錄驗證</div>
         </div>
 
-        <div class="auth-divider">
-            <span>或使用第三方登錄</span>
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+        <div class="loading" id="loadingMessage">
+            <span class="spinner"></span>
+            正在登錄...
         </div>
 
-        <div class="provider-buttons">
-            ${authProviders.filter(p => ['github', 'google', 'microsoft'].includes(p.id)).map(provider => `
-                <button class="provider-button" onclick="handleOAuthLogin('${provider.id}')">
-                    <span class="provider-icon">${provider.icon}</span>
-                    <span>${provider.name}</span>
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('user')">用戶模式</button>
+            <button class="auth-tab" onclick="switchTab('advanced')">高級模式</button>
+        </div>
+
+        <!-- 用戶模式 -->
+        <div class="auth-form active" id="userForm">
+            <div class="oauth-buttons">
+                <button class="oauth-button" onclick="loginWithOAuth('github')">
+                    <span class="oauth-icon">🐙</span>
+                    使用 GitHub 登錄
                 </button>
-            `).join('')}
-        </div>
-
-        <div class="forgot-password">
-            <a href="#" onclick="showForgotPassword()">忘記密碼？</a>
-        </div>
-    </div>
-
-    <!-- 註冊表單 -->
-    <div class="register-form" id="registerForm">
-        <div class="auth-form">
-            <div class="form-group">
-                <label class="form-label">註冊方式</label>
-                <select class="form-input" id="registerProvider" onchange="switchRegisterProvider()">
-                    <option value="email">📧 郵箱註冊</option>
-                    <option value="phone">📱 手機號註冊</option>
-                </select>
-            </div>
-
-            <!-- 郵箱註冊 -->
-            <div id="emailRegister">
-                <div class="form-group">
-                    <label class="form-label">用戶名</label>
-                    <input type="text" class="form-input" id="registerUsername" placeholder="請輸入用戶名">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">郵箱地址</label>
-                    <input type="email" class="form-input" id="registerEmail" placeholder="請輸入郵箱地址">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">密碼</label>
-                    <input type="password" class="form-input" id="registerPassword" placeholder="請輸入密碼">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">確認密碼</label>
-                    <input type="password" class="form-input" id="registerConfirmPassword" placeholder="請再次輸入密碼">
-                </div>
-            </div>
-
-            <!-- 手機號註冊 -->
-            <div id="phoneRegister" style="display:none;">
-                <div class="form-group">
-                    <label class="form-label">用戶名</label>
-                    <input type="text" class="form-input" id="registerPhoneUsername" placeholder="請輸入用戶名">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">手機號碼</label>
-                    <input type="tel" class="form-input" id="registerPhone" placeholder="請輸入手機號碼">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">驗證碼</label>
-                    <div class="form-row">
-                        <input type="text" class="form-input" id="registerCode" placeholder="請輸入驗證碼">
-                        <button class="verification-button" onclick="sendVerificationCode('register')">
-                            發送驗證碼
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="terms-checkbox">
-                <input type="checkbox" id="agreeTerms">
-                <label for="agreeTerms">
-                    我已閱讀並同意 <a href="#" onclick="showTerms()">服務條款</a> 和 <a href="#" onclick="showPrivacy()">隱私政策</a>
-                </label>
-            </div>
-
-            <button class="submit-button" onclick="handleRegister()">
-                ✨ 註冊帳號
-            </button>
-        </div>
-
-        <div class="auth-divider">
-            <span>或使用第三方註冊</span>
-        </div>
-
-        <div class="provider-buttons">
-            ${authProviders.filter(p => ['github', 'google', 'microsoft'].includes(p.id)).map(provider => `
-                <button class="provider-button" onclick="handleOAuthRegister('${provider.id}')">
-                    <span class="provider-icon">${provider.icon}</span>
-                    <span>${provider.name}</span>
+                <button class="oauth-button" onclick="loginWithOAuth('google')">
+                    <span class="oauth-icon">🔍</span>
+                    使用 Google 登錄
                 </button>
-            `).join('')}
+                <button class="oauth-button" onclick="loginWithOAuth('microsoft')">
+                    <span class="oauth-icon">🪟</span>
+                    使用 Microsoft 登錄
+                </button>
+            </div>
+
+            <div class="divider">
+                <span>或使用郵箱登錄</span>
+            </div>
+
+            <form onsubmit="loginWithEmail(event)">
+                <div class="form-group">
+                    <label class="form-label" for="email">郵箱地址</label>
+                    <input type="email" id="email" class="form-input" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">密碼</label>
+                    <input type="password" id="password" class="form-input" placeholder="請輸入密碼" required>
+                </div>
+                <button type="submit" class="form-button">登錄</button>
+            </form>
+
+            <div class="help-text">
+                首次使用？系統將自動為您創建賬戶。<br>
+                忘記密碼？請聯繫管理員重置。
+            </div>
+        </div>
+
+        <!-- 高級模式 -->
+        <div class="auth-form" id="advancedForm">
+            <form onsubmit="loginWithAPIKey(event)">
+                <div class="form-group">
+                    <label class="form-label" for="apiKey">API Key</label>
+                    <input type="password" id="apiKey" class="form-input" placeholder="請輸入您的 API Key" required>
+                </div>
+                <button type="submit" class="form-button">使用 API Key 登錄</button>
+            </form>
+
+            <div class="help-text">
+                開發者可以使用 API Key 直接登錄。<br>
+                沒有 API Key？請在設置中生成或聯繫管理員。
+            </div>
+
+            <div class="divider">
+                <span>快速操作</span>
+            </div>
+
+            <button class="oauth-button" onclick="generateAPIKey()">
+                <span class="oauth-icon">🔑</span>
+                生成新的 API Key
+            </button>
+            <button class="oauth-button" onclick="openSettings()">
+                <span class="oauth-icon">⚙️</span>
+                打開設置
+            </button>
         </div>
     </div>
 
     <script>
         const vscode = acquireVsCodeApi();
-        let currentMode = 'login';
-        let verificationTimer = null;
+        let currentTab = 'user';
 
         // 監聽來自擴展的消息
         window.addEventListener('message', event => {
             const message = event.data;
             switch (message.type) {
-                case 'loginStart':
-                case 'registerStart':
-                    setLoading(true);
+                case 'authStatus':
+                    handleAuthStatus(message);
                     break;
                 case 'loginSuccess':
-                case 'registerSuccess':
-                    setLoading(false);
-                    showSuccess('操作成功！');
+                    handleLoginSuccess(message);
                     break;
                 case 'loginError':
-                case 'registerError':
-                    setLoading(false);
-                    showError(message.error);
+                    handleLoginError(message);
                     break;
-                case 'verificationCodeSent':
-                    showSuccess(\`驗證碼已發送到 \${message.phone}\`);
-                    startVerificationTimer();
+                case 'logoutSuccess':
+                    handleLogoutSuccess();
                     break;
-                case 'verificationCodeError':
-                    showError(message.error);
-                    break;
-                case 'passwordResetSent':
-                    showSuccess(\`密碼重置郵件已發送到 \${message.email}\`);
-                    break;
-                case 'passwordResetError':
-                    showError(message.error);
+                case 'error':
+                    showError(message.message);
                     break;
             }
         });
 
-        function switchTab(mode) {
-            currentMode = mode;
+        function switchTab(tab) {
+            currentTab = tab;
             
             // 更新標籤樣式
-            document.querySelectorAll('.auth-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(\`[onclick="switchTab('\${tab}')"]\`).classList.add('active');
             
-            // 切換表單
-            document.getElementById('loginForm').classList.toggle('active', mode === 'login');
-            document.getElementById('registerForm').classList.toggle('active', mode === 'register');
+            // 更新表單顯示
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            document.getElementById(tab === 'user' ? 'userForm' : 'advancedForm').classList.add('active');
             
-            clearMessages();
+            hideMessages();
         }
 
-        function switchLoginProvider() {
-            const provider = document.getElementById('loginProvider').value;
-            
-            document.getElementById('emailLogin').style.display = provider === 'email' ? 'block' : 'none';
-            document.getElementById('phoneLogin').style.display = provider === 'phone' ? 'block' : 'none';
-            document.getElementById('apikeyLogin').style.display = provider === 'apikey' ? 'block' : 'none';
-        }
-
-        function switchRegisterProvider() {
-            const provider = document.getElementById('registerProvider').value;
-            
-            document.getElementById('emailRegister').style.display = provider === 'email' ? 'block' : 'none';
-            document.getElementById('phoneRegister').style.display = provider === 'phone' ? 'block' : 'none';
-        }
-
-        function handleLogin() {
-            const provider = document.getElementById('loginProvider').value;
-            let credentials = {};
-
-            switch (provider) {
-                case 'email':
-                    credentials = {
-                        email: document.getElementById('loginEmail').value,
-                        password: document.getElementById('loginPassword').value
-                    };
-                    break;
-                case 'phone':
-                    credentials = {
-                        phone: document.getElementById('loginPhone').value,
-                        code: document.getElementById('loginCode').value
-                    };
-                    break;
-                case 'apikey':
-                    credentials = {
-                        apiKey: document.getElementById('loginApiKey').value
-                    };
-                    break;
-            }
-
-            if (!validateCredentials(provider, credentials)) {
-                return;
-            }
-
+        function loginWithOAuth(provider) {
+            showLoading();
             vscode.postMessage({
                 type: 'login',
-                provider: provider,
-                credentials: credentials
-            });
-        }
-
-        function handleRegister() {
-            const provider = document.getElementById('registerProvider').value;
-            let userData = {};
-
-            if (!document.getElementById('agreeTerms').checked) {
-                showError('請先同意服務條款和隱私政策');
-                return;
-            }
-
-            switch (provider) {
-                case 'email':
-                    const password = document.getElementById('registerPassword').value;
-                    const confirmPassword = document.getElementById('registerConfirmPassword').value;
-                    
-                    if (password !== confirmPassword) {
-                        showError('兩次輸入的密碼不一致');
-                        return;
-                    }
-
-                    userData = {
-                        username: document.getElementById('registerUsername').value,
-                        email: document.getElementById('registerEmail').value,
-                        password: password
-                    };
-                    break;
-                case 'phone':
-                    userData = {
-                        username: document.getElementById('registerPhoneUsername').value,
-                        phone: document.getElementById('registerPhone').value,
-                        code: document.getElementById('registerCode').value
-                    };
-                    break;
-            }
-
-            if (!validateUserData(provider, userData)) {
-                return;
-            }
-
-            vscode.postMessage({
-                type: 'register',
-                provider: provider,
-                userData: userData
-            });
-        }
-
-        function handleOAuthLogin(provider) {
-            vscode.postMessage({
-                type: 'login',
-                provider: provider,
-                credentials: {}
-            });
-        }
-
-        function handleOAuthRegister(provider) {
-            vscode.postMessage({
-                type: 'register',
-                provider: provider,
-                userData: {}
-            });
-        }
-
-        function sendVerificationCode(mode) {
-            const phoneInput = mode === 'login' ? 
-                document.getElementById('loginPhone') : 
-                document.getElementById('registerPhone');
-            
-            const phone = phoneInput.value;
-            
-            if (!phone) {
-                showError('請輸入手機號碼');
-                return;
-            }
-
-            vscode.postMessage({
-                type: 'sendVerificationCode',
-                phone: phone
-            });
-        }
-
-        function startVerificationTimer() {
-            const buttons = document.querySelectorAll('.verification-button');
-            let countdown = 60;
-            
-            buttons.forEach(button => {
-                button.disabled = true;
-                button.textContent = \`\${countdown}s後重發\`;
-            });
-
-            verificationTimer = setInterval(() => {
-                countdown--;
-                buttons.forEach(button => {
-                    button.textContent = \`\${countdown}s後重發\`;
-                });
-                
-                if (countdown <= 0) {
-                    clearInterval(verificationTimer);
-                    buttons.forEach(button => {
-                        button.disabled = false;
-                        button.textContent = '發送驗證碼';
-                    });
+                data: {
+                    type: provider,
+                    provider: provider
                 }
-            }, 1000);
+            });
         }
 
-        function validateCredentials(provider, credentials) {
-            switch (provider) {
-                case 'email':
-                    if (!credentials.email || !credentials.password) {
-                        showError('請填寫完整的登錄信息');
-                        return false;
-                    }
-                    break;
-                case 'phone':
-                    if (!credentials.phone || !credentials.code) {
-                        showError('請填寫手機號和驗證碼');
-                        return false;
-                    }
-                    break;
-                case 'apikey':
-                    if (!credentials.apiKey) {
-                        showError('請輸入API Key');
-                        return false;
-                    }
-                    break;
+        function loginWithEmail(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showError('請填寫完整的登錄信息');
+                return;
             }
-            return true;
+            
+            showLoading();
+            vscode.postMessage({
+                type: 'login',
+                data: {
+                    type: 'email',
+                    email: email,
+                    password: password
+                }
+            });
         }
 
-        function validateUserData(provider, userData) {
-            switch (provider) {
-                case 'email':
-                    if (!userData.username || !userData.email || !userData.password) {
-                        showError('請填寫完整的註冊信息');
-                        return false;
-                    }
-                    if (userData.password.length < 6) {
-                        showError('密碼長度至少6位');
-                        return false;
-                    }
-                    break;
-                case 'phone':
-                    if (!userData.username || !userData.phone || !userData.code) {
-                        showError('請填寫完整的註冊信息');
-                        return false;
-                    }
-                    break;
+        function loginWithAPIKey(event) {
+            event.preventDefault();
+            const apiKey = document.getElementById('apiKey').value;
+            
+            if (!apiKey) {
+                showError('請輸入 API Key');
+                return;
             }
-            return true;
+            
+            showLoading();
+            vscode.postMessage({
+                type: 'login',
+                data: {
+                    type: 'apikey',
+                    apiKey: apiKey
+                }
+            });
+        }
+
+        function generateAPIKey() {
+            vscode.postMessage({ type: 'generateAPIKey' });
+        }
+
+        function openSettings() {
+            vscode.postMessage({ type: 'openSettings' });
+        }
+
+        function handleAuthStatus(message) {
+            if (message.authenticated) {
+                // 用戶已登錄，可以顯示登出界面或重定向
+                console.log('User is authenticated:', message.user);
+            }
+        }
+
+        function handleLoginSuccess(message) {
+            hideLoading();
+            showSuccess(\`登錄成功！歡迎，\${message.user?.username || '用戶'}！\`);
+            
+            // 延遲刷新以顯示成功消息
+            setTimeout(() => {
+                // 這裡可以觸發視圖刷新或其他操作
+                vscode.postMessage({ type: 'checkAuthStatus' });
+            }, 1500);
+        }
+
+        function handleLoginError(message) {
+            hideLoading();
+            showError(message.message || '登錄失敗，請重試');
+        }
+
+        function handleLogoutSuccess() {
+            hideLoading();
+            showSuccess('已成功登出');
+            
+            // 清空表單
+            document.getElementById('email').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('apiKey').value = '';
         }
 
         function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
+            hideMessages();
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
         }
 
         function showSuccess(message) {
-            const successDiv = document.getElementById('successMessage');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-            
-            setTimeout(() => {
-                successDiv.style.display = 'none';
-            }, 3000);
+            hideMessages();
+            const successEl = document.getElementById('successMessage');
+            successEl.textContent = message;
+            successEl.style.display = 'block';
         }
 
-        function clearMessages() {
+        function showLoading() {
+            hideMessages();
+            document.getElementById('loadingMessage').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingMessage').classList.remove('show');
+        }
+
+        function hideMessages() {
             document.getElementById('errorMessage').style.display = 'none';
             document.getElementById('successMessage').style.display = 'none';
+            hideLoading();
         }
 
-        function setLoading(loading) {
-            const forms = document.querySelectorAll('.auth-form');
-            forms.forEach(form => {
-                form.classList.toggle('loading', loading);
-            });
+        // 頁面加載時檢查認證狀態
+        vscode.postMessage({ type: 'checkAuthStatus' });
+    </script>
+</body>
+</html>`;
+    }
+
+    private _getAuthenticatedView(): string {
+        const user = this._authService.getCurrentUser();
+        
+        return `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PowerAutomation - 已登錄</title>
+    <style>
+        body {
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+            color: var(--vscode-foreground);
+            background: var(--vscode-editor-background);
+            margin: 0;
+            padding: 16px;
+            line-height: 1.5;
         }
 
-        function showForgotPassword() {
-            const email = prompt('請輸入您的郵箱地址：');
-            if (email) {
-                vscode.postMessage({
-                    type: 'resetPassword',
-                    email: email
-                });
+        .auth-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .user-info {
+            background: var(--vscode-input-background);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .user-avatar {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .user-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .user-type {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            margin-bottom: 8px;
+        }
+
+        .user-role {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 500;
+        }
+
+        .auth-actions {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+
+        .action-button {
+            padding: 10px 16px;
+            background: var(--vscode-button-secondaryBackground);
+            border: 1px solid var(--vscode-button-border);
+            border-radius: 4px;
+            color: var(--vscode-button-secondaryForeground);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-button:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .action-button.danger {
+            background: rgba(244, 67, 54, 0.1);
+            color: #f44336;
+            border-color: rgba(244, 67, 54, 0.3);
+        }
+
+        .action-button.danger:hover {
+            background: rgba(244, 67, 54, 0.2);
+        }
+
+        .action-icon {
+            font-size: 12px;
+        }
+
+        .status-info {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            border-radius: 4px;
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 11px;
+            color: #4caf50;
+            text-align: center;
+        }
+
+        .permissions-list {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--vscode-panel-border);
+        }
+
+        .permissions-title {
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--vscode-foreground);
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 0;
+            font-size: 10px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .permission-icon {
+            font-size: 10px;
+            color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="status-info">
+            ✅ 您已成功登錄 PowerAutomation
+        </div>
+
+        <div class="user-info">
+            <div class="user-avatar">${this._getUserAvatar(user)}</div>
+            <div class="user-name">${user?.username || '用戶'}</div>
+            <div class="user-type">${this._getUserTypeText(user?.userType || 'user')}</div>
+            <div class="user-role">${this._getUserRoleText(user?.role || 'user')}</div>
+
+            ${this._getPermissionsList(user)}
+        </div>
+
+        <div class="auth-actions">
+            <button class="action-button" onclick="openSettings()">
+                <span class="action-icon">⚙️</span>
+                設置
+            </button>
+            <button class="action-button" onclick="generateAPIKey()">
+                <span class="action-icon">🔑</span>
+                生成 API Key
+            </button>
+            <button class="action-button danger" onclick="logout()">
+                <span class="action-icon">🚪</span>
+                登出
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+
+        function logout() {
+            if (confirm('確定要登出嗎？')) {
+                vscode.postMessage({ type: 'logout' });
             }
         }
 
-        function showTerms() {
-            alert('服務條款內容...');
+        function openSettings() {
+            vscode.postMessage({ type: 'openSettings' });
         }
 
-        function showPrivacy() {
-            alert('隱私政策內容...');
+        function generateAPIKey() {
+            vscode.postMessage({ type: 'generateAPIKey' });
         }
 
-        // 初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            // 設置默認值（用於演示）
-            document.getElementById('loginEmail').value = 'demo@powerautomation.ai';
-            document.getElementById('loginPassword').value = 'demo123';
+        // 監聽來自擴展的消息
+        window.addEventListener('message', event => {
+            const message = event.data;
+            switch (message.type) {
+                case 'logoutSuccess':
+                    // 登出成功後會自動刷新視圖
+                    break;
+                case 'error':
+                    alert('錯誤: ' + message.message);
+                    break;
+            }
         });
     </script>
 </body>
 </html>`;
     }
 
-    private _getProviderIcon(provider: string): string {
-        const icons: { [key: string]: string } = {
-            'email': '📧',
-            'github': '🐙',
-            'google': '🔍',
-            'microsoft': '🪟',
-            'phone': '📱',
-            'apikey': '🔑'
-        };
-        return icons[provider] || '🔐';
+    private _getUserAvatar(user: any): string {
+        if (user?.userType === 'developer') return '👨‍💻';
+        if (user?.role === 'admin') return '👑';
+        return '👤';
     }
 
-    private _getProviderName(provider: string): string {
-        const names: { [key: string]: string } = {
-            'email': '郵箱',
-            'github': 'GitHub',
-            'google': 'Google',
-            'microsoft': 'Microsoft',
-            'phone': '手機',
-            'apikey': 'API Key'
+    private _getUserTypeText(userType: string): string {
+        switch (userType) {
+            case 'developer': return '開發者用戶';
+            case 'enterprise': return '企業用戶';
+            default: return '普通用戶';
+        }
+    }
+
+    private _getUserRoleText(role: string): string {
+        switch (role) {
+            case 'admin': return '管理員';
+            case 'developer': return '開發者';
+            default: return '用戶';
+        }
+    }
+
+    private _getPermissionsList(user: any): string {
+        const permissions = user?.permissions || [];
+        if (!permissions || permissions.length === 0) {
+            return '';
+        }
+
+        const permissionTexts: { [key: string]: string } = {
+            'chat': '💬 AI 聊天',
+            'file-upload': '📁 文件上傳',
+            'history': '📚 歷史記錄',
+            'mcp-access': '🔗 MCP 訪問',
+            'debug-tools': '🛠️ 調試工具',
+            'api-access': '🔑 API 訪問',
+            'user-management': '👥 用戶管理',
+            'system-config': '⚙️ 系統配置',
+            'server-management': '🖥️ 服務器管理',
+            'analytics': '📊 數據分析'
         };
-        return names[provider] || provider;
+
+        const permissionItems = permissions
+            .map((p: string) => `<div class="permission-item"><span class="permission-icon">✓</span>${permissionTexts[p] || p}</div>`)
+            .join('');
+
+        return `
+            <div class="permissions-list">
+                <div class="permissions-title">您的權限</div>
+                ${permissionItems}
+            </div>
+        `;
     }
 }
 

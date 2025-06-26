@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo2_code_generation",
+  "start_time": "2025-06-24T07:18:56.553986",
+  "end_time": "2025-06-24T07:18:56.848721",
+  "duration": 0.294735,
+  "success": true,
+  "return_code": 0,
+  "stdout": "🚀 Multi-Scenario Code Generation Demo\n============================================================\n📋 描述: 多场景代码生成能力展示\n\n🔧 初始化AICore系统...\n❌ 演示过程中发生错误: No module named 'components.smartinvention_adapter_mcp'\n",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/aicore0624/development/demos/demo2_code_generation/code_generation_demo.py\", line 75, in run_demo\n    aicore = AICore3()\n             ^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/PowerAutomation/core/aicore3.py\", line 371, in __init__\n    from components.smartinvention_adapter_mcp import SmartinventionAdapterMCP\nModuleNotFoundError: No module named 'components.smartinvention_adapter_mcp'\n"
+}

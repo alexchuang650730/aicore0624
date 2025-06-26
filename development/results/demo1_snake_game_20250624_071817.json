@@ -1,0 +1,10 @@
+{
+  "demo_name": "demo1_snake_game",
+  "start_time": "2025-06-24T07:18:17.192445",
+  "end_time": "2025-06-24T07:18:17.538728",
+  "duration": 0.346283,
+  "success": false,
+  "return_code": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"/home/ubuntu/aicore0624/development/demos/demo1_snake_game/snake_game_demo.py\", line 216, in <module>\n    asyncio.run(main())\n  File \"/usr/lib/python3.11/asyncio/runners.py\", line 188, in run\n    return runner.run(main)\n           ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/asyncio/runners.py\", line 120, in run\n    return self._loop.run_until_complete(task)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.11/asyncio/base_events.py\", line 650, in run_until_complete\n    return future.result()\n           ^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/development/demos/demo1_snake_game/snake_game_demo.py\", line 211, in main\n    demo = SnakeGameDemo()\n           ^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/development/demos/demo1_snake_game/snake_game_demo.py\", line 29, in __init__\n    self.config = self._load_config()\n                  ^^^^^^^^^^^^^^^^^^^\n  File \"/home/ubuntu/aicore0624/development/demos/demo1_snake_game/snake_game_demo.py\", line 38, in _load_config\n    return toml.load(f)\n           ^^^^\nNameError: name 'toml' is not defined\n"
+}

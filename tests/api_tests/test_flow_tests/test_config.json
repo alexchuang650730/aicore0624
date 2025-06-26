@@ -1,0 +1,164 @@
+{
+  "api_config": {
+    "base_url": "http://127.0.0.1:8080",
+    "api_key": "test_407CYuVKuP_s3hVqIhO4JZKqcE4-W9ocTgc_fldjxso",
+    "timeout": 30,
+    "retry_attempts": 3,
+    "retry_delay": 1
+  },
+  "test_data": {
+    "requirement_texts": {
+      "simple": [
+        "用戶需要登錄功能",
+        "系統應該支援搜索",
+        "實現用戶註冊模組",
+        "添加密碼重置功能",
+        "支援用戶頭像上傳"
+      ],
+      "medium": [
+        "用戶希望能夠快速搜索產品，並且支援多種篩選條件",
+        "系統需要提供用戶管理功能，支援角色權限控制",
+        "實現訂單處理流程，包括創建、支付、發貨等狀態",
+        "建立消息通知系統，支援郵件和短信通知",
+        "開發數據分析儀表板，提供實時統計和報表功能"
+      ],
+      "complex": [
+        "用戶在移動端需要離線瀏覽功能，要求數據同步穩定，同時考慮存儲空間限制",
+        "系統應該提供實時通知功能，支援推送和郵件通知，並且考慮用戶隱私設置",
+        "實現多租戶架構的 SaaS 平台，支援數據隔離、自定義配置和計費管理",
+        "建立微服務架構的電商平台，包括用戶服務、商品服務、訂單服務和支付服務",
+        "開發 AI 驅動的推薦系統，基於用戶行為和偏好提供個性化內容推薦"
+      ]
+    },
+    "test_types": [
+      "requirement_analysis",
+      "functional_test",
+      "integration_test",
+      "performance_test",
+      "security_test"
+    ],
+    "analysis_depths": [
+      "basic",
+      "standard",
+      "detailed",
+      "comprehensive"
+    ],
+    "priorities": [
+      "low",
+      "medium",
+      "high",
+      "critical"
+    ]
+  },
+  "validation_schemas": {
+    "execute_response": {
+      "type": "object",
+      "properties": {
+        "success": {"type": "boolean"},
+        "task_id": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "enum": ["running", "queued", "completed", "failed"]},
+        "estimated_completion": {"type": "string"},
+        "message": {"type": "string"}
+      },
+      "required": ["success", "task_id", "status"]
+    },
+    "status_response": {
+      "type": "object",
+      "properties": {
+        "success": {"type": "boolean"},
+        "task_id": {"type": "string"},
+        "status": {"type": "string", "enum": ["running", "queued", "completed", "failed", "cancelled"]},
+        "progress": {
+          "type": "object",
+          "properties": {
+            "current_stage": {"type": "string"},
+            "completion_percentage": {"type": "number", "minimum": 0, "maximum": 100},
+            "stages_completed": {"type": "array", "items": {"type": "string"}},
+            "stages_remaining": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "execution_time": {"type": "number", "minimum": 0},
+        "estimated_remaining": {"type": "number", "minimum": 0}
+      },
+      "required": ["success", "task_id", "status"]
+    },
+    "results_response": {
+      "type": "object",
+      "properties": {
+        "success": {"type": "boolean"},
+        "task_id": {"type": "string"},
+        "test_type": {"type": "string"},
+        "execution_summary": {
+          "type": "object",
+          "properties": {
+            "start_time": {"type": "string"},
+            "end_time": {"type": "string"},
+            "duration": {"type": "number"},
+            "status": {"type": "string"}
+          }
+        },
+        "results": {"type": "object"}
+      },
+      "required": ["success", "task_id", "test_type", "results"]
+    },
+    "health_response": {
+      "type": "object",
+      "properties": {
+        "success": {"type": "boolean"},
+        "status": {"type": "string", "enum": ["healthy", "degraded", "unhealthy"]},
+        "timestamp": {"type": "string"},
+        "components": {"type": "object"},
+        "system_metrics": {"type": "object"}
+      },
+      "required": ["success", "status"]
+    },
+    "error_response": {
+      "type": "object",
+      "properties": {
+        "success": {"type": "boolean", "enum": [false]},
+        "error_code": {"type": "string"},
+        "message": {"type": "string"},
+        "details": {"type": "object"}
+      },
+      "required": ["success", "error_code", "message"]
+    }
+  },
+  "performance_thresholds": {
+    "response_time": {
+      "excellent": 1.0,
+      "good": 2.0,
+      "acceptable": 5.0,
+      "poor": 10.0
+    },
+    "success_rate": {
+      "excellent": 99.0,
+      "good": 95.0,
+      "acceptable": 90.0,
+      "poor": 80.0
+    },
+    "concurrent_users": {
+      "light": 5,
+      "medium": 10,
+      "heavy": 20,
+      "stress": 50
+    }
+  },
+  "test_environments": {
+    "development": {
+      "base_url": "http://localhost:8080",
+      "api_key": "dev_api_key_12345",
+      "timeout": 60
+    },
+    "staging": {
+      "base_url": "http://staging.example.com:8080",
+      "api_key": "staging_api_key_12345",
+      "timeout": 30
+    },
+    "production": {
+      "base_url": "https://api.example.com",
+      "api_key": "prod_api_key_12345",
+      "timeout": 15
+    }
+  }
+}
+

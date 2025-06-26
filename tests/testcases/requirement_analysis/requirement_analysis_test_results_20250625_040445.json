@@ -1,0 +1,106 @@
+{
+  "test_session": {
+    "start_time": "2025-06-25T04:04:40.223448",
+    "end_time": "2025-06-25T04:04:45.243994",
+    "total_tests": 5,
+    "passed_tests": 4,
+    "failed_tests": 1
+  },
+  "test_results": [
+    {
+      "test_name": "服務器連接性測試",
+      "success": true,
+      "timestamp": "2025-06-25T04:04:40.227505",
+      "details": {
+        "status_code": 200,
+        "response": {
+          "api_key_system": "enabled",
+          "message": "Test server is running",
+          "status": "running",
+          "timestamp": 1750838680.2262986
+        }
+      }
+    },
+    {
+      "test_name": "API Key 認證測試",
+      "success": true,
+      "timestamp": "2025-06-25T04:04:41.233311",
+      "details": {
+        "no_key_status": 401,
+        "with_key_status": 200,
+        "with_key_response": {
+          "api_key_info": {
+            "name": "Default Developer",
+            "usage_count": 2
+          },
+          "message": "Request processed successfully by developer",
+          "success": true,
+          "timestamp": 1750838681.2323375,
+          "user_request": "測試認證",
+          "user_role": "developer"
+        }
+      }
+    },
+    {
+      "test_name": "需求分析工作流測試",
+      "success": true,
+      "timestamp": "2025-06-25T04:04:42.237149",
+      "details": {
+        "status_code": 200,
+        "response_data": {
+          "api_key_info": {
+            "name": "Default Developer",
+            "usage_count": 3
+          },
+          "message": "Request processed successfully by developer",
+          "success": true,
+          "timestamp": 1750838682.235615,
+          "user_request": "我想要多了解本系統的架構和功能",
+          "user_role": "developer"
+        },
+        "has_required_fields": true,
+        "is_developer_role": true,
+        "has_processing_result": true,
+        "response_length": 233
+      }
+    },
+    {
+      "test_name": "test_flow_mcp 集成測試",
+      "success": false,
+      "timestamp": "2025-06-25T04:04:43.240434",
+      "details": {
+        "status_code": 200,
+        "response_data": {
+          "api_key_info": {
+            "name": "Default Developer",
+            "usage_count": 4
+          },
+          "message": "Request processed successfully by developer",
+          "success": true,
+          "timestamp": 1750838683.2394826,
+          "user_request": "請分析當前系統的測試覆蓋率並提供改進建議",
+          "user_role": "developer"
+        },
+        "is_developer_mode": true,
+        "has_test_content": false,
+        "response_keywords": []
+      }
+    },
+    {
+      "test_name": "開發者與使用者角色區分測試",
+      "success": true,
+      "timestamp": "2025-06-25T04:04:44.243634",
+      "details": {
+        "developer_test": {
+          "status_code": 200,
+          "identified_role": "developer",
+          "is_correct_role": true
+        }
+      }
+    }
+  ],
+  "server_config": {
+    "server_url": "http://127.0.0.1:8080",
+    "api_key_used": "dev_WqV-Kud9..."
+  }
+}
