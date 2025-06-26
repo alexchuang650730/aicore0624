@@ -1,0 +1,226 @@
+{
+  "api_config": {
+    "base_url": "http://localhost:8000",
+    "timeout": 30,
+    "retry_attempts": 3,
+    "retry_delay": 1
+  },
+  "endpoints": {
+    "conversations_latest": "/api/conversations/latest",
+    "conversations_sync": "/api/sync/conversations",
+    "interventions_needed": "/api/interventions/needed",
+    "smartinvention_process": "/api/smartinvention/process",
+    "smartinvention_status": "/api/smartinvention/status",
+    "health_check": "/api/health",
+    "conversation_analysis": "/api/smartinvention/analyze",
+    "comparison_engine": "/api/smartinvention/compare"
+  },
+  "test_scenarios": {
+    "basic_functionality": {
+      "description": "基礎功能測試",
+      "tests": [
+        "health_check",
+        "get_latest_conversations", 
+        "search_conversations",
+        "interventions_needed"
+      ]
+    },
+    "core_features": {
+      "description": "核心功能測試",
+      "tests": [
+        "smartinvention_process",
+        "conversation_analysis",
+        "incremental_comparison"
+      ]
+    },
+    "integration": {
+      "description": "集成測試",
+      "tests": [
+        "manus_comparison_workflow",
+        "hitl_middleware"
+      ]
+    },
+    "performance": {
+      "description": "性能測試",
+      "tests": [
+        "concurrent_requests",
+        "large_conversation_handling"
+      ]
+    }
+  },
+  "test_data": {
+    "sample_requests": [
+      "請幫我生成一個用戶登錄功能的測試案例",
+      "如何設計一個 RESTful API 來管理用戶數據？",
+      "我需要實現一個文件上傳功能，有什麼最佳實踐？",
+      "請分析這個代碼的安全性問題",
+      "幫我優化這個數據庫查詢的性能"
+    ],
+    "search_keywords": [
+      "測試案例",
+      "API 設計", 
+      "用戶登錄",
+      "文件上傳",
+      "安全性",
+      "性能優化",
+      "數據庫",
+      "RESTful",
+      "最佳實踐"
+    ],
+    "contexts": [
+      {
+        "project": "web_application",
+        "framework": "react",
+        "version": "v1.0",
+        "environment": "development"
+      },
+      {
+        "project": "mobile_app",
+        "framework": "react_native", 
+        "version": "v2.1",
+        "environment": "staging"
+      },
+      {
+        "project": "api_service",
+        "framework": "fastapi",
+        "version": "v3.0",
+        "environment": "production"
+      }
+    ],
+    "conversation_templates": {
+      "simple_qa": {
+        "messages": [
+          {"role": "user", "content": "{{user_question}}"},
+          {"role": "assistant", "content": "{{assistant_response}}"}
+        ]
+      },
+      "complex_discussion": {
+        "messages": [
+          {"role": "user", "content": "{{initial_question}}"},
+          {"role": "assistant", "content": "{{initial_response}}"},
+          {"role": "user", "content": "{{follow_up_question}}"},
+          {"role": "assistant", "content": "{{detailed_response}}"}
+        ]
+      }
+    }
+  },
+  "validation_schemas": {
+    "conversation_response": {
+      "type": "object",
+      "required": ["conversations"],
+      "properties": {
+        "conversations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "messages", "participants"],
+            "properties": {
+              "id": {"type": "string"},
+              "messages": {"type": "array"},
+              "participants": {"type": "array"},
+              "timestamp": {"type": "string"},
+              "context": {"type": "object"}
+            }
+          }
+        },
+        "total_count": {"type": "integer"},
+        "has_more": {"type": "boolean"}
+      }
+    },
+    "smartinvention_process_response": {
+      "type": "object",
+      "required": ["success"],
+      "properties": {
+        "success": {"type": "boolean"},
+        "request_id": {"type": "string"},
+        "manus_original_response": {"type": "object"},
+        "conversation_history": {
+          "type": "object",
+          "properties": {
+            "conversation_id": {"type": "string"},
+            "total_messages": {"type": "integer"},
+            "relevant_score": {"type": "number"}
+          }
+        },
+        "incremental_comparison": {
+          "type": "object",
+          "properties": {
+            "comparison_id": {"type": "string"},
+            "differences": {"type": "array"},
+            "recommendations": {"type": "array"},
+            "confidence_score": {"type": "number"}
+          }
+        },
+        "final_recommendations": {"type": "array"},
+        "execution_time": {"type": "number"},
+        "error_message": {"type": "string"}
+      }
+    },
+    "search_response": {
+      "type": "object",
+      "required": ["search_results"],
+      "properties": {
+        "search_results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["conversation_id", "relevance_score"],
+            "properties": {
+              "conversation_id": {"type": "string"},
+              "relevance_score": {"type": "number"},
+              "matched_content": {"type": "string"},
+              "context": {"type": "object"}
+            }
+          }
+        },
+        "total_matches": {"type": "integer"},
+        "search_time": {"type": "number"}
+      }
+    }
+  },
+  "performance_benchmarks": {
+    "response_time": {
+      "health_check": {"max": 1.0, "target": 0.5},
+      "get_conversations": {"max": 5.0, "target": 2.0},
+      "search_conversations": {"max": 10.0, "target": 5.0},
+      "smartinvention_process": {"max": 60.0, "target": 30.0}
+    },
+    "throughput": {
+      "concurrent_requests": {"min": 5, "target": 10},
+      "conversations_per_second": {"min": 10, "target": 50}
+    },
+    "resource_usage": {
+      "memory_limit": "512MB",
+      "cpu_limit": "80%"
+    }
+  },
+  "error_scenarios": {
+    "invalid_request": {
+      "description": "無效請求測試",
+      "test_cases": [
+        {"payload": {}, "expected_status": 400},
+        {"payload": {"invalid_field": "value"}, "expected_status": 400},
+        {"payload": null, "expected_status": 400}
+      ]
+    },
+    "authentication": {
+      "description": "認證測試",
+      "test_cases": [
+        {"headers": {}, "expected_status": 401},
+        {"headers": {"Authorization": "invalid_token"}, "expected_status": 401}
+      ]
+    },
+    "rate_limiting": {
+      "description": "速率限制測試",
+      "requests_per_minute": 100,
+      "expected_status": 429
+    }
+  },
+  "reporting": {
+    "output_formats": ["json", "html", "markdown"],
+    "include_details": true,
+    "save_responses": true,
+    "generate_charts": true
+  }
+}
+
