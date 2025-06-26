@@ -35,8 +35,8 @@ async function activate(context) {
     logMessage('✅ 基於 SmartUI Fusion 的智慧界面已準備就緒');
     // 創建視圖提供者
     logMessage('📝 創建智慧視圖提供者...');
-    const repositoryProvider = new RepositoryProvider_1.RepositoryProvider(context.extensionUri, mcpService, smartUIController);
-    const chatProvider = new ChatProvider_1.ChatProvider(context.extensionUri, mcpService, smartUIController);
+    const repositoryProvider = new RepositoryProvider_1.RepositoryProvider(context.extensionUri, mcpService);
+    const chatProvider = new ChatProvider_1.ChatProvider(context.extensionUri, mcpService);
     // 註冊視圖提供者
     logMessage('📋 註冊智慧視圖提供者...');
     context.subscriptions.push(vscode.window.registerWebviewViewProvider('powerautomation.repository', repositoryProvider));
@@ -119,7 +119,8 @@ function setupSmartUIEventListeners() {
         return;
     // 監聽角色切換事件
     smartUIController.addEventListener('ROLE_CHANGED', (event) => {
-        const { newRole, oldRole } = event.payload;
+        const payload = event.payload;
+        const { newRole, oldRole } = payload;
         logMessage(`🔄 角色已切換: ${oldRole} → ${newRole}`);
         vscode.window.showInformationMessage(`已切換到 ${getRoleDisplayName(newRole)} 模式`);
     });
@@ -344,9 +345,11 @@ function trackUserInteraction(type, element, context = {}) {
     if (!smartUIController)
         return;
     const interaction = {
-        type,
+        id: `interaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: type,
         element,
         timestamp: Date.now(),
+        role: types_1.UserRole.USER,
         context: {
             ...context,
             userId: 'current_user',

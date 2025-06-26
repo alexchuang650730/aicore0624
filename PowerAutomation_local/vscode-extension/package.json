@@ -123,63 +123,6 @@
       }
     ],
     "menus": {
-      "commandPalette": [
-        {
-          "command": "powerautomation.smartui.switchToAdmin",
-          "when": "true"
-        },
-        {
-          "command": "powerautomation.smartui.switchToDeveloper",
-          "when": "true"
-        },
-        {
-          "command": "powerautomation.smartui.switchToUser",
-          "when": "true"
-        },
-        {
-          "command": "powerautomation.smartui.analyzeSelection",
-          "when": "editorHasSelection"
-        },
-        {
-          "command": "powerautomation.smartui.reviewCode",
-          "when": "editorHasSelection"
-        },
-        {
-          "command": "powerautomation.smartui.explainCode",
-          "when": "editorHasSelection"
-        },
-        {
-          "command": "powerautomation.smartui.generateCode",
-          "when": "true"
-        },
-        {
-          "command": "powerautomation.smartui.showStatus",
-          "when": "true"
-        },
-        {
-          "command": "powerautomation.smartui.showRecommendations",
-          "when": "true"
-        },
-        {
-          "command": "powerautomation.smartui.showUserAnalysis",
-          "when": "true"
-        }
-      ],
-      "editor/context": [
-        {
-          "submenu": "powerautomation.smartui.context",
-          "when": "editorHasSelection",
-          "group": "1_modification"
-        }
-      ]
-    },
-    "submenus": [
-      {
-        "id": "powerautomation.smartui.context",
-        "label": "SmartUI Claude 分析"
-      }
-    ],
-    "menus": {
       "powerautomation.smartui.context": [
         {
           "command": "powerautomation.smartui.analyzeSelection",
@@ -198,6 +141,12 @@
         }
       ]
     },
+    "submenus": [
+      {
+        "id": "powerautomation.smartui.context",
+        "label": "SmartUI Claude 分析"
+      }
+    ],
     "keybindings": [
       {
         "command": "powerautomation.smartui.analyzeSelection",
@@ -294,12 +243,13 @@
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
-    "@types/vscode": "^1.74.0",
     "@types/node": "16.x",
+    "@types/vscode": "^1.74.0",
     "typescript": "^4.9.4"
   },
   "dependencies": {
-    "axios": "^1.6.0"
+    "@types/node-fetch": "^2.6.12",
+    "axios": "^1.6.0",
+    "node-fetch": "^3.3.2"
   }
 }
-

@@ -5,11 +5,11 @@
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SmartUIController = void 0;
-const types_1 = require("../types");
-const DecisionEngine_1 = require("../core/DecisionEngine");
-const UserAnalyzer_1 = require("../core/UserAnalyzer");
-const ClaudeService_1 = require("../services/ClaudeService");
-const RoleService_1 = require("../services/RoleService");
+const types_1 = require("./types");
+const DecisionEngine_1 = require("./core/DecisionEngine");
+const UserAnalyzer_1 = require("./core/UserAnalyzer");
+const ClaudeService_1 = require("./services/ClaudeService");
+const RoleService_1 = require("./services/RoleService");
 class SmartUIController {
     constructor(context) {
         this.context = context;

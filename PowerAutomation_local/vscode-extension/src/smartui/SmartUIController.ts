@@ -11,11 +11,11 @@ import {
     UserInteraction, 
     AnalysisResult,
     SystemStatus 
-} from '../types';
-import { SmartUIDecisionEngine } from '../core/DecisionEngine';
-import { SmartUIUserAnalyzer } from '../core/UserAnalyzer';
-import { SmartUIClaudeService } from '../services/ClaudeService';
-import { SmartUIRoleService } from '../services/RoleService';
+} from './types';
+import { SmartUIDecisionEngine } from './core/DecisionEngine';
+import { SmartUIUserAnalyzer } from './core/UserAnalyzer';
+import { SmartUIClaudeService } from './services/ClaudeService';
+import { SmartUIRoleService } from './services/RoleService';
 
 export class SmartUIController {
     private isInitialized = false;
@@ -402,7 +402,7 @@ export class SmartUIController {
             // 從 VS Code 存儲中加載用戶狀態
             const savedState = this.context.globalState.get('smartui_state');
             if (savedState) {
-                this.state = { ...this.state, ...savedState };
+                this.state = { ...this.state, ...(savedState as Partial<SmartUIState>) };
                 console.log('📖 用戶狀態加載完成');
             }
         } catch (error) {
@@ -435,7 +435,7 @@ export class SmartUIController {
 
     private getSessionDuration(): number {
         // 計算會話持續時間
-        const startTime = this.context.globalState.get('session_start_time') || Date.now();
+        const startTime = (this.context.globalState.get('session_start_time') as number) || Date.now();
         return Date.now() - startTime;
     }
 
@@ -497,7 +497,7 @@ export class SmartUIController {
 
     private getUserId(): string {
         // 獲取用戶 ID（可以是匿名 ID）
-        let userId = this.context.globalState.get('user_id');
+        let userId = this.context.globalState.get('user_id') as string;
         if (!userId) {
             userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
             this.context.globalState.update('user_id', userId);

@@ -493,11 +493,11 @@ export class SmartUIUserAnalyzer implements UserAnalyzer {
         const hourlyUsage = this.analyzeTimeDistribution(interactions);
         const dayTimeUsage = Object.entries(hourlyUsage)
             .filter(([hour]) => parseInt(hour) >= 6 && parseInt(hour) <= 18)
-            .reduce((sum, [, count]) => sum + count, 0);
+            .reduce((sum, [, count]) => sum + (count as number), 0);
         
         const nightTimeUsage = Object.entries(hourlyUsage)
             .filter(([hour]) => parseInt(hour) < 6 || parseInt(hour) > 18)
-            .reduce((sum, [, count]) => sum + count, 0);
+            .reduce((sum, [, count]) => sum + (count as number), 0);
 
         if (nightTimeUsage > dayTimeUsage * 1.5) return 'dark';
         if (dayTimeUsage > nightTimeUsage * 1.5) return 'light';

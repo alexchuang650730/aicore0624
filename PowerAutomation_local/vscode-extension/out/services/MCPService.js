@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MCPService = void 0;
 const vscode = require("vscode");
+const node_fetch_1 = require("node-fetch");
 class MCPService {
     constructor(outputChannel) {
         this.outputChannel = outputChannel;
@@ -11,7 +12,7 @@ class MCPService {
     async sendChatMessage(message) {
         try {
             this.log(`發送消息到 MCP: ${message}`);
-            const response = await fetch(`${this.endpoint}/api/process`, {
+            const response = await (0, node_fetch_1.default)(`${this.endpoint}/api/process`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -47,7 +48,7 @@ class MCPService {
     async executeAutomation(task) {
         try {
             this.log(`執行自動化任務: ${task}`);
-            const response = await fetch(`${this.endpoint}/api/process`, {
+            const response = await (0, node_fetch_1.default)(`${this.endpoint}/api/process`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

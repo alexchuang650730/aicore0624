@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 
+import fetch from 'node-fetch';
+
 export class MCPService {
     private outputChannel: vscode.OutputChannel;
     private endpoint: string;

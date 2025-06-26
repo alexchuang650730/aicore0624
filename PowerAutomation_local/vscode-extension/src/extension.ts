@@ -3,7 +3,7 @@ import { RepositoryProvider } from './providers/RepositoryProvider';
 import { ChatProvider } from './providers/ChatProvider';
 import { MCPService } from './services/MCPService';
 import { SmartUIController } from './smartui/SmartUIController';
-import { UserRole } from './smartui/types';
+import { UserRole, UserInteraction, AnalysisResult, SystemStatus } from './smartui/types';
 
 let outputChannel: vscode.OutputChannel;
 let mcpService: MCPService;
@@ -39,8 +39,8 @@ export async function activate(context: vscode.ExtensionContext) {
     
     // 創建視圖提供者
     logMessage('📝 創建智慧視圖提供者...');
-    const repositoryProvider = new RepositoryProvider(context.extensionUri, mcpService, smartUIController);
-    const chatProvider = new ChatProvider(context.extensionUri, mcpService, smartUIController);
+    const repositoryProvider = new RepositoryProvider(context.extensionUri, mcpService);
+    const chatProvider = new ChatProvider(context.extensionUri, mcpService);
     
     // 註冊視圖提供者
     logMessage('📋 註冊智慧視圖提供者...');
@@ -172,20 +172,21 @@ function setupSmartUIEventListeners() {
     
     // 監聽角色切換事件
     smartUIController.addEventListener('ROLE_CHANGED', (event) => {
-        const { newRole, oldRole } = event.payload;
+        const payload = event.payload as { newRole: UserRole; oldRole: UserRole; };
+        const { newRole, oldRole } = payload;
         logMessage(`🔄 角色已切換: ${oldRole} → ${newRole}`);
         vscode.window.showInformationMessage(`已切換到 ${getRoleDisplayName(newRole)} 模式`);
     });
     
     // 監聽分析完成事件
     smartUIController.addEventListener('ANALYSIS_COMPLETE', (event) => {
-        const result = event.payload;
+        const result = event.payload as AnalysisResult;
         logMessage(`🤖 Claude 分析完成: ${result.type} (信心度: ${(result.confidence * 100).toFixed(1)}%)`);
     });
     
     // 監聽系統狀態更新事件
     smartUIController.addEventListener('SYSTEM_STATUS_UPDATE', (event) => {
-        const status = event.payload;
+        const status = event.payload as SystemStatus;
         if (status.health !== 'healthy') {
             logMessage(`⚠️ 系統狀態警告: ${status.health}`);
         }
@@ -193,7 +194,7 @@ function setupSmartUIEventListeners() {
     
     // 監聽用戶操作事件
     smartUIController.addEventListener('USER_ACTION', (event) => {
-        const interaction = event.payload;
+        const interaction = event.payload as UserInteraction;
         logMessage(`👆 用戶操作: ${interaction.type} - ${interaction.element}`);
     });
     
@@ -432,10 +433,12 @@ function formatAnalysisResult(result: any): string {
 function trackUserInteraction(type: string, element: string, context: any = {}): void {
     if (!smartUIController) return;
     
-    const interaction = {
-        type,
+    const interaction: UserInteraction = {
+        id: `interaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        type: type as 'click' | 'input' | 'scroll' | 'hover' | 'keypress',
         element,
         timestamp: Date.now(),
+        role: UserRole.USER, // 默認角色，可以從 smartUIController 獲取當前角色
         context: {
             ...context,
             userId: 'current_user',
