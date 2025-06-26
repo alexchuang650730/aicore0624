@@ -34,8 +34,6 @@ ENV/
 .venv/
 .env/
 
-# Deployment
-deployment/
 
 # IDE
 .vscode/
