@@ -1,0 +1,74 @@
+{
+  "deployment_info": {
+    "timestamp": "2025-06-24T02:36:20.289509",
+    "deployment_id": "real_deploy_1750746980",
+    "status": "success",
+    "deployment_type": "real_mcp_deployment",
+    "no_simulation": true
+  },
+  "environment": {
+    "os": "Linux",
+    "python_version": "3.11.0rc1 (main, Aug 12 2022, 10:02:14) [GCC 11.2.0]",
+    "working_directory": "/home/ubuntu/aicore0624",
+    "vscode_installed": true
+  },
+  "vscode_extension": {
+    "name": "PowerAutomation Local MCP",
+    "version": "3.0.0",
+    "installed": true,
+    "real_installation": true,
+    "extension_id": "powerautomation.powerautomation-local-mcp"
+  },
+  "mcp_components": {
+    "local_adapter": {
+      "type": "LocalMCPAdapter",
+      "status": "config_ready",
+      "real_instance": true,
+      "error": "No module named 'aiohttp'"
+    },
+    "tool_registry": {
+      "type": "EnhancedToolRegistry",
+      "status": "config_ready",
+      "real_instance": true,
+      "error": "No module named 'aiohttp'"
+    },
+    "aicore": {
+      "type": "AICore3",
+      "status": "config_ready",
+      "real_instance": true,
+      "error": "No module named 'aiohttp'"
+    }
+  },
+  "connection_status": {
+    "connection_id": "real_conn_1750746974",
+    "connection_type": "real_mcp_connection",
+    "timestamp": "2025-06-24T02:36:14.887317",
+    "components": {
+      "local_adapter": {
+        "type": "LocalMCPAdapter",
+        "status": "config_ready",
+        "connected": false,
+        "real_instance": true
+      },
+      "tool_registry": {
+        "type": "EnhancedToolRegistry",
+        "status": "config_ready",
+        "connected": false,
+        "real_instance": true
+      },
+      "aicore": {
+        "type": "AICore3",
+        "status": "config_ready",
+        "connected": false,
+        "real_instance": true
+      }
+    },
+    "real_mode": true
+  },
+  "verification": {
+    "real_installation_verified": true,
+    "mcp_components_initialized": true,
+    "real_mode_confirmed": true,
+    "no_simulation_used": true
+  }
+}

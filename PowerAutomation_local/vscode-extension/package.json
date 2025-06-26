@@ -1,16 +1,24 @@
 {
-  "name": "powerautomation-kilocode",
-  "displayName": "PowerAutomation KiloCode",
-  "description": "PowerAutomation - 基於 KiloCode 的可靠三欄佈局版本",
+  "name": "powerautomation-smartui",
+  "displayName": "PowerAutomation SmartUI",
+  "description": "智慧 UI 自動化開發助手，整合 Claude SDK 和三角色支持",
   "version": "1.0.0",
-  "publisher": "powerautomation",
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.74.0"
   },
   "categories": [
-    "AI",
-    "Programming Languages",
-    "Other"
+    "Other",
+    "Machine Learning",
+    "Productivity"
+  ],
+  "keywords": [
+    "smartui",
+    "claude",
+    "ai",
+    "automation",
+    "productivity",
+    "三角色",
+    "智慧界面"
   ],
   "activationEvents": [
     "onStartupFinished"
@@ -21,15 +29,8 @@
       "activitybar": [
         {
           "id": "powerautomation-activitybar",
-          "title": "PowerAutomation",
+          "title": "PowerAutomation SmartUI",
           "icon": "$(robot)"
-        }
-      ],
-      "panel": [
-        {
-          "id": "powerautomation-panel",
-          "title": "PowerAutomation Chat",
-          "icon": "$(comment-discussion)"
         }
       ]
     },
@@ -38,41 +39,251 @@
         {
           "type": "webview",
           "id": "powerautomation.repository",
-          "name": "Repository & Dashboard"
-        }
-      ],
-      "powerautomation-panel": [
+          "name": "智慧項目管理",
+          "when": "true"
+        },
         {
           "type": "webview",
           "id": "powerautomation.chat",
-          "name": "AI Assistant"
+          "name": "Claude AI 助手",
+          "when": "true"
         }
       ]
     },
     "commands": [
       {
         "command": "powerautomation.openEditor",
-        "title": "Open Editor",
+        "title": "打開編輯器",
         "category": "PowerAutomation"
       },
       {
         "command": "powerautomation.showDashboard",
-        "title": "Show Dashboard",
+        "title": "顯示儀表板",
         "category": "PowerAutomation"
+      },
+      {
+        "command": "powerautomation.smartui.switchToAdmin",
+        "title": "切換到管理員模式",
+        "category": "SmartUI",
+        "icon": "$(crown)"
+      },
+      {
+        "command": "powerautomation.smartui.switchToDeveloper",
+        "title": "切換到開發者模式",
+        "category": "SmartUI",
+        "icon": "$(code)"
+      },
+      {
+        "command": "powerautomation.smartui.switchToUser",
+        "title": "切換到用戶模式",
+        "category": "SmartUI",
+        "icon": "$(person)"
+      },
+      {
+        "command": "powerautomation.smartui.analyzeSelection",
+        "title": "Claude 需求分析",
+        "category": "SmartUI",
+        "icon": "$(search)"
+      },
+      {
+        "command": "powerautomation.smartui.reviewCode",
+        "title": "Claude 代碼審查",
+        "category": "SmartUI",
+        "icon": "$(checklist)"
+      },
+      {
+        "command": "powerautomation.smartui.explainCode",
+        "title": "Claude 代碼解釋",
+        "category": "SmartUI",
+        "icon": "$(question)"
+      },
+      {
+        "command": "powerautomation.smartui.generateCode",
+        "title": "Claude 代碼生成",
+        "category": "SmartUI",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "powerautomation.smartui.showStatus",
+        "title": "顯示系統狀態",
+        "category": "SmartUI",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "powerautomation.smartui.showRecommendations",
+        "title": "顯示智能推薦",
+        "category": "SmartUI",
+        "icon": "$(lightbulb)"
+      },
+      {
+        "command": "powerautomation.smartui.showUserAnalysis",
+        "title": "顯示用戶分析",
+        "category": "SmartUI",
+        "icon": "$(graph)"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "powerautomation.smartui.switchToAdmin",
+          "when": "true"
+        },
+        {
+          "command": "powerautomation.smartui.switchToDeveloper",
+          "when": "true"
+        },
+        {
+          "command": "powerautomation.smartui.switchToUser",
+          "when": "true"
+        },
+        {
+          "command": "powerautomation.smartui.analyzeSelection",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "powerautomation.smartui.reviewCode",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "powerautomation.smartui.explainCode",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "powerautomation.smartui.generateCode",
+          "when": "true"
+        },
+        {
+          "command": "powerautomation.smartui.showStatus",
+          "when": "true"
+        },
+        {
+          "command": "powerautomation.smartui.showRecommendations",
+          "when": "true"
+        },
+        {
+          "command": "powerautomation.smartui.showUserAnalysis",
+          "when": "true"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "powerautomation.smartui.context",
+          "when": "editorHasSelection",
+          "group": "1_modification"
+        }
+      ]
+    },
+    "submenus": [
+      {
+        "id": "powerautomation.smartui.context",
+        "label": "SmartUI Claude 分析"
+      }
+    ],
+    "menus": {
+      "powerautomation.smartui.context": [
+        {
+          "command": "powerautomation.smartui.analyzeSelection",
+          "when": "editorHasSelection",
+          "group": "analysis"
+        },
+        {
+          "command": "powerautomation.smartui.reviewCode",
+          "when": "editorHasSelection",
+          "group": "analysis"
+        },
+        {
+          "command": "powerautomation.smartui.explainCode",
+          "when": "editorHasSelection",
+          "group": "analysis"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "powerautomation.smartui.analyzeSelection",
+        "key": "ctrl+shift+a",
+        "mac": "cmd+shift+a",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "powerautomation.smartui.reviewCode",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "powerautomation.smartui.explainCode",
+        "key": "ctrl+shift+e",
+        "mac": "cmd+shift+e",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "powerautomation.smartui.generateCode",
+        "key": "ctrl+shift+g",
+        "mac": "cmd+shift+g"
+      },
+      {
+        "command": "powerautomation.smartui.switchToDeveloper",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d"
+      },
+      {
+        "command": "powerautomation.smartui.switchToAdmin",
+        "key": "ctrl+shift+1",
+        "mac": "cmd+shift+1"
+      },
+      {
+        "command": "powerautomation.smartui.switchToUser",
+        "key": "ctrl+shift+3",
+        "mac": "cmd+shift+3"
       }
     ],
     "configuration": {
-      "title": "PowerAutomation",
+      "title": "PowerAutomation SmartUI",
       "properties": {
-        "powerautomation.mcpEndpoint": {
+        "powerautomation.smartui.defaultRole": {
           "type": "string",
-          "default": "http://18.212.97.173:8080",
-          "description": "MCP Service endpoint URL"
+          "enum": [
+            "admin",
+            "developer",
+            "user"
+          ],
+          "default": "user",
+          "description": "默認用戶角色"
         },
-        "powerautomation.apiKey": {
+        "powerautomation.smartui.enableRealTimeAnalysis": {
+          "type": "boolean",
+          "default": true,
+          "description": "啟用實時智能分析"
+        },
+        "powerautomation.smartui.enableSmartSuggestions": {
+          "type": "boolean",
+          "default": true,
+          "description": "啟用智能建議"
+        },
+        "powerautomation.smartui.autoSwitchRole": {
+          "type": "boolean",
+          "default": false,
+          "description": "根據使用模式自動切換角色"
+        },
+        "powerautomation.smartui.analysisLanguage": {
           "type": "string",
-          "default": "",
-          "description": "API Key for MCP Service"
+          "enum": [
+            "zh-CN",
+            "en-US"
+          ],
+          "default": "zh-CN",
+          "description": "分析結果語言"
+        },
+        "powerautomation.smartui.theme": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
+          "default": "auto",
+          "description": "SmartUI 主題"
         }
       }
     }
@@ -83,9 +294,12 @@
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
-    "@types/node": "^20.19.1",
-    "@types/vscode": "^1.60.0",
-    "@vscode/vsce": "^3.5.0",
-    "typescript": "^5.8.3"
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
   }
 }
+
