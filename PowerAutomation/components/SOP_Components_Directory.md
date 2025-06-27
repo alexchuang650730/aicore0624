@@ -28,7 +28,8 @@ PowerAutomation/components/
 
 ## 📁 當前組件清單
 
-### MCP 組件 (10個)
+### MCP 組件 (11個)
+- `claude_sdk_mcp/` - 智能代码分析和专家咨询系统，基于Claude API的MCP组件
 - `cloud_search_mcp/` - 雲端搜索工具，負責動態場景發現
 - `code_generation_mcp/` - 代碼生成工作流工具
 - `human_loop_mcp/` - 人工循環適配器
