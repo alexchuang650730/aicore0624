@@ -1,0 +1,213 @@
+# Claude Code 前置場景識別路由器測試
+# 基於 tests/templates/test_template.yaml 格式
+
+test_suite:
+  name: "Claude Code 前置場景識別測試"
+  description: "測試移除智慧路由後，Claude Code 前置場景識別和專家引進的效果"
+  
+configuration:
+  server_url: "http://127.0.0.1:8000"
+  api_key: "${CLAUDE_API_KEY}"  # 從環境變量讀取
+  timeout: 60
+  
+test_cases:
+  - name: "性能優化場景識別測試"
+    description: "測試 API 性能問題的場景識別和專家推薦"
+    method: "POST"
+    endpoint: "/api/claude_code/analyze_and_route"
+    steps:
+      - step: "提交性能優化請求"
+        method: "POST"
+        endpoint: "/api/claude_code/analyze_and_route"
+        payload:
+          user_input: "我的 Python Flask API 響應時間平均 3 秒，需要優化到 500ms 以內，主要瓶頸在數據庫查詢和 JSON 序列化"
+          context:
+            framework: "flask"
+            current_response_time: "3s"
+            target_response_time: "500ms"
+            bottlenecks: ["database", "json_serialization"]
+        expected_status: 200
+        validation:
+          - "response.status == 'success'"
+          - "response.scenario_analysis.scenario_type == 'performance_optimization'"
+          - "response.scenario_analysis.complexity_level in ['medium', 'high']"
+          - "len(response.scenario_analysis.recommended_experts) >= 1"
+          - "response.scenario_analysis.recommended_experts[0].expert_type == 'performance_optimizer'"
+          - "response.scenario_analysis.confidence_score >= 0.8"
+          - "'performance' in response.processing_result.expert_analysis.expert_response.lower()"
+
+  - name: "代碼架構設計場景測試"
+    description: "測試大型系統架構設計的場景識別"
+    method: "POST"
+    endpoint: "/api/claude_code/analyze_and_route"
+    steps:
+      - step: "提交架構設計請求"
+        method: "POST"
+        endpoint: "/api/claude_code/analyze_and_route"
+        payload:
+          user_input: "設計一個支持 100 萬用戶的社交媒體平台，需要支持實時聊天、動態發布、推薦算法、內容審核等功能，要求高可用性和可擴展性"
+          context:
+            expected_users: 1000000
+            features: ["real_time_chat", "social_feed", "recommendation", "content_moderation"]
+            requirements: ["high_availability", "scalability", "real_time"]
+        expected_status: 200
+        validation:
+          - "response.status == 'success'"
+          - "response.scenario_analysis.scenario_type == 'architecture_design'"
+          - "response.scenario_analysis.complexity_level == 'expert'"
+          - "response.scenario_analysis.content_size in ['large', 'massive']"
+          - "response.scenario_analysis.recommended_experts[0].expert_type == 'code_architect'"
+          - "'架構' in response.processing_result.expert_analysis.expert_response"
+
+  - name: "安全審計場景測試"
+    description: "測試代碼安全問題的識別和專家推薦"
+    method: "POST"
+    endpoint: "/api/claude_code/analyze_and_route"
+    steps:
+      - step: "提交安全審計請求"
+        method: "POST"
+        endpoint: "/api/claude_code/analyze_and_route"
+        payload:
+          user_input: |
+            請審計這段用戶認證代碼的安全性：
+            
+            def authenticate_user(username, password):
+                query = f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
+                result = db.execute(query)
+                if result:
+                    session['user_id'] = result[0]['id']
+                    return True
+                return False
+                
+            def reset_password(email):
+                token = str(random.randint(1000, 9999))
+                send_email(email, f"Your reset token: {token}")
+                return token
+          context:
+            code_type: "authentication"
+            language: "python"
+            concerns: ["sql_injection", "session_security", "password_reset"]
+        expected_status: 200
+        validation:
+          - "response.status == 'success'"
+          - "response.scenario_analysis.scenario_type == 'security_audit'"
+          - "response.scenario_analysis.recommended_experts[0].expert_type == 'security_analyst'"
+          - "'SQL注入' in response.processing_result.expert_analysis.expert_response or 'sql injection' in response.processing_result.expert_analysis.expert_response.lower()"
+
+  - name: "數據庫設計場景測試"
+    description: "測試複雜數據庫設計的場景識別"
+    method: "POST"
+    endpoint: "/api/claude_code/analyze_and_route"
+    steps:
+      - step: "提交數據庫設計請求"
+        method: "POST"
+        endpoint: "/api/claude_code/analyze_and_route"
+        payload:
+          user_input: "設計一個電商平台的數據庫架構，需要支持多租戶、商品管理、庫存控制、訂單處理、支付記錄、用戶評價、促銷活動等功能，預計日訂單量 10 萬筆"
+          context:
+            system_type: "ecommerce"
+            features: ["multi_tenant", "inventory", "orders", "payments", "reviews", "promotions"]
+            scale: "100k_orders_per_day"
+            requirements: ["consistency", "performance", "scalability"]
+        expected_status: 200
+        validation:
+          - "response.status == 'success'"
+          - "response.scenario_analysis.scenario_type == 'database_design'"
+          - "response.scenario_analysis.complexity_level == 'high'"
+          - "response.scenario_analysis.recommended_experts[0].expert_type == 'database_expert'"
+          - "'數據庫' in response.processing_result.expert_analysis.expert_response or 'database' in response.processing_result.expert_analysis.expert_response.lower()"
+
+  - name: "API 設計場景測試"
+    description: "測試 RESTful API 設計的場景識別"
+    method: "POST"
+    endpoint: "/api/claude_code/analyze_and_route"
+    steps:
+      - step: "提交 API 設計請求"
+        method: "POST"
+        endpoint: "/api/claude_code/analyze_and_route"
+        payload:
+          user_input: "設計一套 RESTful API 來支持移動端 App，包括用戶註冊登錄、個人資料管理、好友系統、消息推送、文件上傳下載等功能，需要考慮版本控制和向後兼容"
+          context:
+            client_type: "mobile_app"
+            features: ["auth", "profile", "friends", "messaging", "file_upload"]
+            requirements: ["versioning", "backward_compatibility", "mobile_optimized"]
+        expected_status: 200
+        validation:
+          - "response.status == 'success'"
+          - "response.scenario_analysis.scenario_type == 'api_design'"
+          - "response.scenario_analysis.recommended_experts[0].expert_type == 'api_designer'"
+          - "'API' in response.processing_result.expert_analysis.expert_response"
+
+performance_tests:
+  - name: "大型內容處理測試"
+    description: "測試 200K tokens 上下文處理能力"
+    method: "POST"
+    endpoint: "/api/claude_code/analyze_and_route"
+    payload:
+      user_input: "分析這個包含 500 個文件的大型 Python 項目架構"
+      context:
+        project_size: "large"
+        file_count: 500
+        total_lines: 50000
+        languages: ["python", "javascript", "sql"]
+        # 這裡會包含大量代碼內容來測試上下文限制
+    expected_performance:
+      max_response_time: 30000  # 30 秒
+      context_utilization: ">= 50000 tokens"
+    validation:
+      - "response.scenario_analysis.content_size == 'massive'"
+      - "response.scenario_analysis.context_requirements.full_context_needed == true"
+
+comparison_tests:
+  - name: "vs 傳統智慧路由對比"
+    description: "對比 Claude Code 前置 vs 傳統智慧路由的效果"
+    scenarios:
+      - input: "優化這個複雜的 SQL 查詢性能"
+        expected_claude_code:
+          scenario_type: "performance_optimization"
+          expert_type: "performance_optimizer"
+          confidence: ">= 0.8"
+        expected_traditional_routing:
+          scenario_type: "general"
+          expert_type: "general"
+          confidence: "<= 0.6"
+      
+      - input: "設計微服務架構來處理高併發"
+        expected_claude_code:
+          scenario_type: "architecture_design"
+          expert_type: "code_architect"
+          confidence: ">= 0.9"
+        expected_traditional_routing:
+          scenario_type: "general"
+          expert_type: "general"
+          confidence: "<= 0.7"
+
+expert_validation:
+  - expert_type: "performance_optimizer"
+    test_scenarios:
+      - "API 響應時間優化"
+      - "數據庫查詢性能調優"
+      - "系統資源使用優化"
+    expected_keywords: ["性能", "優化", "瓶頸", "監控"]
+    
+  - expert_type: "security_analyst"
+    test_scenarios:
+      - "代碼安全漏洞審計"
+      - "系統安全架構設計"
+      - "數據加密和保護"
+    expected_keywords: ["安全", "漏洞", "加密", "認證"]
+    
+  - expert_type: "database_expert"
+    test_scenarios:
+      - "數據庫架構設計"
+      - "數據遷移策略"
+      - "查詢優化"
+    expected_keywords: ["數據庫", "查詢", "索引", "事務"]
+
+success_criteria:
+  overall_success_rate: ">= 90%"
+  scenario_identification_accuracy: ">= 85%"
+  expert_recommendation_accuracy: ">= 90%"
+  response_quality_score: ">= 8.0"
+  context_utilization_efficiency: ">= 70%"
+
