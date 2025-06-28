@@ -1,0 +1,90 @@
+{
+  "mcp_info": {
+    "name": "automated_verification_coordinator_mcp",
+    "version": "1.0.0",
+    "description": "自動化驗證協調器 - 確保所有操作都經過適當的驗證",
+    "type": "workflow",
+    "category": "verification_coordination"
+  },
+  "verification_settings": {
+    "default_timeout": 300,
+    "max_retry_count": 3,
+    "parallel_execution": false,
+    "fail_fast": true,
+    "require_all_critical": true
+  },
+  "operation_types": {
+    "deployment": {
+      "description": "部署操作驗證",
+      "critical_rules": [
+        "environment_readiness",
+        "resource_availability", 
+        "dependency_services",
+        "security_compliance"
+      ]
+    },
+    "testing": {
+      "description": "測試操作驗證",
+      "critical_rules": [
+        "test_environment_isolation",
+        "test_data_preparation"
+      ]
+    },
+    "operations": {
+      "description": "運維操作驗證",
+      "critical_rules": [
+        "system_health_baseline",
+        "backup_verification",
+        "maintenance_window"
+      ]
+    },
+    "release": {
+      "description": "發布操作驗證",
+      "critical_rules": [
+        "environment_readiness",
+        "resource_availability",
+        "dependency_services", 
+        "security_compliance",
+        "test_environment_isolation",
+        "test_data_preparation"
+      ]
+    },
+    "maintenance": {
+      "description": "維護操作驗證",
+      "critical_rules": [
+        "system_health_baseline",
+        "backup_verification",
+        "maintenance_window"
+      ]
+    }
+  },
+  "integration": {
+    "test_flow_mcp": {
+      "endpoint": "http://localhost:8301",
+      "timeout": 120,
+      "retry_count": 2
+    },
+    "deployment_mcp": {
+      "endpoint": "http://localhost:8305",
+      "timeout": 300,
+      "retry_count": 1
+    },
+    "operations_mcp": {
+      "endpoint": "http://localhost:8306",
+      "timeout": 180,
+      "retry_count": 2
+    }
+  },
+  "notification": {
+    "enabled": true,
+    "channels": ["log", "webhook"],
+    "webhook_url": "http://localhost:8000/notifications",
+    "log_level": "INFO"
+  },
+  "security": {
+    "require_authentication": true,
+    "allowed_operations": ["deployment", "testing", "operations", "release", "maintenance"],
+    "audit_log": true
+  }
+}
+
