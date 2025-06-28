@@ -26,7 +26,9 @@ import {
   XCircle
 } from 'lucide-react'
 
-const API_BASE_URL = 'http://18.212.97.173:3001'
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'http://18.212.97.173:3001' 
+  : 'http://localhost:3001'
 
 function App() {
   const [user, setUser] = useState(null)
@@ -49,6 +51,8 @@ function App() {
     setError('')
 
     try {
+      console.log('正在连接到:', `${API_BASE_URL}/api/auth/api-key`)
+      
       const response = await fetch(`${API_BASE_URL}/api/auth/api-key`, {
         method: 'POST',
         headers: {
@@ -58,17 +62,26 @@ function App() {
       })
 
       const data = await response.json()
+      console.log('服务器响应:', data)
 
       if (response.ok) {
         setUser(data.user)
         localStorage.setItem('token', data.token)
-        fetchSystemStats()
+        setError('')
+        // 登录成功后获取系统统计信息
+        if (data.user.role === 'admin') {
+          await fetchSystemStats()
+        }
       } else {
         setError(data.message || '登录失败')
       }
     } catch (err) {
-      setError('连接服务器失败，请检查网络连接')
-      console.error('Login error:', err)
+      console.error('登录错误:', err)
+      if (err.name === 'TypeError' && err.message.includes('fetch')) {
+        setError('无法连接到服务器，请检查网络连接或服务器状态')
+      } else {
+        setError(`连接服务器失败: ${err.message}`)
+      }
     } finally {
       setLoading(false)
     }
@@ -143,10 +156,33 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (token) {
-      // 这里可以验证 token 有效性
-      fetchSystemStats()
+      // 验证 token 有效性并恢复用户状态
+      verifyTokenAndRestoreUser(token)
     }
   }, [])
+
+  // 验证token并恢复用户状态
+  const verifyTokenAndRestoreUser = async (token) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setUser(data.user)
+        await fetchSystemStats()
+      } else {
+        // Token无效，清除本地存储
+        localStorage.removeItem('token')
+      }
+    } catch (err) {
+      console.error('Token验证失败:', err)
+      localStorage.removeItem('token')
+    }
+  }
 
   // 如果未登录，显示登录界面
   if (!user) {

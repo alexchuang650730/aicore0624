@@ -1,0 +1,423 @@
+{
+  "summary": {
+    "total_tests": 5,
+    "our_average_score": 6.248666666666666,
+    "manus_average_score": 5.3340000000000005,
+    "average_improvement": 17.78353856124432,
+    "win_rate": 80.0,
+    "wins": 4,
+    "losses": 0,
+    "ties": 1
+  },
+  "detailed_results": [
+    {
+      "test_id": "CMP-001",
+      "test_input": "開發一個在線教育平台，需要支持視頻直播、互動白板、作業提交、成績管理、支付系統等功能",
+      "our_system": {
+        "response": {
+          "request": "開發一個在線教育平台，需要支持視頻直播、互動白板、作業提交、成績管理、支付系統等功能",
+          "user_role": "developer",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:50.033466",
+          "system_type": "fully_integrated_intelligent_system_asgi",
+          "from_cache": false,
+          "cache_hit": false,
+          "claude_code_analysis": {
+            "functional_requirements": [],
+            "non_functional_requirements": [],
+            "constraints": [],
+            "priorities": {},
+            "quality_score": 0.0,
+            "suggestions": [],
+            "confidence_score": 0.0,
+            "completeness_score": 0.0,
+            "clarity_score": 0.0,
+            "feasibility_score": 0.0,
+            "improvement_suggestions": []
+          },
+          "enhanced_by_claude": true,
+          "tools_used": [
+            "claude_code_mcp",
+            "requirements_analyzer"
+          ],
+          "analysis_quality": 0.0,
+          "processing_time": 0.1819448471069336,
+          "status": "error",
+          "response_time": 0.18329620361328125
+        },
+        "response_time": 0.19065093994140625,
+        "quality_score": 6.0,
+        "performance_score": 10.0,
+        "completeness_score": 2.86,
+        "total_score": 6.286666666666666
+      },
+      "manus_system": {
+        "response": {
+          "request": "開發一個在線教育平台，需要支持視頻直播、互動白板、作業提交、成績管理、支付系統等功能",
+          "user_role": "developer",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:50.219737",
+          "system_type": "basic_manus_system",
+          "from_cache": false,
+          "cache_hit": false,
+          "result": "已智能處理您的請求：開發一個在線教育平台，需要支持視頻直播、互動白板、作業提交、成績管理、支付系統等功能",
+          "processing_method": "intelligent_analysis",
+          "tools_used": [
+            "cloud_search",
+            "intelligent_processor"
+          ],
+          "confidence": 0.85,
+          "response_time": 0.10033607482910156
+        },
+        "response_time": 0.10334038734436035,
+        "quality_score": 4.0,
+        "performance_score": 10.0,
+        "completeness_score": 1.43,
+        "total_score": 5.1433333333333335
+      },
+      "comparison": {
+        "improvement_percentage": 22.2294232015554,
+        "quality_improvement": 2.0,
+        "performance_improvement": 0.0,
+        "completeness_improvement": 1.43,
+        "winner": "our_system"
+      },
+      "timestamp": "2025-06-25T14:17:50.321223"
+    },
+    {
+      "test_id": "CMP-002",
+      "test_input": "幫我寫一個 React 組件，實現用戶登錄表單，包括用戶名、密碼輸入，記住密碼功能，以及表單驗證",
+      "our_system": {
+        "response": {
+          "request": "幫我寫一個 React 組件，實現用戶登錄表單，包括用戶名、密碼輸入，記住密碼功能，以及表單驗證",
+          "user_role": "developer",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:51.325121",
+          "system_type": "fully_integrated_intelligent_system_asgi",
+          "from_cache": false,
+          "cache_hit": false,
+          "claude_code_analysis": {
+            "functional_requirements": [],
+            "non_functional_requirements": [],
+            "constraints": [],
+            "priorities": {},
+            "quality_score": 0.0,
+            "suggestions": [],
+            "confidence_score": 0.0,
+            "completeness_score": 0.0,
+            "clarity_score": 0.0,
+            "feasibility_score": 0.0,
+            "improvement_suggestions": []
+          },
+          "enhanced_by_claude": true,
+          "tools_used": [
+            "claude_code_mcp",
+            "requirements_analyzer"
+          ],
+          "analysis_quality": 0.0,
+          "processing_time": 0.09511137008666992,
+          "status": "error",
+          "response_time": 0.09623932838439941
+        },
+        "response_time": 0.09949517250061035,
+        "quality_score": 6.0,
+        "performance_score": 10.0,
+        "completeness_score": 2.86,
+        "total_score": 6.286666666666666
+      },
+      "manus_system": {
+        "response": {
+          "request": "幫我寫一個 React 組件，實現用戶登錄表單，包括用戶名、密碼輸入，記住密碼功能，以及表單驗證",
+          "user_role": "developer",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:51.424119",
+          "system_type": "basic_manus_system",
+          "from_cache": false,
+          "cache_hit": false,
+          "result": "已智能處理您的請求：幫我寫一個 React 組件，實現用戶登錄表單，包括用戶名、密碼輸入，記住密碼功能，以及表單驗證",
+          "processing_method": "intelligent_analysis",
+          "tools_used": [
+            "cloud_search",
+            "intelligent_processor"
+          ],
+          "confidence": 0.85,
+          "response_time": 0.10125565528869629
+        },
+        "response_time": 0.10393691062927246,
+        "quality_score": 4.0,
+        "performance_score": 10.0,
+        "completeness_score": 1.43,
+        "total_score": 5.1433333333333335
+      },
+      "comparison": {
+        "improvement_percentage": 22.2294232015554,
+        "quality_improvement": 2.0,
+        "performance_improvement": 0.0,
+        "completeness_improvement": 1.43,
+        "winner": "our_system"
+      },
+      "timestamp": "2025-06-25T14:17:51.526354"
+    },
+    {
+      "test_id": "CMP-003",
+      "test_input": "我需要設計一個微服務架構，支持高併發用戶訪問，包括負載均衡、數據庫分片、緩存策略等",
+      "our_system": {
+        "response": {
+          "request": "我需要設計一個微服務架構，支持高併發用戶訪問，包括負載均衡、數據庫分片、緩存策略等",
+          "user_role": "architect",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:52.530501",
+          "system_type": "fully_integrated_intelligent_system_asgi",
+          "from_cache": false,
+          "cache_hit": false,
+          "claude_code_analysis": {
+            "functional_requirements": [],
+            "non_functional_requirements": [],
+            "constraints": [],
+            "priorities": {},
+            "quality_score": 0.0,
+            "suggestions": [],
+            "confidence_score": 0.0,
+            "completeness_score": 0.0,
+            "clarity_score": 0.0,
+            "feasibility_score": 0.0,
+            "improvement_suggestions": []
+          },
+          "enhanced_by_claude": true,
+          "tools_used": [
+            "claude_code_mcp",
+            "requirements_analyzer"
+          ],
+          "analysis_quality": 0.0,
+          "processing_time": 0.052365779876708984,
+          "status": "error",
+          "response_time": 0.05362963676452637
+        },
+        "response_time": 0.05714821815490723,
+        "quality_score": 6.0,
+        "performance_score": 10.0,
+        "completeness_score": 2.86,
+        "total_score": 6.286666666666666
+      },
+      "manus_system": {
+        "response": {
+          "request": "我需要設計一個微服務架構，支持高併發用戶訪問，包括負載均衡、數據庫分片、緩存策略等",
+          "user_role": "architect",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:52.587032",
+          "system_type": "basic_manus_system",
+          "from_cache": false,
+          "cache_hit": false,
+          "result": "已智能處理您的請求：我需要設計一個微服務架構，支持高併發用戶訪問，包括負載均衡、數據庫分片、緩存策略等",
+          "processing_method": "intelligent_analysis",
+          "tools_used": [
+            "cloud_search",
+            "intelligent_processor"
+          ],
+          "confidence": 0.85,
+          "response_time": 0.10144948959350586
+        },
+        "response_time": 0.10439038276672363,
+        "quality_score": 4.0,
+        "performance_score": 10.0,
+        "completeness_score": 1.43,
+        "total_score": 5.1433333333333335
+      },
+      "comparison": {
+        "improvement_percentage": 22.2294232015554,
+        "quality_improvement": 2.0,
+        "performance_improvement": 0.0,
+        "completeness_improvement": 1.43,
+        "winner": "our_system"
+      },
+      "timestamp": "2025-06-25T14:17:52.689534"
+    },
+    {
+      "test_id": "CMP-004",
+      "test_input": "系統出現性能問題，API 響應時間過長，需要診斷和優化建議",
+      "our_system": {
+        "response": {
+          "request": "系統出現性能問題，API 響應時間過長，需要診斷和優化建議",
+          "user_role": "user",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:53.693625",
+          "system_type": "smartinvention_manus_integrated",
+          "from_cache": false,
+          "cache_hit": false,
+          "result": "已處理您的請求：系統出現性能問題，API 響應時間過長，需要診斷和優化建議",
+          "manus_direct_response": true,
+          "manus_direct_available": true,
+          "tools_used": [
+            "smartinvention_mcp",
+            "manus_adapter",
+            "hitl_review"
+          ],
+          "metadata": {
+            "hitl_status": "active",
+            "review_pending": false,
+            "processing_time": 1750875473.693647
+          },
+          "smartinvention_data": {
+            "tasks_count": 3,
+            "tasks": [
+              {
+                "id": "task_001",
+                "title": "需求分析",
+                "status": "pending"
+              },
+              {
+                "id": "task_002",
+                "title": "系統設計",
+                "status": "in_progress"
+              },
+              {
+                "id": "task_003",
+                "title": "代碼實現",
+                "status": "completed"
+              }
+            ]
+          },
+          "response_time": 0.0005681514739990234
+        },
+        "response_time": 0.0037593841552734375,
+        "quality_score": 4.0,
+        "performance_score": 10.0,
+        "completeness_score": 4.29,
+        "total_score": 6.096666666666667
+      },
+      "manus_system": {
+        "response": {
+          "request": "系統出現性能問題，API 響應時間過長，需要診斷和優化建議",
+          "user_role": "user",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:53.696474",
+          "system_type": "basic_manus_system",
+          "from_cache": false,
+          "cache_hit": false,
+          "result": "已處理您的請求：系統出現性能問題，API 響應時間過長，需要診斷和優化建議",
+          "manus_direct_response": true,
+          "manus_direct_available": true,
+          "tools_used": [
+            "smartinvention_mcp",
+            "manus_adapter",
+            "hitl_review"
+          ],
+          "metadata": {
+            "hitl_status": "active",
+            "review_pending": false,
+            "processing_time": 1750875473.6964867
+          },
+          "smartinvention_data": {
+            "tasks_count": 3,
+            "tasks": [
+              {
+                "id": "task_001",
+                "title": "需求分析",
+                "status": "pending"
+              },
+              {
+                "id": "task_002",
+                "title": "系統設計",
+                "status": "in_progress"
+              },
+              {
+                "id": "task_003",
+                "title": "代碼實現",
+                "status": "completed"
+              }
+            ]
+          },
+          "response_time": 0.00036072731018066406
+        },
+        "response_time": 0.002679586410522461,
+        "quality_score": 4.0,
+        "performance_score": 10.0,
+        "completeness_score": 4.29,
+        "total_score": 6.096666666666667
+      },
+      "comparison": {
+        "improvement_percentage": 0.0,
+        "quality_improvement": 0.0,
+        "performance_improvement": 0.0,
+        "completeness_improvement": 0.0,
+        "winner": "tie"
+      },
+      "timestamp": "2025-06-25T14:17:53.697639"
+    },
+    {
+      "test_id": "CMP-005",
+      "test_input": "如何優化 Python 代碼的執行效率，特別是數據處理和算法部分",
+      "our_system": {
+        "response": {
+          "request": "如何優化 Python 代碼的執行效率，特別是數據處理和算法部分",
+          "user_role": "developer",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:54.701556",
+          "system_type": "fully_integrated_intelligent_system_asgi",
+          "from_cache": false,
+          "cache_hit": false,
+          "claude_code_analysis": {
+            "functional_requirements": [],
+            "non_functional_requirements": [],
+            "constraints": [],
+            "priorities": {},
+            "quality_score": 0.0,
+            "suggestions": [],
+            "confidence_score": 0.0,
+            "completeness_score": 0.0,
+            "clarity_score": 0.0,
+            "feasibility_score": 0.0,
+            "improvement_suggestions": []
+          },
+          "enhanced_by_claude": true,
+          "tools_used": [
+            "claude_code_mcp",
+            "requirements_analyzer"
+          ],
+          "analysis_quality": 0.0,
+          "processing_time": 0.44758009910583496,
+          "status": "error",
+          "response_time": 0.44879937171936035
+        },
+        "response_time": 0.45198941230773926,
+        "quality_score": 6.0,
+        "performance_score": 10.0,
+        "completeness_score": 2.86,
+        "total_score": 6.286666666666666
+      },
+      "manus_system": {
+        "response": {
+          "request": "如何優化 Python 代碼的執行效率，特別是數據處理和算法部分",
+          "user_role": "developer",
+          "workflow_type": "general_inquiry",
+          "timestamp": "2025-06-25T14:17:55.152964",
+          "system_type": "basic_manus_system",
+          "from_cache": false,
+          "cache_hit": false,
+          "result": "已智能處理您的請求：如何優化 Python 代碼的執行效率，特別是數據處理和算法部分",
+          "processing_method": "intelligent_analysis",
+          "tools_used": [
+            "cloud_search",
+            "intelligent_processor"
+          ],
+          "confidence": 0.85,
+          "response_time": 0.10128307342529297
+        },
+        "response_time": 0.1040503978729248,
+        "quality_score": 4.0,
+        "performance_score": 10.0,
+        "completeness_score": 1.43,
+        "total_score": 5.1433333333333335
+      },
+      "comparison": {
+        "improvement_percentage": 22.2294232015554,
+        "quality_improvement": 2.0,
+        "performance_improvement": 0.0,
+        "completeness_improvement": 1.43,
+        "winner": "our_system"
+      },
+      "timestamp": "2025-06-25T14:17:55.255370"
+    }
+  ],
+  "generated_at": "2025-06-25T14:17:56.256919"
+}

@@ -1,0 +1,1056 @@
+# Claude Code Enhanced aicore vs Manus 對比測試模板
+# 此模板用於集成測試，對比兩個系統的能力差異
+
+test_suite:
+  name: "Claude Code Enhanced aicore vs Manus 對比測試"
+  description: "測試 aicore + Claude Code (200K tokens) vs Manus (32K tokens) 的能力差異"
+  version: "1.0.0"
+  
+configuration:
+  # aicore + Claude Code 系統配置
+  aicore_system:
+    server_url: "http://127.0.0.1:8080"
+    api_key: "your_claude_api_key_here"
+    context_capacity: 200000  # 200K tokens
+    enhanced_features: true
+    
+  # Manus 系統配置 (模擬)
+  manus_system:
+    server_url: "https://api.manus.ai"
+    api_key: "manus_api_key_here"
+    context_capacity: 32000   # 32K tokens
+    enhanced_features: false
+    
+  # 測試配置
+  test_config:
+    timeout: 60
+    retry_count: 3
+    comparison_metrics:
+      - "response_quality"
+      - "context_understanding"
+      - "code_analysis_depth"
+      - "technical_accuracy"
+      - "response_completeness"
+
+test_cases:
+  # 測試用例 1: 大型代碼庫分析
+  - name: "大型代碼庫分析對比"
+    description: "測試兩個系統分析大型代碼庫的能力"
+    category: "code_analysis"
+    priority: "high"
+    
+    input:
+      request_type: "code_analysis"
+      content: |
+        # React 電商平台項目 (約 50K tokens)
+        
+        ## 項目結構
+        ```
+        ecommerce-platform/
+        ├── src/
+        │   ├── components/
+        │   │   ├── ProductList.jsx
+        │   │   ├── ShoppingCart.jsx
+        │   │   ├── UserProfile.jsx
+        │   │   └── PaymentGateway.jsx
+        │   ├── hooks/
+        │   │   ├── useAuth.js
+        │   │   ├── useCart.js
+        │   │   └── usePayment.js
+        │   ├── services/
+        │   │   ├── api.js
+        │   │   ├── auth.service.js
+        │   │   └── payment.service.js
+        │   ├── utils/
+        │   │   ├── validation.js
+        │   │   ├── formatting.js
+        │   │   └── constants.js
+        │   └── App.jsx
+        ├── backend/
+        │   ├── controllers/
+        │   │   ├── userController.js
+        │   │   ├── productController.js
+        │   │   └── orderController.js
+        │   ├── models/
+        │   │   ├── User.js
+        │   │   ├── Product.js
+        │   │   └── Order.js
+        │   ├── middleware/
+        │   │   ├── auth.js
+        │   │   ├── validation.js
+        │   │   └── errorHandler.js
+        │   └── server.js
+        └── database/
+            ├── migrations/
+            ├── seeds/
+            └── config.js
+        ```
+        
+        ## 核心代碼文件內容
+        
+        ### ProductList.jsx (前端組件)
+        ```jsx
+        import React, { useState, useEffect, useMemo } from 'react';
+        import { useCart } from '../hooks/useCart';
+        import { productService } from '../services/api';
+        import { formatPrice, validateProduct } from '../utils';
+        
+        const ProductList = ({ category, filters, sortBy }) => {
+          const [products, setProducts] = useState([]);
+          const [loading, setLoading] = useState(true);
+          const [error, setError] = useState(null);
+          const { addToCart, isInCart } = useCart();
+          
+          useEffect(() => {
+            const fetchProducts = async () => {
+              try {
+                setLoading(true);
+                const response = await productService.getProducts({
+                  category,
+                  filters,
+                  sortBy
+                });
+                
+                if (response.success) {
+                  setProducts(response.data);
+                } else {
+                  setError(response.message);
+                }
+              } catch (err) {
+                setError('Failed to fetch products');
+                console.error('Product fetch error:', err);
+              } finally {
+                setLoading(false);
+              }
+            };
+            
+            fetchProducts();
+          }, [category, filters, sortBy]);
+          
+          const filteredProducts = useMemo(() => {
+            return products.filter(product => {
+              if (!validateProduct(product)) return false;
+              
+              if (filters.priceRange) {
+                const price = product.price;
+                if (price < filters.priceRange.min || price > filters.priceRange.max) {
+                  return false;
+                }
+              }
+              
+              if (filters.brand && product.brand !== filters.brand) {
+                return false;
+              }
+              
+              if (filters.rating && product.rating < filters.rating) {
+                return false;
+              }
+              
+              return true;
+            });
+          }, [products, filters]);
+          
+          const handleAddToCart = async (product) => {
+            try {
+              await addToCart(product);
+              // Show success notification
+            } catch (error) {
+              // Show error notification
+              console.error('Add to cart error:', error);
+            }
+          };
+          
+          if (loading) return <div className="loading">Loading products...</div>;
+          if (error) return <div className="error">Error: {error}</div>;
+          
+          return (
+            <div className="product-list">
+              <div className="product-grid">
+                {filteredProducts.map(product => (
+                  <div key={product.id} className="product-card">
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.name}
+                      className="product-image"
+                    />
+                    <div className="product-info">
+                      <h3 className="product-name">{product.name}</h3>
+                      <p className="product-description">{product.description}</p>
+                      <div className="product-price">
+                        {formatPrice(product.price)}
+                      </div>
+                      <div className="product-rating">
+                        Rating: {product.rating}/5
+                      </div>
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        disabled={isInCart(product.id)}
+                        className="add-to-cart-btn"
+                      >
+                        {isInCart(product.id) ? 'In Cart' : 'Add to Cart'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        };
+        
+        export default ProductList;
+        ```
+        
+        ### userController.js (後端控制器)
+        ```javascript
+        const bcrypt = require('bcrypt');
+        const jwt = require('jsonwebtoken');
+        const User = require('../models/User');
+        const { validateEmail, validatePassword } = require('../utils/validation');
+        const { sendEmail } = require('../services/emailService');
+        
+        class UserController {
+          async register(req, res) {
+            try {
+              const { email, password, firstName, lastName, phone } = req.body;
+              
+              // 驗證輸入
+              if (!validateEmail(email)) {
+                return res.status(400).json({
+                  success: false,
+                  message: 'Invalid email format'
+                });
+              }
+              
+              if (!validatePassword(password)) {
+                return res.status(400).json({
+                  success: false,
+                  message: 'Password must be at least 8 characters with uppercase, lowercase, and numbers'
+                });
+              }
+              
+              // 檢查用戶是否已存在
+              const existingUser = await User.findOne({ email });
+              if (existingUser) {
+                return res.status(409).json({
+                  success: false,
+                  message: 'User already exists'
+                });
+              }
+              
+              // 加密密碼
+              const saltRounds = 12;
+              const hashedPassword = await bcrypt.hash(password, saltRounds);
+              
+              // 創建新用戶
+              const newUser = new User({
+                email,
+                password: hashedPassword,
+                firstName,
+                lastName,
+                phone,
+                isEmailVerified: false,
+                createdAt: new Date(),
+                lastLoginAt: null
+              });
+              
+              await newUser.save();
+              
+              // 發送驗證郵件
+              const verificationToken = jwt.sign(
+                { userId: newUser._id },
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+              );
+              
+              await sendEmail({
+                to: email,
+                subject: 'Verify your email',
+                template: 'email-verification',
+                data: {
+                  firstName,
+                  verificationLink: `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`
+                }
+              });
+              
+              res.status(201).json({
+                success: true,
+                message: 'User registered successfully. Please check your email for verification.',
+                data: {
+                  userId: newUser._id,
+                  email: newUser.email,
+                  firstName: newUser.firstName,
+                  lastName: newUser.lastName
+                }
+              });
+              
+            } catch (error) {
+              console.error('Registration error:', error);
+              res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+              });
+            }
+          }
+          
+          async login(req, res) {
+            try {
+              const { email, password } = req.body;
+              
+              // 查找用戶
+              const user = await User.findOne({ email });
+              if (!user) {
+                return res.status(401).json({
+                  success: false,
+                  message: 'Invalid credentials'
+                });
+              }
+              
+              // 驗證密碼
+              const isPasswordValid = await bcrypt.compare(password, user.password);
+              if (!isPasswordValid) {
+                return res.status(401).json({
+                  success: false,
+                  message: 'Invalid credentials'
+                });
+              }
+              
+              // 檢查郵箱是否驗證
+              if (!user.isEmailVerified) {
+                return res.status(403).json({
+                  success: false,
+                  message: 'Please verify your email before logging in'
+                });
+              }
+              
+              // 生成 JWT token
+              const token = jwt.sign(
+                { 
+                  userId: user._id,
+                  email: user.email,
+                  role: user.role 
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: '7d' }
+              );
+              
+              // 更新最後登入時間
+              await User.findByIdAndUpdate(user._id, {
+                lastLoginAt: new Date()
+              });
+              
+              res.json({
+                success: true,
+                message: 'Login successful',
+                data: {
+                  token,
+                  user: {
+                    id: user._id,
+                    email: user.email,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    role: user.role
+                  }
+                }
+              });
+              
+            } catch (error) {
+              console.error('Login error:', error);
+              res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+              });
+            }
+          }
+          
+          async getProfile(req, res) {
+            try {
+              const userId = req.user.userId;
+              
+              const user = await User.findById(userId).select('-password');
+              if (!user) {
+                return res.status(404).json({
+                  success: false,
+                  message: 'User not found'
+                });
+              }
+              
+              res.json({
+                success: true,
+                data: user
+              });
+              
+            } catch (error) {
+              console.error('Get profile error:', error);
+              res.status(500).json({
+                success: false,
+                message: 'Internal server error'
+              });
+            }
+          }
+        }
+        
+        module.exports = new UserController();
+        ```
+        
+        請分析這個電商平台項目的：
+        1. 整體架構設計
+        2. 代碼質量和最佳實踐
+        3. 潛在的安全問題
+        4. 性能優化建議
+        5. 可維護性改進建議
+      
+      context:
+        include_history: true
+        include_project_context: true
+        
+    expected_comparison:
+      aicore_advantages:
+        - "能夠分析完整的 50K tokens 代碼庫"
+        - "提供深度的架構分析"
+        - "識別複雜的跨文件依賴關係"
+        - "給出具體的重構建議"
+        
+      manus_limitations:
+        - "32K tokens 限制，無法完整分析大型項目"
+        - "可能遺漏重要的上下文信息"
+        - "分析深度受限"
+        
+      evaluation_criteria:
+        - response_completeness: "回應的完整性 (1-10)"
+        - technical_depth: "技術深度 (1-10)"
+        - context_awareness: "上下文理解 (1-10)"
+        - actionable_suggestions: "可執行建議數量"
+
+  # 測試用例 2: 複雜需求分析
+  - name: "複雜需求分析對比"
+    description: "測試兩個系統分析複雜業務需求的能力"
+    category: "requirement_analysis"
+    priority: "high"
+    
+    input:
+      request_type: "requirement_analysis"
+      content: |
+        # 企業級 AI 驅動的客戶服務平台需求
+        
+        ## 項目背景
+        我們需要開發一個企業級的 AI 驅動客戶服務平台，整合多個渠道的客戶互動，提供智能化的客戶支持解決方案。
+        
+        ## 核心功能需求
+        
+        ### 1. 多渠道整合
+        - **即時聊天**: 網站聊天窗口，支持文字、圖片、文件傳輸
+        - **郵件系統**: 自動分類和優先級排序
+        - **電話系統**: VoIP 整合，通話錄音和轉錄
+        - **社交媒體**: Facebook、Twitter、Instagram 私訊整合
+        - **移動應用**: iOS/Android 原生應用支持
+        
+        ### 2. AI 智能功能
+        - **自然語言處理**: 理解客戶意圖和情感分析
+        - **智能路由**: 根據問題類型自動分配給合適的客服人員
+        - **自動回覆**: 常見問題的智能回答
+        - **知識庫整合**: 動態搜索和推薦相關解決方案
+        - **預測分析**: 識別潛在的客戶流失風險
+        
+        ### 3. 工作流程管理
+        - **票務系統**: 創建、分配、追蹤客戶問題
+        - **SLA 管理**: 服務水平協議監控和報警
+        - **升級機制**: 自動升級未解決的問題
+        - **協作工具**: 內部團隊溝通和知識分享
+        
+        ### 4. 分析和報告
+        - **實時儀表板**: 客服績效和客戶滿意度監控
+        - **詳細報告**: 客戶互動分析、趨勢識別
+        - **KPI 追蹤**: 回應時間、解決率、客戶滿意度
+        - **預測報告**: 客戶行為預測和業務洞察
+        
+        ## 技術需求
+        
+        ### 架構要求
+        - **微服務架構**: 可擴展的分布式系統
+        - **雲原生**: 支持 Kubernetes 部署
+        - **高可用性**: 99.9% 正常運行時間
+        - **彈性擴展**: 自動擴縮容應對流量波動
+        
+        ### 整合需求
+        - **CRM 系統**: Salesforce、HubSpot 等主流 CRM 整合
+        - **ERP 系統**: SAP、Oracle 等企業系統整合
+        - **支付系統**: 處理退款、計費相關問題
+        - **身份認證**: SSO、LDAP、OAuth 2.0 支持
+        
+        ### 安全要求
+        - **數據加密**: 傳輸和存儲加密
+        - **訪問控制**: 基於角色的權限管理
+        - **審計日誌**: 完整的操作記錄
+        - **合規性**: GDPR、CCPA 等法規遵循
+        
+        ## 性能要求
+        - **併發用戶**: 支持 10,000+ 同時在線用戶
+        - **回應時間**: API 回應時間 < 200ms
+        - **消息處理**: 每秒處理 1,000+ 消息
+        - **數據存儲**: 支持 PB 級數據存儲和查詢
+        
+        ## 用戶角色
+        
+        ### 客戶端用戶
+        - **終端客戶**: 尋求支持的用戶
+        - **企業客戶**: B2B 客戶的多用戶管理
+        
+        ### 內部用戶
+        - **客服代表**: 處理客戶問題的一線員工
+        - **主管**: 團隊管理和績效監控
+        - **分析師**: 數據分析和報告生成
+        - **系統管理員**: 平台配置和維護
+        
+        ## 部署和維護
+        - **多環境支持**: 開發、測試、生產環境
+        - **CI/CD 管道**: 自動化部署和測試
+        - **監控和告警**: 系統健康監控
+        - **備份和恢復**: 數據備份和災難恢復
+        
+        ## 預算和時間線
+        - **項目預算**: $2,000,000 - $3,000,000
+        - **開發時間**: 18-24 個月
+        - **團隊規模**: 25-30 人的開發團隊
+        - **分階段交付**: 每 3 個月一個里程碑
+        
+        請提供：
+        1. 詳細的技術架構設計
+        2. 開發計劃和里程碑
+        3. 技術棧選擇建議
+        4. 風險評估和緩解策略
+        5. 成本效益分析
+        
+      context:
+        include_history: true
+        include_project_context: true
+        
+    expected_comparison:
+      aicore_advantages:
+        - "能夠處理完整的複雜需求文檔"
+        - "提供詳細的技術架構建議"
+        - "考慮到所有技術和業務約束"
+        - "給出具體的實施路線圖"
+        
+      manus_limitations:
+        - "可能無法完整理解所有需求細節"
+        - "技術建議可能不夠深入"
+        - "缺少對複雜整合場景的考慮"
+
+  # 測試用例 3: 代碼生成和優化
+  - name: "代碼生成和優化對比"
+    description: "測試兩個系統生成和優化代碼的能力"
+    category: "code_generation"
+    priority: "medium"
+    
+    input:
+      request_type: "code_generation"
+      content: |
+        請基於以下需求生成一個完整的 Node.js + React 全棧應用：
+        
+        ## 應用需求：智能任務管理系統
+        
+        ### 後端需求 (Node.js + Express)
+        1. **用戶認證系統**
+           - JWT 認證
+           - 密碼加密 (bcrypt)
+           - 郵箱驗證
+           - 密碼重置功能
+        
+        2. **任務管理 API**
+           - CRUD 操作 (創建、讀取、更新、刪除任務)
+           - 任務分類和標籤
+           - 優先級設置
+           - 截止日期管理
+           - 任務狀態追蹤
+        
+        3. **協作功能**
+           - 任務分配給其他用戶
+           - 評論和附件
+           - 實時通知 (WebSocket)
+           - 活動日誌
+        
+        4. **數據分析**
+           - 任務完成統計
+           - 生產力分析
+           - 時間追蹤
+           - 報告生成
+        
+        ### 前端需求 (React)
+        1. **用戶界面**
+           - 響應式設計
+           - 現代化 UI (Material-UI 或 Ant Design)
+           - 深色/淺色主題切換
+           - 多語言支持
+        
+        2. **任務視圖**
+           - 列表視圖
+           - 看板視圖 (Kanban)
+           - 日曆視圖
+           - 甘特圖
+        
+        3. **實時功能**
+           - 實時更新
+           - 即時通知
+           - 在線狀態顯示
+           - 協作編輯
+        
+        4. **數據可視化**
+           - 圖表和統計
+           - 進度追蹤
+           - 性能儀表板
+        
+        ### 技術要求
+        - **後端**: Node.js, Express, MongoDB, Socket.io
+        - **前端**: React, Redux, Material-UI, Chart.js
+        - **認證**: JWT, Passport.js
+        - **實時通信**: WebSocket
+        - **文件上傳**: Multer
+        - **郵件服務**: Nodemailer
+        - **測試**: Jest, Supertest, React Testing Library
+        - **部署**: Docker, PM2
+        
+        請生成：
+        1. 完整的項目結構
+        2. 主要的後端 API 代碼
+        3. 核心的 React 組件
+        4. 數據庫模型定義
+        5. 認證和授權邏輯
+        6. WebSocket 實時通信
+        7. 測試用例
+        8. Docker 配置
+        9. 部署腳本
+        
+      context:
+        include_history: false
+        include_project_context: false
+        
+    expected_comparison:
+      aicore_advantages:
+        - "生成完整的全棧應用代碼"
+        - "包含所有必要的配置文件"
+        - "代碼結構清晰，遵循最佳實踐"
+        - "包含測試和部署配置"
+        
+      manus_limitations:
+        - "可能無法生成完整的應用"
+        - "代碼片段可能不完整"
+        - "缺少複雜的整合邏輯"
+
+  # 測試用例 4: 技術問題診斷
+  - name: "技術問題診斷對比"
+    description: "測試兩個系統診斷和解決技術問題的能力"
+    category: "problem_diagnosis"
+    priority: "medium"
+    
+    input:
+      request_type: "problem_diagnosis"
+      content: |
+        ## 生產環境問題報告
+        
+        ### 問題描述
+        我們的 React + Node.js 電商平台在生產環境中出現了嚴重的性能問題，需要緊急診斷和解決。
+        
+        ### 症狀
+        1. **頁面加載緩慢**: 首頁加載時間從 2 秒增加到 15-20 秒
+        2. **API 響應延遲**: 商品搜索 API 響應時間從 200ms 增加到 5-8 秒
+        3. **內存洩漏**: Node.js 進程內存使用量持續增長，每小時增加 100MB
+        4. **數據庫連接問題**: 頻繁出現 "too many connections" 錯誤
+        5. **前端崩潰**: 用戶報告頁面經常白屏或無響應
+        
+        ### 環境信息
+        - **服務器**: AWS EC2 t3.large (2 vCPU, 8GB RAM)
+        - **數據庫**: MongoDB Atlas M30 (2.5GB RAM)
+        - **CDN**: CloudFront
+        - **負載均衡**: ALB
+        - **監控**: CloudWatch, New Relic
+        
+        ### 錯誤日誌
+        
+        #### Node.js 服務器日誌
+        ```
+        2024-06-26 10:15:23 ERROR: MongoDB connection timeout
+        2024-06-26 10:15:45 ERROR: Memory usage: 1.2GB (85% of available)
+        2024-06-26 10:16:12 ERROR: API /api/products/search timeout after 30s
+        2024-06-26 10:16:30 ERROR: UnhandledPromiseRejectionWarning: MongoNetworkError
+        2024-06-26 10:17:01 ERROR: Process killed due to memory limit
+        2024-06-26 10:17:02 INFO: Process restarted by PM2
+        ```
+        
+        #### MongoDB 日誌
+        ```
+        2024-06-26 10:15:20 [conn123] command mystore.products planSummary: COLLSCAN 
+        docsExamined:50000 keysExamined:0 docsReturned:100 numYields:391 
+        locks:{ Global: { acquireCount: { r: 784 } }, Database: { acquireCount: { r: 392 } }, 
+        Collection: { acquireCount: { r: 392 } } } protocol:op_msg 8234ms
+        
+        2024-06-26 10:16:15 [conn456] Error: too many connections
+        2024-06-26 10:16:45 [conn789] command mystore.users planSummary: IXSCAN 
+        { email: 1 } keysExamined:1 docsExamined:1 docsReturned:1 numYields:0 
+        locks:{ Global: { acquireCount: { r: 2 } }, Database: { acquireCount: { r: 1 } }, 
+        Collection: { acquireCount: { r: 1 } } } protocol:op_msg 1ms
+        ```
+        
+        #### React 前端錯誤
+        ```javascript
+        Uncaught TypeError: Cannot read property 'map' of undefined
+            at ProductList.jsx:45
+            at updateComponent (react-dom.production.min.js:1)
+            
+        Warning: Can't perform a React state update on an unmounted component
+            at ShoppingCart.jsx:78
+            
+        Error: Network request failed
+            at api.js:23
+            at Promise.catch (async)
+        ```
+        
+        ### 相關代碼片段
+        
+        #### 商品搜索 API (Node.js)
+        ```javascript
+        app.get('/api/products/search', async (req, res) => {
+          try {
+            const { query, category, minPrice, maxPrice, page = 1 } = req.query;
+            
+            // 構建搜索條件
+            let searchConditions = {};
+            
+            if (query) {
+              searchConditions.$or = [
+                { name: { $regex: query, $options: 'i' } },
+                { description: { $regex: query, $options: 'i' } },
+                { tags: { $in: [new RegExp(query, 'i')] } }
+              ];
+            }
+            
+            if (category) {
+              searchConditions.category = category;
+            }
+            
+            if (minPrice || maxPrice) {
+              searchConditions.price = {};
+              if (minPrice) searchConditions.price.$gte = parseFloat(minPrice);
+              if (maxPrice) searchConditions.price.$lte = parseFloat(maxPrice);
+            }
+            
+            // 執行搜索 (問題可能在這裡)
+            const products = await Product.find(searchConditions)
+              .populate('category')
+              .populate('reviews')
+              .populate('vendor')
+              .sort({ createdAt: -1 })
+              .limit(20)
+              .skip((page - 1) * 20);
+            
+            // 獲取總數 (另一個可能的性能問題)
+            const totalCount = await Product.countDocuments(searchConditions);
+            
+            res.json({
+              success: true,
+              data: products,
+              pagination: {
+                page: parseInt(page),
+                totalPages: Math.ceil(totalCount / 20),
+                totalCount
+              }
+            });
+            
+          } catch (error) {
+            console.error('Search error:', error);
+            res.status(500).json({
+              success: false,
+              message: 'Search failed'
+            });
+          }
+        });
+        ```
+        
+        #### React 商品列表組件
+        ```jsx
+        const ProductList = () => {
+          const [products, setProducts] = useState([]);
+          const [loading, setLoading] = useState(false);
+          const [searchQuery, setSearchQuery] = useState('');
+          
+          // 可能的內存洩漏問題
+          useEffect(() => {
+            const searchProducts = async () => {
+              setLoading(true);
+              try {
+                const response = await fetch(`/api/products/search?query=${searchQuery}`);
+                const data = await response.json();
+                setProducts(data.data);
+              } catch (error) {
+                console.error('Search failed:', error);
+              } finally {
+                setLoading(false);
+              }
+            };
+            
+            // 防抖搜索
+            const debounceTimer = setTimeout(searchProducts, 300);
+            
+            // 清理函數可能有問題
+            return () => clearTimeout(debounceTimer);
+          }, [searchQuery]);
+          
+          // 渲染邏輯
+          return (
+            <div className="product-list">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索商品..."
+              />
+              
+              {loading && <div>Loading...</div>}
+              
+              <div className="products-grid">
+                {products.map(product => (
+                  <ProductCard key={product._id} product={product} />
+                ))}
+              </div>
+            </div>
+          );
+        };
+        ```
+        
+        ### 監控數據
+        - **CPU 使用率**: 平均 85%，峰值 100%
+        - **內存使用率**: 持續增長，重啟前達到 95%
+        - **數據庫連接數**: 峰值 200+ (限制 100)
+        - **網絡延遲**: 平均 500ms，峰值 8s
+        - **錯誤率**: 15% (正常情況下 < 1%)
+        
+        請診斷問題並提供解決方案：
+        1. 識別根本原因
+        2. 提供具體的修復代碼
+        3. 性能優化建議
+        4. 預防措施
+        5. 監控改進建議
+        
+      context:
+        include_history: true
+        include_project_context: true
+        
+    expected_comparison:
+      aicore_advantages:
+        - "能夠分析完整的錯誤上下文"
+        - "識別多個相關的性能問題"
+        - "提供具體的修復代碼"
+        - "給出全面的優化建議"
+        
+      manus_limitations:
+        - "可能無法處理複雜的多層次問題"
+        - "診斷可能不夠深入"
+        - "解決方案可能不夠具體"
+
+  # 測試用例 5: 架構設計諮詢
+  - name: "架構設計諮詢對比"
+    description: "測試兩個系統提供架構設計建議的能力"
+    category: "architecture_consultation"
+    priority: "high"
+    
+    input:
+      request_type: "architecture_consultation"
+      content: |
+        ## 企業級微服務架構設計諮詢
+        
+        ### 項目背景
+        我們是一家快速成長的金融科技公司，目前的單體應用已經無法滿足業務需求。我們需要重新設計系統架構，遷移到微服務架構，以支持：
+        
+        - **用戶規模**: 100萬+ 註冊用戶，日活躍用戶 50萬+
+        - **交易量**: 每日處理 100萬+ 金融交易
+        - **數據量**: 每日新增 10TB+ 數據
+        - **全球部署**: 需要支持北美、歐洲、亞太地區
+        - **合規要求**: 需要滿足 PCI DSS、SOX、GDPR 等法規
+        
+        ### 現有系統問題
+        1. **單體應用瓶頸**: 部署困難，擴展性差
+        2. **數據庫性能**: 單一 PostgreSQL 數據庫成為瓶頸
+        3. **開發效率**: 多團隊開發衝突頻繁
+        4. **系統可靠性**: 單點故障影響整個系統
+        5. **技術債務**: 10年老代碼，維護困難
+        
+        ### 業務需求
+        
+        #### 核心業務模塊
+        1. **用戶管理服務**
+           - 註冊、認證、KYC 驗證
+           - 用戶畫像和風險評估
+           - 多因素認證 (MFA)
+        
+        2. **賬戶服務**
+           - 多幣種賬戶管理
+           - 餘額查詢和歷史記錄
+           - 賬戶凍結和解凍
+        
+        3. **交易處理服務**
+           - 實時交易處理
+           - 交易驗證和風控
+           - 交易狀態追蹤
+        
+        4. **支付服務**
+           - 多種支付方式整合
+           - 跨境支付處理
+           - 退款和爭議處理
+        
+        5. **風控服務**
+           - 實時風險評估
+           - 反洗錢 (AML) 檢測
+           - 欺詐檢測和預防
+        
+        6. **報告和合規服務**
+           - 監管報告生成
+           - 審計日誌管理
+           - 合規檢查自動化
+        
+        7. **通知服務**
+           - 多渠道通知 (郵件、短信、推送)
+           - 實時警報系統
+           - 通知模板管理
+        
+        8. **數據分析服務**
+           - 實時數據處理
+           - 商業智能報告
+           - 機器學習模型服務
+        
+        ### 技術要求
+        
+        #### 性能要求
+        - **高併發**: 支持 10,000+ TPS
+        - **低延遲**: 交易處理 < 100ms
+        - **高可用**: 99.99% 正常運行時間
+        - **災難恢復**: RTO < 4小時，RPO < 15分鐘
+        
+        #### 安全要求
+        - **數據加密**: 傳輸和存儲端到端加密
+        - **訪問控制**: 零信任安全模型
+        - **審計**: 完整的操作審計日誌
+        - **合規**: 滿足金融行業法規要求
+        
+        #### 擴展要求
+        - **水平擴展**: 支持自動擴縮容
+        - **多雲部署**: AWS、Azure、GCP 多雲策略
+        - **全球化**: 多地區部署和數據本地化
+        
+        ### 現有技術棧
+        - **後端**: Java Spring Boot, Python Django
+        - **前端**: React, Angular
+        - **數據庫**: PostgreSQL, Redis
+        - **消息隊列**: RabbitMQ
+        - **監控**: Prometheus, Grafana
+        - **CI/CD**: Jenkins, GitLab CI
+        
+        ### 團隊結構
+        - **開發團隊**: 8個敏捷團隊，每團隊 6-8 人
+        - **DevOps 團隊**: 5人專職 DevOps 工程師
+        - **架構團隊**: 3人解決方案架構師
+        - **安全團隊**: 4人信息安全專家
+        
+        ### 遷移約束
+        - **業務連續性**: 不能中斷現有服務
+        - **數據一致性**: 確保數據完整性
+        - **漸進式遷移**: 分階段遷移，降低風險
+        - **預算限制**: 總預算 $5,000,000
+        - **時間限制**: 18個月完成遷移
+        
+        請提供：
+        1. **詳細的微服務架構設計**
+           - 服務拆分策略
+           - 服務間通信設計
+           - 數據管理策略
+           - API 網關設計
+        
+        2. **技術選型建議**
+           - 微服務框架選擇
+           - 數據庫選型
+           - 消息中間件
+           - 服務發現和配置管理
+           - 監控和日誌系統
+        
+        3. **部署和運維策略**
+           - 容器化策略 (Docker/Kubernetes)
+           - CI/CD 管道設計
+           - 監控和告警系統
+           - 災難恢復方案
+        
+        4. **安全架構設計**
+           - 身份認證和授權
+           - 數據加密策略
+           - 網絡安全設計
+           - 合規性保證
+        
+        5. **遷移路線圖**
+           - 分階段遷移計劃
+           - 風險評估和緩解
+           - 回滾策略
+           - 成功標準定義
+        
+        6. **成本效益分析**
+           - 基礎設施成本
+           - 開發和運維成本
+           - ROI 預期
+           - 長期維護成本
+        
+      context:
+        include_history: true
+        include_project_context: true
+        
+    expected_comparison:
+      aicore_advantages:
+        - "提供完整的企業級架構設計"
+        - "考慮到所有技術和業務約束"
+        - "給出詳細的實施路線圖"
+        - "包含成本效益分析"
+        
+      manus_limitations:
+        - "可能無法處理如此複雜的架構需求"
+        - "建議可能不夠具體和可執行"
+        - "缺少對金融行業特殊要求的考慮"
+
+# 評估標準
+evaluation_metrics:
+  response_quality:
+    weight: 0.25
+    criteria:
+      - "回應的完整性和準確性"
+      - "技術建議的可行性"
+      - "解決方案的創新性"
+      
+  context_understanding:
+    weight: 0.25
+    criteria:
+      - "對問題背景的理解深度"
+      - "對技術細節的掌握程度"
+      - "對業務需求的理解"
+      
+  technical_depth:
+    weight: 0.25
+    criteria:
+      - "技術分析的深度"
+      - "代碼質量和最佳實踐"
+      - "架構設計的合理性"
+      
+  actionability:
+    weight: 0.25
+    criteria:
+      - "建議的可執行性"
+      - "具體步驟的清晰度"
+      - "實施指導的完整性"
+
+# 測試執行配置
+execution:
+  parallel_testing: true
+  result_format: "json"
+  detailed_logging: true
+  comparison_report: true
+  
+# 結果輸出
+output:
+  summary_report: true
+  detailed_comparison: true
+  recommendations: true
+  improvement_suggestions: true
+

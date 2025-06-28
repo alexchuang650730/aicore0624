@@ -1,0 +1,37 @@
+{
+  "manus": {
+    "base_url": "https://manus.im",
+    "app_url": "https://manus.im/app",
+    "login_email": "",
+    "login_password": "",
+    "login_timeout": 30,
+    "retry_attempts": 3,
+    "session_timeout": 3600,
+    "auto_login": true,
+    "keep_alive": true,
+    "data_collection": {
+      "conversations_limit": 50,
+      "tasks_limit": 100,
+      "files_download": true,
+      "analysis_enabled": true
+    },
+    "browser_settings": {
+      "headless": true,
+      "timeout": 30000,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+  },
+  "comparison_engine": {
+    "enabled": true,
+    "use_real_manus_data": true,
+    "fallback_on_error": true,
+    "cache_standards": true,
+    "cache_duration": 3600
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "/tmp/smartinvention_manus.log",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  }
+}
+
