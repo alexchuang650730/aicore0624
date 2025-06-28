@@ -123,3 +123,44 @@ config/api_config_real.json
 reality_check_report.txt
 powerautomation_verification_status
 
+# 添加到现有的 .gitignore 文件
+
+# 环境变量和敏感配置
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# 敏感配置文件
+**/config/*_config.json
+**/manus_config.json
+**/claude_config.json
+**/*_credentials.json
+
+# 日志文件
+*.log
+logs/
+tmp/
+
+# 缓存和临时文件
+__pycache__/
+*.pyc
+*.pyo
+.cache/
+.pytest_cache/
+
+# 下载的文件
+**/manus_downloads/
+**/temp_files/
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 操作系统文件
+.DS_Store
+Thumbs.db
+
