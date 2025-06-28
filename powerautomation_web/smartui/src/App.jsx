@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import GitHubFileExplorer from './components/GitHubFileExplorer'
 import CodeEditor from './components/CodeEditor'
 import FileManager from './components/FileManager'
+import AuthModal from './components/AuthModal'
 import mcpService from './services/mcpService'
+import useAuth from './hooks/useAuth'
 import './App.css'
 
 // 角色权限配置
@@ -139,6 +141,16 @@ function App() {
   const [showEditor, setShowEditor] = useState(false)
   const [mcpConnected, setMcpConnected] = useState(false)
   const [mcpStatus, setMcpStatus] = useState('checking')
+
+  // 认证管理Hook
+  const {
+    authRequest,
+    isAuthModalVisible,
+    authHistory,
+    submitAuth,
+    cancelAuth,
+    triggerAuthRequest
+  } = useAuth()
 
   // 初始化权限
   useEffect(() => {
@@ -564,6 +576,14 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* 认证模态框 */}
+      <AuthModal
+        authRequest={authRequest}
+        onSubmit={submitAuth}
+        onCancel={cancelAuth}
+        isVisible={isAuthModalVisible}
+      />
     </div>
   )
 }
