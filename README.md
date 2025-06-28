@@ -19,6 +19,9 @@ aicore0624/
 ├── scripts/                     # 通用腳本
 ├── test_flow_api_examples/      # API 測試範例
 ├── powerautomation_web/         # Web 相關組件
+│   ├── frontend/                # 原有前端應用
+│   ├── backend/                 # 原有後端服務
+│   └── smartui/                 # SmartUI 智能界面 (新增)
 └── agent_admin/                 # 管理工具
 ```
 
@@ -36,6 +39,13 @@ aicore0624/
   - `packages.microsoft.gpg` - Microsoft 包簽名
   - `wrangler.toml` - Cloudflare 配置
   - 其他系統配置文件
+
+- **`deployment/smartui/`**: SmartUI 部署配置 (新增)
+  - `docker-compose.yml` - Docker 編排配置
+  - `smartui_dockerfile` - SmartUI Docker 配置
+  - `aicore_dockerfile` - AICore Docker 配置
+  - `smartui_nginx.conf` - Nginx 配置
+  - `deploy_to_cloud.sh` - 雲端部署腳本
 
 - **`deployment/keys/`**: 密鑰文件
   - `*.pem` - SSH 密鑰文件
@@ -57,6 +67,12 @@ aicore0624/
 - **`docs/guides/`**: 指南文檔
   - 安裝指南、使用手冊等
 
+- **`docs/smartui/`**: SmartUI 相關文檔 (新增)
+  - `SMARTUI_INTEGRATION_GUIDE.md` - SmartUI 整合指南
+  - `Claude Code SDK + SmartUI Fusion 整合設計方案.md`
+  - `AICore + SmartUI 雲端部署指南.md`
+  - 其他 SmartUI 相關文檔
+
 #### 🧪 **測試相關** → `tests/`
 - **`tests/results/`**: 測試結果
   - `*.json` - 測試結果 JSON 文件
@@ -65,6 +81,12 @@ aicore0624/
 
 - **`tests/testcases/`**: 測試案例
   - 各種測試用例和測試數據
+
+- **`tests/smartui/`**: SmartUI 測試文件 (新增)
+  - `comparison_engine_test.py` - 對比引擎測試
+  - `real_world_comparison_test.py` - 真實世界對比測試
+  - `run_comparison_test.py` - 運行對比測試
+  - `claude_code_vs_manus_test_*.json` - 測試結果數據
 
 #### 🛠️ **開發相關** → `development/`
 - **`development/tools/`**: 開發工具
@@ -155,6 +177,16 @@ aicore0624/
 - **多格式導出**: JSON、CSV、YAML格式支持
 - **會話管理**: 完整的錄製會話生命週期管理
 
+### **SmartUI 智能界面系統** (新增)
+- **GitHub 文件瀏覽器**: 直接瀏覽和編輯 GitHub 倉庫文件
+- **智能代碼編輯器**: 支持語法高亮和智能提示
+- **Claude Code SDK 集成**: 真實的 Claude Code 代碼分析能力
+- **實時 MCP 連接**: 與 AICore 的 MCP 服務實時通信
+- **智能聊天界面**: 200K tokens 上下文分析
+- **高性能緩存**: Redis 緩存加速，提升響應速度
+- **企業級安全**: 完整的認證和授權機制
+- **響應式設計**: 支持桌面和移動設備
+
 ## 📁 PowerAutomation 核心結構
 
 ```
@@ -163,13 +195,18 @@ PowerAutomation/
 │   ├── general_processor_mcp.py          # 通用處理器
 │   ├── recorder_workflow_mcp.py          # 工作流錄製器
 │   ├── smartinvention_adapter_mcp.py     # 智能對話適配器
+│   ├── enhanced_smartinvention_mcp_v3.py # 增強版 SmartInvention MCP (新增)
 │   ├── local_mcp_adapter.py              # 端側適配器
 │   ├── tool_registry_manager.py          # 工具註冊管理器
 │   ├── heartbeat_manager.py              # 心跳管理器
 │   ├── smart_routing_engine.py           # 智慧路由引擎
 │   ├── scenario_analyzer.py              # 場景分析器
 │   ├── dynamic_expert_registry.py        # 動態專家註冊中心
-│   └── expert_recommendation_aggregator.py # 專家建議聚合器
+│   ├── expert_recommendation_aggregator.py # 專家建議聚合器
+│   ├── claude_code_primary_router.py     # Claude Code 主路由器 (新增)
+│   ├── claude_code_real_router.py        # Claude Code 實際路由器 (新增)
+│   ├── claude_code_enhanced_context_manager.py # Claude Code 上下文管理器 (新增)
+│   └── smartinvention_claude_code_adapter.py # SmartInvention Claude Code 適配器 (新增)
 ├── core/               # 核心引擎
 │   ├── aicore3.py      # AICore 3.0主引擎
 │   ├── aicore2.py      # AICore 2.0
@@ -186,6 +223,21 @@ PowerAutomation/
 │   ├── action_executor.py                # 基礎動作執行器
 │   └── action_executor_mcp_support.py    # MCP支持動作執行器
 └── docs/              # 文檔
+
+powerautomation_web/    # Web 組件 (新增 SmartUI)
+├── frontend/           # 原有前端應用
+├── backend/            # 原有後端服務
+└── smartui/            # SmartUI 智能界面
+    ├── src/
+    │   ├── components/ # React 組件
+    │   │   ├── GitHubFileExplorer.jsx    # GitHub 文件瀏覽器
+    │   │   ├── CodeEditor.jsx            # 代碼編輯器
+    │   │   └── ui/                       # UI 組件庫
+    │   ├── services/   # 服務層
+    │   │   └── mcpService.js             # MCP 服務連接
+    │   └── ...
+    ├── package.json    # 依賴配置
+    └── vite.config.js  # Vite 構建配置
 ```
 
 ## 🎯 核心能力
@@ -378,6 +430,16 @@ local_mcp_adapter:
 
 ## 📝 更新日誌
 
+### **v3.0.2 (2025-06-28)** (新增)
+- ✅ 整合 SmartUI 智能界面系統到 PowerAutomation 平台
+- ✅ 新增 GitHub 文件瀏覽器和智能代碼編輯器
+- ✅ 集成 Claude Code SDK 提供真實的代碼分析能力
+- ✅ 實現與 AICore MCP 服務的實時連接
+- ✅ 新增增強版 SmartInvention MCP v3.0 (200K tokens 上下文)
+- ✅ 部署 Claude Code 路由系統和上下文管理器
+- ✅ 完善 SmartUI 部署配置和文檔體系
+- ✅ 建立完整的測試和驗證框架
+
 ### **v3.0.1 (2025-06-25)**
 - ✅ 重構項目目錄結構，建立清晰的文件組織規範
 - ✅ 新增完整的目錄組織和文件分類標準
@@ -415,5 +477,5 @@ MIT License - 詳見LICENSE文件
 
 ---
 
-**PowerAutomation 3.0.1** - 讓智能自動化觸手可及，實現真正的雲邊協同智能系統！
+**PowerAutomation 3.0.2** - 讓智能自動化觸手可及，實現真正的雲邊協同智能系統！現已集成 SmartUI 智能界面，提供完整的可視化操作體驗！
 
