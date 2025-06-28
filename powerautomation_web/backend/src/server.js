@@ -311,6 +311,28 @@ app.post('/api/auth/api-key', (req, res) => {
   }
 });
 
+// Token 验证端点
+app.get('/api/auth/verify', authenticateToken, (req, res) => {
+  try {
+    // 如果通过了authenticateToken中间件，说明token有效
+    const user = req.user;
+    
+    res.json({
+      message: 'Token 验证成功',
+      user: {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        permissions: user.permissions
+      }
+    });
+
+  } catch (error) {
+    console.error('Token 验证错误:', error);
+    res.status(500).json({ message: '服务器内部错误' });
+  }
+});
+
 // 管理员统计端点（带缓存）
 app.get('/api/admin/stats', authenticateToken, requireRole(['admin']), (req, res) => {
   try {
