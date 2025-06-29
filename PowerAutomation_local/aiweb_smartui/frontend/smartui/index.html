@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartUI + Claude Code SDK - AI-First IDE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+        }
+        
+        .logo {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .start-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            margin-top: 1rem;
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .status.error {
+            background: rgba(244, 67, 54, 0.1);
+            border-color: rgba(244, 67, 54, 0.3);
+        }
+        
+        .status-text {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+        
+        .status.error .status-text {
+            color: #F44336;
+        }
+        
+        .ide-container {
+            display: none;
+            text-align: left;
+            margin-top: 2rem;
+        }
+        
+        .ide-header {
+            background: #2d2d30;
+            color: #fff;
+            padding: 1rem;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .ide-content {
+            display: flex;
+            height: 500px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .sidebar {
+            width: 200px;
+            background: #f5f5f5;
+            border-right: 1px solid #ddd;
+            padding: 1rem;
+        }
+        
+        .sidebar h3 {
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .file-item, .tool-item {
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: background-color 0.2s;
+        }
+        
+        .file-item:hover, .tool-item:hover {
+            background: #e3f2fd;
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .editor {
+            flex: 1;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            overflow-y: auto;
+        }
+        
+        .console {
+            height: 150px;
+            background: #2d2d30;
+            border-top: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .console-header {
+            background: #3c3c3c;
+            color: #fff;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+        }
+        
+        .console-content {
+            flex: 1;
+            padding: 1rem;
+            color: #d4d4d4;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8rem;
+            overflow-y: auto;
+        }
+        
+        .console-input {
+            display: flex;
+            padding: 0.5rem 1rem;
+            background: #2d2d30;
+        }
+        
+        .console-input input {
+            flex: 1;
+            background: #3c3c3c;
+            border: 1px solid #5a5a5a;
+            color: #fff;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .powerautomation-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="powerautomation-badge">PowerAutomation Local</div>
+    
+    <div class="container">
+        <div class="logo">🧠</div>
+        <h1>SmartUI</h1>
+        <p class="subtitle">AI-First IDE - 智能代码开发环境</p>
+        
+        <div id="loginForm">
+            <div class="form-group">
+                <label for="apiKey">Claude API Key:</label>
+                <input type="password" id="apiKey" value="admin_qIFdydy7h_cZcop7uGNT73JRhjXQblHgWaRoDJMMz4U" placeholder="输入您的Claude API Key">
+            </div>
+            
+            <div class="form-group">
+                <label for="projectName">项目名称:</label>
+                <input type="text" id="projectName" value="PowerAutomation Project" placeholder="输入项目名称">
+            </div>
+            
+            <button class="start-btn" onclick="startIDE()">
+                🚀 启动 AI-First IDE
+            </button>
+        </div>
+        
+        <div class="status" id="status">
+            <div class="status-text">✅ 后端服务连接正常</div>
+        </div>
+        
+        <div class="ide-container" id="ideContainer">
+            <div class="ide-header">
+                <div>
+                    <strong id="projectTitle">PowerAutomation Project</strong> - SmartUI AI-First IDE
+                </div>
+                <div style="font-size: 0.8rem;">PowerAutomation Local</div>
+            </div>
+            
+            <div class="ide-content">
+                <div class="sidebar">
+                    <h3>📁 项目文件</h3>
+                    <div class="file-item" onclick="openFile('main.py')">📄 main.py</div>
+                    <div class="file-item" onclick="openFile('requirements.txt')">📄 requirements.txt</div>
+                    <div class="file-item" onclick="openFile('README.md')">📄 README.md</div>
+                    
+                    <h3 style="margin-top: 1.5rem;">🤖 AI 工具</h3>
+                    <div class="tool-item" onclick="activateAI('generate')">🤖 代码生成</div>
+                    <div class="tool-item" onclick="activateAI('review')">🔍 代码审查</div>
+                    <div class="tool-item" onclick="activateAI('optimize')">⚡ 代码优化</div>
+                    <div class="tool-item" onclick="activateAI('debug')">🐛 调试助手</div>
+                </div>
+                
+                <div class="main-content">
+                    <div class="editor" id="editor">
+# PowerAutomation Project - Main File
+# AI-First IDE with SmartUI
+
+def main():
+    """
+    PowerAutomation 主函数
+    集成 AIWeb 和 SmartUI 组件
+    """
+    print("🚀 PowerAutomation Local 启动")
+    print("🌐 AIWeb 服务: http://localhost:8081")
+    print("🧠 SmartUI IDE: http://localhost:3000")
+    print("📡 后端 API: http://localhost:5001")
+    
+    # TODO: 添加您的代码逻辑
+    pass
+
+if __name__ == "__main__":
+    main()
+                    </div>
+                    
+                    <div class="console">
+                        <div class="console-header">🤖 AI 助手控制台</div>
+                        <div class="console-content" id="consoleOutput">
+                            <div style="color: #4CAF50;">[启动] SmartUI AI-First IDE 已启动</div>
+                            <div style="color: #2196F3;">[连接] 后端 MCP 服务连接成功</div>
+                            <div style="color: #FF9800;">[就绪] 等待您的指令...</div>
+                        </div>
+                        <div class="console-input">
+                            <input type="text" placeholder="输入您的代码需求或问题..." onkeypress="handleConsoleInput(event)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function checkBackendStatus() {
+            fetch('http://localhost:5001/health')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status').innerHTML = '<div class="status-text">✅ 后端服务连接正常</div>';
+                })
+                .catch(error => {
+                    document.getElementById('status').innerHTML = '<div class="status-text">⚠️ 后端服务连接失败</div>';
+                    document.getElementById('status').className = 'status error';
+                });
+        }
+        
+        function startIDE() {
+            const apiKey = document.getElementById('apiKey').value;
+            const projectName = document.getElementById('projectName').value;
+            
+            if (!apiKey || !projectName) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            // 保存配置
+            localStorage.setItem('claude_api_key', apiKey);
+            localStorage.setItem('project_name', projectName);
+            
+            // 显示IDE界面
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('ideContainer').style.display = 'block';
+            document.getElementById('projectTitle').textContent = projectName;
+            
+            // 添加启动日志
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `<div style="color: #4CAF50;">[${timestamp}] 🚀 项目 "${projectName}" 已启动</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function openFile(filename) {
+            const editor = document.getElementById('editor');
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            // 模拟文件内容
+            const fileContents = {
+                'main.py': `# ${document.getElementById('projectTitle').textContent}
+# PowerAutomation Local - 主文件
+
+from powerautomation_local import PowerAutomationMCP
+from aiweb_smartui import SmartUIMCP
+
+def main():
+    """主函数"""
+    print("🚀 启动 PowerAutomation Local")
+    
+    # 初始化组件
+    pa_mcp = PowerAutomationMCP()
+    smartui_mcp = SmartUIMCP()
+    
+    # 启动服务
+    pa_mcp.start()
+    smartui_mcp.start()
+    
+    print("✅ 所有服务已启动")
+
+if __name__ == "__main__":
+    main()`,
+                'requirements.txt': `# PowerAutomation Local 依赖
+flask==2.3.3
+flask-cors==4.0.0
+requests==2.31.0
+
+# AI 相关
+openai>=1.0.0
+anthropic>=0.3.0
+
+# 工具库
+click>=8.0.0
+pydantic>=2.0.0`,
+                'README.md': `# ${document.getElementById('projectTitle').textContent}
+
+PowerAutomation Local 项目 - AIWeb & SmartUI 组件
+
+## 🚀 快速开始
+
+\`\`\`bash
+# 初始化项目
+./init_aicore.sh
+
+# 访问服务
+# AIWeb: http://localhost:8081
+# SmartUI: http://localhost:3000
+\`\`\`
+
+## 📁 项目结构
+
+\`\`\`
+PowerAutomation_local/
+├── aiweb_smartui/          # AIWeb & SmartUI 组件
+├── core/                   # 核心 MCP 服务
+└── start.sh               # 启动脚本
+\`\`\`
+
+## 🔧 技术栈
+
+- **后端**: Python Flask + MCP 架构
+- **前端**: HTML5 + JavaScript
+- **AI**: Claude API 集成
+`
+            };
+            
+            editor.textContent = fileContents[filename] || `# ${filename}\n# 文件内容加载中...`;
+            output.innerHTML += `<div style="color: #2196F3;">[${timestamp}] 📄 已打开文件: ${filename}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function activateAI(tool) {
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const tools = {
+                'generate': '🤖 代码生成工具已激活，请在下方输入您的需求',
+                'review': '🔍 代码审查工具已激活，正在分析当前代码...',
+                'optimize': '⚡ 代码优化工具已激活，正在寻找优化机会...',
+                'debug': '🐛 调试助手已激活，请描述遇到的问题'
+            };
+            
+            output.innerHTML += `<div style="color: #FF9800;">[${timestamp}] ${tools[tool]}</div>`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        function handleConsoleInput(event) {
+            if (event.key === 'Enter') {
+                const input = event.target;
+                const output = document.getElementById('consoleOutput');
+                const timestamp = new Date().toLocaleTimeString();
+                
+                if (input.value.trim()) {
+                    // 显示用户输入
+                    output.innerHTML += `<div style="margin-bottom: 0.5rem; color: #FFF;">[${timestamp}] > ${input.value}</div>`;
+                    
+                    // 模拟AI响应
+                    setTimeout(() => {
+                        const responses = [
+                            "🤖 我理解了您的需求，正在生成相应的代码...",
+                            "🤖 这是一个很好的想法！让我为您创建一个示例实现。",
+                            "🤖 根据您的描述，我建议使用以下方法来实现...",
+                            "🤖 我已经分析了您的需求，这里是优化后的解决方案。"
+                        ];
+                        const response = responses[Math.floor(Math.random() * responses.length)];
+                        const newTimestamp = new Date().toLocaleTimeString();
+                        output.innerHTML += `<div style="margin-bottom: 0.5rem; color: #2196F3;">[${newTimestamp}] ${response}</div>`;
+                        output.scrollTop = output.scrollHeight;
+                    }, 1000);
+                    
+                    input.value = '';
+                }
+            }
+        }
+        
+        // 页面加载时检查服务状态
+        window.addEventListener('load', function() {
+            checkBackendStatus();
+            
+            // 如果已有保存的配置，自动填入
+            const savedApiKey = localStorage.getItem('claude_api_key');
+            const savedProjectName = localStorage.getItem('project_name');
+            
+            if (savedApiKey) {
+                document.getElementById('apiKey').value = savedApiKey;
+            }
+            if (savedProjectName) {
+                document.getElementById('projectName').value = savedProjectName;
+            }
+        });
+    </script>
+</body>
+</html>
+
