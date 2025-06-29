@@ -1,0 +1,54 @@
+{
+  "environments": [
+    {
+      "environment_id": "mac_local_001",
+      "environment_type": "mac_local",
+      "connection_method": "ssh",
+      "host": "192.168.1.100",
+      "port": 22,
+      "username": "alexchuang",
+      "ssh_key_path": "/home/ubuntu/.ssh/id_rsa",
+      "init_script_path": "./init_aicore.sh",
+      "health_check_url": "http://localhost:8081/health",
+      "timeout": 300,
+      "description": "Alex的Mac本地开发环境"
+    },
+    {
+      "environment_id": "mac_local_002",
+      "environment_type": "mac_local",
+      "connection_method": "http_api",
+      "host": "192.168.1.101",
+      "port": 8082,
+      "api_token": "your_api_token_here",
+      "init_script_path": "./init_aicore.sh",
+      "health_check_url": "http://localhost:8081/health",
+      "timeout": 300,
+      "description": "备用Mac开发环境 (HTTP API方式)"
+    },
+    {
+      "environment_id": "windows_local_001",
+      "environment_type": "windows_local",
+      "connection_method": "ssh",
+      "host": "192.168.1.102",
+      "port": 22,
+      "username": "developer",
+      "ssh_key_path": "/home/ubuntu/.ssh/id_rsa",
+      "init_script_path": "./init_aicore.sh",
+      "health_check_url": "http://localhost:8081/health",
+      "timeout": 300,
+      "description": "Windows WSL开发环境"
+    }
+  ],
+  "global_settings": {
+    "max_concurrent_deployments": 3,
+    "default_timeout": 300,
+    "retry_attempts": 2,
+    "health_check_interval": 30
+  },
+  "notification_settings": {
+    "slack_webhook": "",
+    "email_notifications": false,
+    "log_level": "INFO"
+  }
+}
+
