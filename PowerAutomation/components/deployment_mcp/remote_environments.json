@@ -1,0 +1,109 @@
+{
+  "environments": [
+    {
+      "environment_id": "mac_local_001",
+      "environment_type": "mac_local",
+      "connection_method": "ssh",
+      "host": "192.168.1.100",
+      "port": 22,
+      "username": "alexchuang",
+      "ssh_key_path": "/home/ubuntu/.ssh/id_rsa",
+      "init_script_path": "./init_aicore.sh",
+      "working_directory": "/Users/alexchuang/aicore0624",
+      "health_check_url": "http://192.168.1.100:8081/health",
+      "timeout": 300,
+      "description": "Alex的Mac本地环境"
+    },
+    {
+      "environment_id": "mac_local_002",
+      "environment_type": "mac_local",
+      "connection_method": "ssh",
+      "host": "192.168.1.101",
+      "port": 22,
+      "username": "developer",
+      "ssh_key_path": "/home/ubuntu/.ssh/id_rsa",
+      "init_script_path": "./init_aicore.sh",
+      "working_directory": "/Users/developer/aicore0624",
+      "health_check_url": "http://192.168.1.101:8081/health",
+      "timeout": 300,
+      "description": "开发者Mac环境"
+    },
+    {
+      "environment_id": "windows_local_001",
+      "environment_type": "windows_local",
+      "connection_method": "ssh",
+      "host": "192.168.1.102",
+      "port": 22,
+      "username": "administrator",
+      "password": "your_password_here",
+      "init_script_path": "./init_aicore.sh",
+      "working_directory": "C:\\aicore0624",
+      "health_check_url": "http://192.168.1.102:8081/health",
+      "timeout": 300,
+      "description": "Windows本地环境（需要WSL或Git Bash）"
+    },
+    {
+      "environment_id": "linux_local_001",
+      "environment_type": "linux_local",
+      "connection_method": "ssh",
+      "host": "192.168.1.103",
+      "port": 22,
+      "username": "ubuntu",
+      "ssh_key_path": "/home/ubuntu/.ssh/id_rsa",
+      "init_script_path": "./init_aicore.sh",
+      "working_directory": "/home/ubuntu/aicore0624",
+      "health_check_url": "http://192.168.1.103:8081/health",
+      "timeout": 300,
+      "description": "Linux本地环境"
+    },
+    {
+      "environment_id": "docker_local_001",
+      "environment_type": "docker",
+      "connection_method": "http_api",
+      "host": "localhost",
+      "port": 8082,
+      "api_endpoint": "http://localhost:8082/api/deploy",
+      "init_script_path": "./init_aicore.sh",
+      "working_directory": "/app",
+      "health_check_url": "http://localhost:8082/health",
+      "timeout": 300,
+      "description": "Docker容器环境"
+    },
+    {
+      "environment_id": "webhook_test_001",
+      "environment_type": "mac_local",
+      "connection_method": "webhook",
+      "host": "localhost",
+      "port": 8083,
+      "webhook_url": "http://localhost:8083/webhook/deploy",
+      "init_script_path": "./init_aicore.sh",
+      "working_directory": ".",
+      "timeout": 300,
+      "description": "Webhook测试环境"
+    }
+  ],
+  "default_settings": {
+    "timeout": 300,
+    "retry_count": 3,
+    "retry_delay": 10,
+    "health_check_timeout": 30,
+    "health_check_retries": 3
+  },
+  "ssh_settings": {
+    "default_key_path": "/home/ubuntu/.ssh/id_rsa",
+    "connection_timeout": 30,
+    "command_timeout": 300
+  },
+  "deployment_settings": {
+    "parallel_limit": 5,
+    "log_level": "INFO",
+    "enable_health_check": true,
+    "auto_retry_on_failure": true
+  },
+  "notification_settings": {
+    "enable_notifications": true,
+    "notification_webhook": "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK",
+    "email_notifications": false
+  }
+}
+

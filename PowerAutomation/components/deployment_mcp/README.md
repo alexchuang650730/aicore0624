@@ -1,263 +1,304 @@
-# 通用部署 MCP (Deployment MCP)
+# 部署管理 MCP (Deployment MCP)
 
-## 🎯 **核心功能**
+PowerAutomation 系统的统一部署管理组件，负责协调 EC2 主平台与本地环境的分布式部署。
 
-專門負責執行各種類型的部署操作，與自動化驗證協調器配合，確保部署前已通過驗證。
+## 🏗️ 架构概述
 
-## 🚀 **支持的部署類型**
-
-- **Web Application** - Web 應用程序部署
-- **API Service** - API 服務部署
-- **Database** - 數據庫部署
-- **Microservice** - 微服務部署
-- **Static Site** - 靜態網站部署
-- **Container** - 容器化應用部署
-- **Serverless** - 無服務器函數部署
-
-## 📋 **支持的部署策略**
-
-### 🔵 **藍綠部署 (Blue-Green)**
-- 零停機部署
-- 快速回滾能力
-- 適用於生產環境
-
-### 🔄 **滾動更新 (Rolling Update)**
-- 逐步替換實例
-- 保持服務可用性
-- 適用於多實例服務
-
-### 🐤 **金絲雀部署 (Canary)**
-- 小流量驗證
-- 風險控制
-- 適用於新功能發布
-
-### 🔄 **重建部署 (Recreate)**
-- 簡單直接
-- 短暫停機
-- 適用於開發環境
-
-### 🧪 **A/B 測試部署**
-- 並行版本測試
-- 數據驅動決策
-- 適用於功能驗證
-
-## 🛠️ **使用方法**
-
-### **CLI 接口**
-
-```bash
-# 部署 Web 應用（藍綠策略）
-python main.py deploy \
-  --name "my-web-app" \
-  --type "web_application" \
-  --strategy "blue_green" \
-  --source "/path/to/app" \
-  --environment "production" \
-  --version "v1.2.0" \
-  --replicas 3
-
-# 部署 API 服務（滾動更新）
-python main.py deploy \
-  --name "user-api" \
-  --type "api_service" \
-  --strategy "rolling_update" \
-  --source "/path/to/api" \
-  --environment "staging" \
-  --version "v2.1.0" \
-  --replicas 5
-
-# 查看部署歷史
-python main.py history
-
-# 查看活躍部署
-python main.py status
-
-# 回滾部署
-python main.py rollback --deployment-id "my-web-app_1750966000"
+```
+EC2 主平台部署
+       ↓
+远程部署协调器 (Remote Deployment Coordinator)
+       ↓
+触发本地环境部署 (SSH/HTTP API/Webhook)
+       ↓
+本地 init_aicore.sh 执行
+       ↓
+验证分布式系统状态
 ```
 
-### **Python API**
+## 📁 组件结构
 
-```python
-from main import DeploymentMCP, DeploymentConfig, DeploymentType, DeploymentStrategy
-
-# 創建部署 MCP 實例
-deployment_mcp = DeploymentMCP()
-
-# 配置部署
-config = DeploymentConfig(
-    name="my-service",
-    type=DeploymentType.API_SERVICE,
-    strategy=DeploymentStrategy.BLUE_GREEN,
-    source_path="/path/to/service",
-    target_environment="production",
-    version="v1.0.0",
-    replicas=3,
-    health_check_url="http://my-service/health",
-    rollback_enabled=True
-)
-
-# 執行部署
-result = await deployment_mcp.deploy(config)
-print(f"部署狀態: {result.status}")
-print(f"部署端點: {result.endpoints}")
+```
+deployment_mcp/
+├── main.py                           # 主要的部署 MCP 组件
+├── remote_deployment_coordinator.py  # 远程部署协调器
+├── ec2_deployment_trigger.py         # EC2 部署触发器
+├── remote_environments.json          # 远程环境配置
+└── README.md                         # 本文档
 ```
 
-## ⚙️ **配置選項**
+## 🚀 核心功能
 
-### **部署配置 (DeploymentConfig)**
+### 1. 远程部署协调器 (Remote Deployment Coordinator)
 
-```python
-@dataclass
-class DeploymentConfig:
-    name: str                    # 部署名稱
-    type: DeploymentType        # 部署類型
-    strategy: DeploymentStrategy # 部署策略
-    source_path: str            # 源代碼路徑
-    target_environment: str     # 目標環境
-    version: str                # 版本號
-    replicas: int = 1           # 副本數量
-    health_check_url: str = None # 健康檢查 URL
-    rollback_enabled: bool = True # 是否啟用回滾
-    timeout: int = 600          # 超時時間（秒）
-    environment_variables: Dict = None # 環境變量
-    dependencies: List[str] = None     # 依賴服務
-```
+负责协调整个分布式部署流程：
 
-### **系統配置**
+- **EC2 主平台部署**: 部署 PowerAutomation 主平台到云端
+- **本地环境触发**: 通过多种方式触发本地环境初始化
+- **状态监控**: 实时监控所有环境的部署状态
+- **健康检查**: 验证分布式系统的整体健康状态
+
+### 2. EC2 部署触发器 (EC2 Deployment Trigger)
+
+在 EC2 部署完成后自动执行：
+
+- **环境配置加载**: 从配置文件加载所有注册的本地环境
+- **批量触发**: 并行触发多个本地环境的部署
+- **结果汇总**: 收集和展示所有环境的部署结果
+
+### 3. 多种连接方式
+
+支持多种方式连接和触发本地环境：
+
+- **SSH**: 通过 SSH 直接执行远程命令
+- **HTTP API**: 通过 REST API 触发部署
+- **Webhook**: 通过 Webhook 通知本地环境
+
+## ⚙️ 配置说明
+
+### 远程环境配置 (remote_environments.json)
 
 ```json
 {
-  "deployment_root": "/tmp/deployments",
-  "backup_root": "/tmp/deployment_backups",
-  "max_concurrent_deployments": 3,
-  "default_timeout": 600,
-  "health_check_timeout": 120,
-  "rollback_retention_days": 30
+  "environments": [
+    {
+      "environment_id": "mac_local_001",
+      "environment_type": "mac_local",
+      "connection_method": "ssh",
+      "host": "192.168.1.100",
+      "port": 22,
+      "username": "alexchuang",
+      "ssh_key_path": "/home/ubuntu/.ssh/id_rsa",
+      "init_script_path": "./init_aicore.sh",
+      "health_check_url": "http://localhost:8081/health",
+      "timeout": 300
+    }
+  ]
 }
 ```
 
-## 🔄 **部署流程**
+### 配置参数说明
 
-1. **驗證配置** - 檢查部署配置的有效性
-2. **並發檢查** - 確保不超過最大並發部署限制
-3. **創建快照** - 為回滾創建當前狀態快照
-4. **執行策略** - 根據選擇的策略執行部署
-5. **健康檢查** - 驗證部署後的服務健康狀態
-6. **記錄歷史** - 保存部署結果和日誌
+| 参数 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `environment_id` | string | ✅ | 环境唯一标识符 |
+| `environment_type` | enum | ✅ | 环境类型 (mac_local, windows_local, linux_local) |
+| `connection_method` | enum | ✅ | 连接方式 (ssh, http_api, webhook) |
+| `host` | string | ✅ | 目标主机地址 |
+| `port` | integer | ✅ | 连接端口 |
+| `username` | string | SSH时必需 | SSH 用户名 |
+| `ssh_key_path` | string | SSH时必需 | SSH 私钥路径 |
+| `api_token` | string | HTTP API时必需 | API 认证令牌 |
+| `init_script_path` | string | ❌ | 初始化脚本路径 (默认: ./init_aicore.sh) |
+| `health_check_url` | string | ❌ | 健康检查 URL |
+| `timeout` | integer | ❌ | 超时时间 (默认: 300秒) |
 
-## 🔒 **安全特性**
+## 🔧 使用方法
 
-- **回滾機制** - 自動和手動回滾支持
-- **健康檢查** - 部署後自動驗證服務狀態
-- **並發控制** - 防止過多並發部署影響系統
-- **操作日誌** - 完整的部署過程記錄
-- **快照備份** - 部署前狀態保存
+### 1. 在 EC2 部署脚本中集成
 
-## 🎯 **與 PowerAutomation 集成**
+在您的 EC2 部署脚本的最后添加：
 
-### **與驗證協調器配合**
+```bash
+#!/bin/bash
+# EC2 部署脚本
+
+# ... EC2 部署逻辑 ...
+
+# 部署完成后触发本地环境
+echo "🚀 PowerAutomation 主平台部署完成，触发本地环境..."
+
+# 设置环境变量
+export EC2_INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+export EC2_PUBLIC_IP=$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)
+export DEPLOYMENT_VERSION="v1.0.0"
+
+# 执行触发器
+cd /path/to/PowerAutomation/components/deployment_mcp
+python3 ec2_deployment_trigger.py
+
+echo "✅ 分布式部署协调完成"
+```
+
+### 2. 直接使用协调器
+
 ```python
-# 部署前自動調用驗證協調器
-verification_result = await verification_coordinator.coordinate_verification(
-    "deployment", deployment_context
+import asyncio
+from remote_deployment_coordinator import (
+    RemoteDeploymentCoordinator,
+    RemoteEnvironmentConfig,
+    RemoteEnvironmentType
 )
 
-if verification_result["overall_status"] == "PASSED":
-    # 執行部署
-    deployment_result = await deployment_mcp.deploy(config)
-else:
-    # 阻止部署
-    raise Exception("部署前驗證失敗")
+async def deploy_distributed_system():
+    coordinator = RemoteDeploymentCoordinator()
+    
+    # 注册本地环境
+    mac_config = RemoteEnvironmentConfig(
+        environment_id="mac_local_001",
+        environment_type=RemoteEnvironmentType.MAC_LOCAL,
+        connection_method="ssh",
+        host="192.168.1.100",
+        port=22,
+        username="alexchuang",
+        ssh_key_path="/path/to/ssh/key",
+        init_script_path="./init_aicore.sh"
+    )
+    
+    coordinator.register_remote_environment(mac_config)
+    
+    # 执行协调部署
+    result = await coordinator.coordinate_deployment(
+        coordination_id="deploy_001",
+        ec2_deployment_config={"instance_type": "t3.medium"},
+        target_environments=["mac_local_001"]
+    )
+    
+    print(f"部署状态: {result.status.value}")
+
+# 运行
+asyncio.run(deploy_distributed_system())
 ```
 
-### **質量門禁遵循**
-- ✅ 部署前強制驗證
-- ✅ 失敗自動回滾
-- ✅ 完整操作追蹤
-- ✅ 「若交付不成功，不同意離開」
+### 3. 配置本地环境
 
-## 📊 **監控和告警**
+在本地环境中，确保：
 
-- **部署狀態監控** - 實時跟蹤部署進度
-- **性能指標收集** - 部署後系統性能監控
-- **異常告警** - 部署失敗或異常自動告警
-- **歷史分析** - 部署成功率和趨勢分析
+1. **SSH 访问**: 配置 SSH 密钥认证
+2. **脚本权限**: 确保 `init_aicore.sh` 有执行权限
+3. **网络连通**: 确保 EC2 可以访问本地环境
 
-## 🔧 **擴展和定制**
-
-### **添加新的部署類型**
-```python
-class CustomDeploymentType(Enum):
-    CUSTOM_APP = "custom_app"
-
-# 實現對應的部署方法
-async def _deploy_custom_app(self, deployment_id, config, logs):
-    # 自定義部署邏輯
-    pass
-```
-
-### **添加新的部署策略**
-```python
-async def _deploy_custom_strategy(self, deployment_id, config, logs):
-    # 自定義策略邏輯
-    pass
-```
-
-## 🚨 **故障排除**
-
-### **常見問題**
-
-1. **部署超時**
-   - 檢查網絡連接
-   - 增加超時時間
-   - 檢查資源可用性
-
-2. **健康檢查失敗**
-   - 驗證健康檢查 URL
-   - 檢查服務啟動時間
-   - 查看應用日誌
-
-3. **回滾失敗**
-   - 檢查快照完整性
-   - 驗證回滾權限
-   - 手動恢復備份
-
-### **日誌分析**
 ```bash
-# 查看部署日誌
-grep "deployment_id" /var/log/deployment.log
+# 在本地环境中
+chmod +x init_aicore.sh
 
-# 分析失敗原因
-grep "ERROR\|FAILED" /var/log/deployment.log
+# 测试 SSH 连接 (从 EC2)
+ssh -i /path/to/key user@local-host "echo 'SSH connection test'"
 ```
 
-## 📈 **最佳實踐**
+## 📊 部署流程
 
-1. **選擇合適的部署策略**
-   - 生產環境：藍綠或金絲雀
-   - 測試環境：滾動更新或重建
-   - 開發環境：重建
+### 完整的分布式部署流程
 
-2. **設置健康檢查**
-   - 提供準確的健康檢查端點
-   - 設置合理的檢查超時時間
-   - 包含關鍵依賴檢查
+1. **EC2 主平台部署**
+   - 部署 PowerAutomation 主平台到 EC2
+   - 启动核心 MCP 服务
+   - 验证主平台状态
 
-3. **啟用回滾機制**
-   - 始終啟用自動回滾
-   - 定期測試回滾流程
-   - 保持足夠的備份保留期
+2. **触发本地环境**
+   - 读取远程环境配置
+   - 并行触发所有注册的本地环境
+   - 执行 `init_aicore.sh` 脚本
 
-4. **監控部署指標**
-   - 跟蹤部署成功率
-   - 監控部署時間
-   - 分析失敗原因
+3. **本地环境初始化**
+   - 启动 PowerAutomation_local (MCP 适配器)
+   - 启动 AIWeb & SmartUI 组件
+   - 连接到 EC2 主平台
 
-## 🔗 **相關組件**
+4. **分布式验证**
+   - 检查所有环境的健康状态
+   - 验证 EC2 与本地环境的连通性
+   - 确认整个系统正常运行
 
-- **自動化驗證協調器** - 部署前驗證
-- **運維 MCP** - 部署後運維
-- **Test Flow MCP** - 功能測試
-- **監控系統** - 部署監控
+### 部署状态流转
+
+```
+PENDING → EC2_DEPLOYING → EC2_COMPLETED → LOCAL_TRIGGERING → 
+LOCAL_DEPLOYING → LOCAL_COMPLETED → COMPLETED
+```
+
+## 🔍 监控和日志
+
+### 部署状态查询
+
+```python
+# 查询活跃的协调任务
+active_coordinations = coordinator.list_active_coordinations()
+
+# 获取特定协调的状态
+status = coordinator.get_coordination_status("deploy_001")
+
+# 查看历史记录
+history = coordinator.get_coordination_history(limit=10)
+```
+
+### 日志输出
+
+部署过程中会输出详细的日志信息：
+
+```
+🚀 开始协调部署: deploy_20250629_001
+📡 阶段1: 部署 PowerAutomation 主平台到 EC2
+✅ EC2 主平台部署完成
+💻 阶段2: 触发本地环境部署
+🔗 触发远程环境: mac_local_001
+✅ mac_local_001 部署成功
+🔍 阶段3: 验证整体部署状态
+🎉 所有环境部署成功完成
+⏱️ 总耗时: 45.67 秒
+```
+
+## 🛠️ 故障排除
+
+### 常见问题
+
+1. **SSH 连接失败**
+   ```
+   错误: SSH 连接超时
+   解决: 检查网络连通性、SSH 密钥配置、防火墙设置
+   ```
+
+2. **本地脚本执行失败**
+   ```
+   错误: init_aicore.sh 执行失败
+   解决: 检查脚本权限、依赖环境、路径配置
+   ```
+
+3. **健康检查失败**
+   ```
+   错误: 健康检查 URL 无响应
+   解决: 确认服务已启动、端口开放、URL 配置正确
+   ```
+
+### 调试模式
+
+启用详细日志：
+
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+
+## 🔐 安全考虑
+
+1. **SSH 密钥管理**: 使用专用的部署密钥，定期轮换
+2. **网络安全**: 限制 SSH 访问来源，使用 VPN 或专用网络
+3. **API 认证**: 使用强密码的 API 令牌，启用 HTTPS
+4. **权限控制**: 使用最小权限原则，避免使用 root 用户
+
+## 📈 扩展性
+
+### 添加新的连接方式
+
+1. 在 `RemoteEnvironmentConfig` 中添加新的连接方法
+2. 在 `RemoteDeploymentCoordinator` 中实现对应的触发逻辑
+3. 更新配置文件格式和文档
+
+### 支持更多环境类型
+
+1. 扩展 `RemoteEnvironmentType` 枚举
+2. 添加特定环境的处理逻辑
+3. 更新配置验证和文档
+
+## 🤝 贡献指南
+
+1. 遵循 PowerAutomation MCP 组织规范
+2. 所有 MCP 通信通过中央协调器进行
+3. 保持向后兼容性
+4. 添加充分的测试和文档
+
+---
+
+**PowerAutomation Team**  
+*让分布式部署变得简单而可靠*
 
