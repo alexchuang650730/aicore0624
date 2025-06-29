@@ -1,0 +1,26 @@
+# 部署协调机制依赖包
+# PowerAutomation Deployment MCP Requirements
+
+# 核心依赖
+paramiko>=3.5.0          # SSH 连接和远程命令执行
+requests>=2.32.0         # HTTP API 调用
+flask>=3.1.0             # 模拟本地环境 HTTP 服务
+
+# 加密和安全
+cryptography>=45.0.0     # 加密支持
+bcrypt>=4.3.0            # 密码哈希
+pynacl>=1.5.0            # 网络和加密库
+
+# 开发和测试
+unittest-xml-reporting   # XML 格式测试报告
+coverage                 # 代码覆盖率
+pytest                   # 更强大的测试框架
+pytest-asyncio           # 异步测试支持
+pytest-mock              # Mock 支持
+
+# 可选依赖
+pyyaml                   # YAML 配置文件支持
+python-dotenv            # 环境变量管理
+rich                     # 美化终端输出
+click                    # 命令行接口
+
