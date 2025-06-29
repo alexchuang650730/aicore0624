@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIWeb - 智能Web平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .connect-btn {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+            text-decoration: none;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+        
+        .connect-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+        
+        .status {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .status-text {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+        
+        .info {
+            margin-top: 1.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .powerautomation-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="powerautomation-badge">PowerAutomation Local</div>
+    
+    <div class="container">
+        <div class="logo">🚀</div>
+        <h1>AIWeb</h1>
+        <p class="subtitle">智能Web平台 - 连接本地SmartUI AI-First IDE</p>
+        
+        <button class="connect-btn" onclick="connectToSmartUI()">
+            🧠 連接SmartUI
+        </button>
+        
+        <div class="status" id="status">
+            <div class="status-text">✅ SmartUI服务正常运行</div>
+        </div>
+        
+        <div class="info">
+            <p>SmartUI AI-First IDE 运行在本地端口 3000</p>
+            <p>点击上方按钮直接连接到SmartUI</p>
+            <p style="margin-top: 1rem; font-size: 0.8rem; color: #999;">
+                PowerAutomation Local - AIWeb & SmartUI 组件
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function connectToSmartUI() {
+            // 直接跳转到SmartUI
+            window.open('http://localhost:3000', '_blank');
+        }
+    </script>
+</body>
+</html>
+
