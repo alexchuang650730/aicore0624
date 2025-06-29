@@ -1,9 +1,9 @@
 // MCP服务 - 生产环境配置
 class MCPService {
   constructor() {
-    // 生产环境后端URL
-    this.baseURL = import.meta.env.VITE_API_BASE_URL || 'https://y0h0i3cyzmop.manus.space/api'
-    this.backendURL = import.meta.env.VITE_BACKEND_URL || 'https://y0h0i3cyzmop.manus.space'
+    // 使用环境变量配置API地址
+    this.baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api'
+    this.backendURL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001'
     this.connected = false
     this.contextCapacity = '200K'
     
@@ -58,48 +58,16 @@ class MCPService {
         analysisMode = 'integrated'
       } = context
 
-      // 构建分析请求
+      // 构建AICore请求
       const payload = {
-        context: {
-          // 基础上下文
-          user_role: this.getUserRole(),
-          repository: repository,
-          selected_file: selectedFile,
-          chat_history: chatHistory,
-          
-          // Claude Code 整合配置
-          enable_code_analysis: enableCodeAnalysis,
-          context_capacity: contextCapacity,
-          analysis_mode: analysisMode,
-          
-          // 智能分析选项
-          auto_analyze_code: true,
-          deep_context_understanding: true,
-          generate_recommendations: true,
-          
-          // 请求内容
-          message: message,
-          
-          // 功能标志
-          use_claude_code: true,
-          integrate_smartinvention: true,
-          enable_caching: true
-        },
-        
-        // 元数据
-        timestamp: new Date().toISOString(),
-        session_id: this.getSessionId(),
-        tokens_used: 0
+        query: message
       }
 
-      // 发送到后端代码分析端点
-      const response = await fetch(`${this.baseURL}/code/analyze`, {
+      // 发送到AICore Manus端点
+      const response = await fetch(`${this.baseURL}/manus/send`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.getApiKey()}`,
-          'X-Context-Capacity': contextCapacity,
-          'X-Analysis-Mode': analysisMode
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       })
@@ -111,8 +79,15 @@ class MCPService {
 
       const result = await response.json()
       
-      // 处理响应，提取整合的分析结果
-      return this.processResponse(result)
+      // 处理AICore响应
+      return {
+        content: result.result || result.message || '处理完成',
+        success: result.success,
+        timestamp: result.timestamp || new Date().toISOString(),
+        service: 'AICore + Manus',
+        query: result.query,
+        enhanced_query: result.enhanced_query
+      }
       
     } catch (error) {
       console.error('MCP处理失败:', error)

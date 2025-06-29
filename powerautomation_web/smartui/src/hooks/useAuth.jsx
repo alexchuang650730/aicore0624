@@ -56,7 +56,7 @@ const useAuth = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8081/api/auth/submit', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001'}/api/auth/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -107,7 +107,7 @@ const useAuth = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8081/api/auth/cancel', {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5001'}/api/auth/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
