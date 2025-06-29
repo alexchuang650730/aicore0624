@@ -490,6 +490,360 @@ class ManusConnector:
                 'last_check': datetime.now().isoformat()
             }
     
+    def check_repository_exists(self, repo_name: str) -> bool:
+        """检查Manus项目中是否存在指定仓库"""
+        try:
+            self.logger.info(f"🔍 检查仓库是否存在: {repo_name}")
+            
+            # 方法1: 通过项目文件列表检查
+            project_data = self.get_project_data()
+            if project_data and 'files' in project_data:
+                for file_info in project_data['files']:
+                    file_path = file_info.get('path', '')
+                    if repo_name in file_path or repo_name.split('/')[-1] in file_path:
+                        self.logger.info(f"✅ 在项目文件中找到仓库: {file_path}")
+                        return True
+            
+            # 方法2: 通过对话历史检查git相关操作
+            conversations = self._extract_conversations()
+            for conv in conversations:
+                content = conv.get('content', '')
+                if 'git clone' in content and repo_name in content:
+                    self.logger.info(f"✅ 在对话历史中找到git clone记录")
+                    return True
+                if 'git pull' in content and repo_name in content:
+                    self.logger.info(f"✅ 在对话历史中找到git pull记录")
+                    return True
+            
+            # 方法3: 检查是否有相关的仓库目录结构
+            if project_data and 'files' in project_data:
+                repo_indicators = ['.git', 'README.md', 'package.json', 'requirements.txt']
+                for file_info in project_data['files']:
+                    file_path = file_info.get('path', '')
+                    for indicator in repo_indicators:
+                        if indicator in file_path and repo_name.split('/')[-1] in file_path:
+                            self.logger.info(f"✅ 找到仓库指示文件: {file_path}")
+                            return True
+            
+            self.logger.info(f"❌ 未找到仓库: {repo_name}")
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"❌ 检查仓库存在性失败: {e}")
+            return False  # 默认假设不存在，触发clone
+    
+    def get_repository_status(self, repo_name: str) -> dict:
+        """获取仓库状态信息"""
+        try:
+            exists = self.check_repository_exists(repo_name)
+            
+            status = {
+                'repository_name': repo_name,
+                'exists_in_manus': exists,
+                'recommended_action': 'git_pull' if exists else 'git_clone',
+                'check_time': datetime.now().isoformat()
+            }
+            
+            if exists:
+                # 如果仓库存在，尝试获取更多信息
+                project_data = self.get_project_data()
+                if project_data and 'files' in project_data:
+                    repo_files = [f for f in project_data['files'] 
+                                if repo_name.split('/')[-1] in f.get('path', '')]
+                    status['file_count_in_manus'] = len(repo_files)
+                    status['last_modified'] = max([f.get('modified', '') for f in repo_files], default='')
+            
+            return status
+            
+        except Exception as e:
+            self.logger.error(f"❌ 获取仓库状态失败: {e}")
+            return {
+                'repository_name': repo_name,
+                'exists_in_manus': False,
+                'recommended_action': 'git_clone',
+                'error': str(e),
+                'check_time': datetime.now().isoformat()
+            }
+
+    async def send_message_to_latest_task(self, message: str) -> dict:
+        """
+        真实发送消息到Manus平台的最新任务
+        通过任务列表找到最新任务，在右边栏位对话框发送query
+        """
+        try:
+            self.logger.info(f"🚀 开始真实发送消息到Manus: {message[:50]}...")
+            
+            # 1. 确保已登录并在项目页面
+            if not await self.navigate_to_project():
+                return {
+                    'success': False,
+                    'error': '无法导航到项目页面',
+                    'message': message
+                }
+            
+            # 2. 获取最新任务
+            latest_task = await self._get_latest_task()
+            if not latest_task:
+                return {
+                    'success': False,
+                    'error': '未找到可用的任务',
+                    'message': message
+                }
+            
+            self.logger.info(f"📋 找到最新任务: {latest_task.get('title', 'Unknown')}")
+            
+            # 3. 导航到任务页面
+            task_success = await self._navigate_to_task(latest_task)
+            if not task_success:
+                return {
+                    'success': False,
+                    'error': '无法导航到任务页面',
+                    'task': latest_task,
+                    'message': message
+                }
+            
+            # 4. 在右边栏位对话框发送消息
+            send_success = await self._send_message_in_chat(message)
+            if not send_success:
+                return {
+                    'success': False,
+                    'error': '无法在对话框中发送消息',
+                    'task': latest_task,
+                    'message': message
+                }
+            
+            self.logger.info(f"✅ 消息已成功发送到Manus任务: {latest_task.get('title', 'Unknown')}")
+            
+            return {
+                'success': True,
+                'task': latest_task,
+                'message': message,
+                'timestamp': datetime.now().isoformat(),
+                'status': '消息已发送到Manus平台'
+            }
+            
+        except Exception as e:
+            self.logger.error(f"❌ 发送消息到Manus失败: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': message
+            }
+    
+    async def _get_latest_task(self) -> dict:
+        """获取最新的任务"""
+        try:
+            # 等待任务列表加载
+            await self.page.wait_for_timeout(2000)
+            
+            # 查找任务列表容器
+            task_selectors = [
+                '.task-list .task-item:first-child',
+                '[data-testid="task-item"]:first-child',
+                '.task-container .task:first-child',
+                '.tasks .task:first-child',
+                'li[class*="task"]:first-child',
+                '.list-item:first-child'
+            ]
+            
+            latest_task_element = None
+            for selector in task_selectors:
+                try:
+                    latest_task_element = await self.page.query_selector(selector)
+                    if latest_task_element:
+                        self.logger.info(f"✅ 使用选择器找到任务: {selector}")
+                        break
+                except:
+                    continue
+            
+            if not latest_task_element:
+                self.logger.warning("⚠️ 未找到任务元素，尝试通过文本查找")
+                # 尝试通过文本内容查找
+                all_elements = await self.page.query_selector_all('*')
+                for element in all_elements[:50]:  # 限制检查前50个元素
+                    try:
+                        text = await element.text_content()
+                        if text and any(keyword in text.lower() for keyword in ['task', '任务', 'project', '项目']):
+                            latest_task_element = element
+                            break
+                    except:
+                        continue
+            
+            if latest_task_element:
+                # 提取任务信息
+                task_title = await latest_task_element.text_content() or "Unknown Task"
+                task_href = await latest_task_element.get_attribute('href')
+                
+                return {
+                    'title': task_title.strip(),
+                    'element': latest_task_element,
+                    'href': task_href,
+                    'found_method': 'element_search'
+                }
+            
+            # 如果还是没找到，返回默认任务信息
+            self.logger.warning("⚠️ 未找到具体任务，使用当前页面作为任务")
+            return {
+                'title': 'Current Page Task',
+                'element': None,
+                'href': None,
+                'found_method': 'current_page'
+            }
+            
+        except Exception as e:
+            self.logger.error(f"❌ 获取最新任务失败: {e}")
+            return None
+    
+    async def _navigate_to_task(self, task: dict) -> bool:
+        """导航到指定任务页面"""
+        try:
+            if task.get('element') and task.get('href'):
+                # 如果有链接，点击导航
+                await task['element'].click()
+                await self.page.wait_for_timeout(3000)
+                self.logger.info(f"✅ 已导航到任务: {task['title']}")
+                return True
+            elif task.get('element'):
+                # 如果有元素但没有链接，尝试点击
+                await task['element'].click()
+                await self.page.wait_for_timeout(3000)
+                self.logger.info(f"✅ 已点击任务元素: {task['title']}")
+                return True
+            else:
+                # 如果是当前页面，直接返回成功
+                self.logger.info("✅ 使用当前页面作为任务页面")
+                return True
+                
+        except Exception as e:
+            self.logger.error(f"❌ 导航到任务失败: {e}")
+            return False
+    
+    async def _send_message_in_chat(self, message: str) -> bool:
+        """在右边栏位对话框中发送消息"""
+        try:
+            # 等待页面加载
+            await self.page.wait_for_timeout(2000)
+            
+            # 查找对话框输入框的多种可能选择器
+            chat_input_selectors = [
+                'textarea[placeholder*="输入"]',
+                'textarea[placeholder*="消息"]',
+                'textarea[placeholder*="message"]',
+                'input[placeholder*="输入"]',
+                'input[placeholder*="消息"]',
+                'input[placeholder*="message"]',
+                '.chat-input textarea',
+                '.message-input textarea',
+                '.input-box textarea',
+                '[data-testid="chat-input"]',
+                '[data-testid="message-input"]',
+                '.chat-container textarea',
+                '.conversation textarea',
+                'div[contenteditable="true"]',
+                '.editable-div',
+                '#chat-input',
+                '#message-input'
+            ]
+            
+            chat_input = None
+            used_selector = None
+            
+            for selector in chat_input_selectors:
+                try:
+                    chat_input = await self.page.query_selector(selector)
+                    if chat_input:
+                        # 检查元素是否可见和可用
+                        is_visible = await chat_input.is_visible()
+                        is_enabled = await chat_input.is_enabled()
+                        if is_visible and is_enabled:
+                            used_selector = selector
+                            self.logger.info(f"✅ 找到对话框输入框: {selector}")
+                            break
+                        else:
+                            chat_input = None
+                except:
+                    continue
+            
+            if not chat_input:
+                self.logger.warning("⚠️ 未找到对话框输入框，尝试查找发送按钮附近的输入框")
+                # 尝试通过发送按钮找到输入框
+                send_buttons = await self.page.query_selector_all('button')
+                for button in send_buttons:
+                    try:
+                        button_text = await button.text_content()
+                        if button_text and any(keyword in button_text.lower() for keyword in ['send', '发送', 'submit', '提交']):
+                            # 在发送按钮附近查找输入框
+                            parent = await button.query_selector('xpath=..')
+                            if parent:
+                                nearby_input = await parent.query_selector('textarea, input[type="text"], div[contenteditable="true"]')
+                                if nearby_input:
+                                    chat_input = nearby_input
+                                    used_selector = "near_send_button"
+                                    break
+                    except:
+                        continue
+            
+            if not chat_input:
+                self.logger.error("❌ 无法找到对话框输入框")
+                return False
+            
+            # 清空输入框并输入消息
+            await chat_input.click()
+            await chat_input.fill('')
+            await self.page.wait_for_timeout(500)
+            await chat_input.type(message)
+            await self.page.wait_for_timeout(1000)
+            
+            self.logger.info(f"✅ 已在输入框中输入消息 (使用选择器: {used_selector})")
+            
+            # 查找并点击发送按钮
+            send_button_selectors = [
+                'button[type="submit"]',
+                'button:has-text("发送")',
+                'button:has-text("Send")',
+                'button:has-text("提交")',
+                'button:has-text("Submit")',
+                '.send-button',
+                '.submit-button',
+                '[data-testid="send-button"]',
+                '[data-testid="submit-button"]',
+                'button[aria-label*="发送"]',
+                'button[aria-label*="send"]'
+            ]
+            
+            send_button = None
+            for selector in send_button_selectors:
+                try:
+                    send_button = await self.page.query_selector(selector)
+                    if send_button:
+                        is_visible = await send_button.is_visible()
+                        is_enabled = await send_button.is_enabled()
+                        if is_visible and is_enabled:
+                            self.logger.info(f"✅ 找到发送按钮: {selector}")
+                            break
+                        else:
+                            send_button = None
+                except:
+                    continue
+            
+            if send_button:
+                await send_button.click()
+                self.logger.info("✅ 已点击发送按钮")
+            else:
+                # 如果没找到发送按钮，尝试按Enter键
+                await chat_input.press('Enter')
+                self.logger.info("✅ 已按Enter键发送消息")
+            
+            # 等待消息发送完成
+            await self.page.wait_for_timeout(2000)
+            
+            self.logger.info(f"✅ 消息已成功发送: {message[:50]}...")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"❌ 在对话框中发送消息失败: {e}")
+            return False
+
     async def cleanup(self):
         """清理资源"""
         try:
