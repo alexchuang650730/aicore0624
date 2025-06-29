@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartUI + Claude Code SDK - AI-First IDE</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        .terminal-output { white-space: pre-wrap; font-family: 'Courier New', monospace; }
+        .terminal-input { background: transparent; border: none; outline: none; color: #00ff00; font-family: 'Courier New', monospace; }
+        .file-tree { max-height: 600px; overflow-y: auto; }
+        .file-item { cursor: pointer; padding: 4px 8px; border-radius: 4px; }
+        .file-item:hover { background-color: rgba(139, 92, 246, 0.1); }
+        .file-item.selected { background-color: rgba(139, 92, 246, 0.3); }
+        .code-editor { font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // API 基础配置
+        const API_BASE_URL = 'https://8080-i7wsi1yp91r4t34rn26rh-79fe3299.manusvm.computer/api';
+        const TERMINAL_API_BASE_URL = 'https://8081-i7wsi1yp91r4t34rn26rh-79fe3299.manusvm.computer/api';
+        const GITHUB_API_BASE_URL = 'https://8083-i1qp9ljlxwc0i4nwbdomx-79fe3299.manusvm.computer/api';
+
+        // 登录组件
+        function LoginForm({ onLogin }) {
+            const [apiKey, setApiKey] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (apiKey.trim()) {
+                    onLogin(apiKey.trim());
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gray-900">
+                    <div className="bg-gray-800 p-8 rounded-lg shadow-xl w-96">
+                        <h1 className="text-2xl font-bold mb-6 text-center">SmartUI 登录</h1>
+                        <form onSubmit={handleSubmit}>
+                            <input
+                                type="password"
+                                placeholder="输入 API Key"
+                                value={apiKey}
+                                onChange={(e) => setApiKey(e.target.value)}
+                                className="w-full p-3 bg-gray-700 rounded mb-4 text-white"
+                                required
+                            />
+                            <button
+                                type="submit"
+                                className="w-full bg-purple-600 hover:bg-purple-700 p-3 rounded text-white font-medium"
+                            >
+                                登录
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // 终端组件
+        function Terminal() {
+            const [terminalHistory, setTerminalHistory] = useState([]);
+            const [currentCommand, setCurrentCommand] = useState('');
+            const [currentDirectory, setCurrentDirectory] = useState('/home/ubuntu/aicore0624');
+            const [platformInfo, setPlatformInfo] = useState(null);
+            const terminalRef = useRef(null);
+
+            useEffect(() => {
+                fetchPlatformInfo();
+                addToHistory('🖥️ SmartUI 终端机 - 智能平台适配', 'system');
+                addToHistory('正在检测平台...', 'system');
+            }, []);
+
+            const fetchPlatformInfo = async () => {
+                try {
+                    const response = await fetch(`${TERMINAL_API_BASE_URL}/terminal/platform`);
+                    if (response.ok) {
+                        const info = await response.json();
+                        setPlatformInfo(info);
+                        addToHistory(`✅ 平台检测完成: ${info.platform} (${info.terminal_type})`, 'system');
+                        addToHistory(`📁 当前目录: ${info.current_directory}`, 'system');
+                        setCurrentDirectory(info.current_directory);
+                    } else {
+                        addToHistory('❌ 无法获取平台信息', 'error');
+                    }
+                } catch (error) {
+                    addToHistory(`❌ 平台检测失败: ${error.message}`, 'error');
+                }
+            };
+
+            const addToHistory = (content, type = 'output') => {
+                setTerminalHistory(prev => [...prev, { content, type, timestamp: Date.now() }]);
+            };
+
+            const executeCommand = async (command) => {
+                if (!command.trim()) return;
+
+                addToHistory(`$ ${command}`, 'command');
+
+                if (command === 'clear') {
+                    setTerminalHistory([]);
+                    return;
+                }
+
+                if (command.startsWith('cd ')) {
+                    const path = command.substring(3).trim();
+                    try {
+                        const response = await fetch(`${TERMINAL_API_BASE_URL}/terminal/cd`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ path })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            setCurrentDirectory(result.current_directory);
+                            addToHistory(`✅ ${result.message}`, 'success');
+                        } else {
+                            addToHistory(`❌ ${result.error}`, 'error');
+                        }
+                    } catch (error) {
+                        addToHistory(`❌ 目录切换失败: ${error.message}`, 'error');
+                    }
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`${TERMINAL_API_BASE_URL}/terminal/execute`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            command,
+                            working_directory: currentDirectory 
+                        })
+                    });
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        if (result.output) {
+                            addToHistory(result.output, 'output');
+                        }
+                        if (result.working_directory) {
+                            setCurrentDirectory(result.working_directory);
+                        }
+                    } else {
+                        addToHistory(`❌ 命令执行失败: ${result.error}`, 'error');
+                        if (result.output) {
+                            addToHistory(result.output, 'error');
+                        }
+                    }
+                } catch (error) {
+                    addToHistory(`❌ 网络错误: ${error.message}`, 'error');
+                }
+            };
+
+            const handleKeyPress = (e) => {
+                if (e.key === 'Enter') {
+                    executeCommand(currentCommand);
+                    setCurrentCommand('');
+                }
+            };
+
+            useEffect(() => {
+                if (terminalRef.current) {
+                    terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+                }
+            }, [terminalHistory]);
+
+            const getPrompt = () => {
+                const shortDir = currentDirectory.split('/').pop() || currentDirectory;
+                return `ubuntu@smartui:${shortDir}$`;
+            };
+
+            return (
+                <div className="h-full bg-black rounded-lg p-4 font-mono text-sm">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-white">💻 智能终端机</h2>
+                        {platformInfo && (
+                            <div className="text-xs text-gray-400">
+                                {platformInfo.platform} | {platformInfo.terminal_type}
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div 
+                        ref={terminalRef}
+                        className="h-96 overflow-y-auto bg-gray-900 p-3 rounded border"
+                    >
+                        {terminalHistory.map((entry, index) => (
+                            <div key={index} className={`terminal-output ${
+                                entry.type === 'command' ? 'text-yellow-400' :
+                                entry.type === 'error' ? 'text-red-400' :
+                                entry.type === 'success' ? 'text-green-400' :
+                                entry.type === 'system' ? 'text-blue-400' :
+                                'text-green-300'
+                            }`}>
+                                {entry.content}
+                            </div>
+                        ))}
+                        
+                        <div className="flex items-center text-green-400">
+                            <span className="mr-2">{getPrompt()}</span>
+                            <input
+                                type="text"
+                                value={currentCommand}
+                                onChange={(e) => setCurrentCommand(e.target.value)}
+                                onKeyPress={handleKeyPress}
+                                className="terminal-input flex-1"
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="mt-4 text-xs text-gray-500">
+                        <div>💡 提示: 支持标准Unix命令，输入 'clear' 清屏</div>
+                        <div>🔧 平台自适应: 根据系统自动选择 WSL/macOS/Unix 终端</div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 聊天区域组件
+        function ChatArea({ messages, onSendMessage }) {
+            const [input, setInput] = useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (input.trim()) {
+                    onSendMessage(input.trim());
+                    setInput('');
+                }
+            };
+
+            return (
+                <div className="h-full flex flex-col">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                        {messages.length === 0 && (
+                            <div className="text-center text-gray-400 mt-8">
+                                <div className="text-6xl mb-4">🤖</div>
+                                <p>歡迎使用 SmartUI！我是您的 AI 助手，可以幫助您進行代碼開發、項目管理和智能協作。</p>
+                                <p className="mt-2">請告訴我您需要什麼幫助？</p>
+                            </div>
+                        )}
+                        {messages.map((msg, index) => (
+                            <div key={index} className={`p-3 rounded-lg ${
+                                msg.type === 'user' ? 'bg-blue-600 ml-8' : 'bg-gray-700 mr-8'
+                            }`}>
+                                <div className="flex items-center mb-2">
+                                    <span className="text-sm font-medium">
+                                        {msg.type === 'user' ? '您' : 'AICore + Manus'} 
+                                    </span>
+                                    <span className="text-xs text-gray-300 ml-2">{msg.timestamp}</span>
+                                </div>
+                                <div className="whitespace-pre-wrap">{msg.content}</div>
+                            </div>
+                        ))}
+                    </div>
+                    <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700">
+                        <div className="flex space-x-2">
+                            <input
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                placeholder="描述您想要建構或分析的內容... (例如: 創建一個用戶註冊的 React 組件, 包含表單驗證)"
+                                className="flex-1 p-3 bg-gray-700 rounded text-white"
+                            />
+                            <button
+                                type="submit"
+                                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded text-white font-medium"
+                            >
+                                發送
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            );
+        }
+
+        // 代码编辑器组件
+        function CodeEditor({ content, fileName, onContentChange, onSave }) {
+            const [editableContent, setEditableContent] = useState(content);
+            const [isModified, setIsModified] = useState(false);
+
+            useEffect(() => {
+                setEditableContent(content);
+                setIsModified(false);
+            }, [content]);
+
+            const handleContentChange = (e) => {
+                const newContent = e.target.value;
+                setEditableContent(newContent);
+                setIsModified(newContent !== content);
+                if (onContentChange) {
+                    onContentChange(newContent);
+                }
+            };
+
+            const handleSave = () => {
+                if (onSave && isModified) {
+                    onSave(editableContent);
+                    setIsModified(false);
+                }
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.ctrlKey && e.key === 's') {
+                    e.preventDefault();
+                    handleSave();
+                }
+            };
+
+            return (
+                <div className="h-full flex flex-col">
+                    <div className="flex items-center justify-between p-3 bg-gray-800 rounded-t border-b border-gray-600">
+                        <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-400">📄</span>
+                            <span className="text-lg">{fileName || '未選擇文件'}</span>
+                            {isModified && <span className="text-orange-400 text-sm">●</span>}
+                        </div>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={handleSave}
+                                disabled={!isModified}
+                                className={`px-3 py-1 text-sm rounded ${
+                                    isModified 
+                                        ? 'bg-green-600 hover:bg-green-700 text-white' 
+                                        : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                }`}
+                            >
+                                保存 (Ctrl+S)
+                            </button>
+                        </div>
+                    </div>
+                    <textarea
+                        className="flex-1 p-4 bg-gray-800 text-green-400 font-mono text-sm rounded-b border border-purple-500 resize-none code-editor"
+                        placeholder={fileName ? "// 文件内容加载中..." : "// 选择左侧文件开始编辑..."}
+                        value={editableContent}
+                        onChange={handleContentChange}
+                        onKeyDown={handleKeyDown}
+                        readOnly={!fileName}
+                    />
+                    <div className="p-2 bg-gray-800 text-xs text-gray-500 rounded-b">
+                        {fileName ? (
+                            <div className="flex justify-between">
+                                <span>行数: {editableContent.split('\n').length} | 字符: {editableContent.length}</span>
+                                <span>{isModified ? '已修改' : '已保存'}</span>
+                            </div>
+                        ) : (
+                            <span>选择文件开始编辑</span>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // 文件树组件
+        function FileTree({ files, onFileSelect, selectedFile, isLoading }) {
+            const [expandedFolders, setExpandedFolders] = useState(new Set());
+
+            const toggleFolder = (folderPath) => {
+                const newExpanded = new Set(expandedFolders);
+                if (newExpanded.has(folderPath)) {
+                    newExpanded.delete(folderPath);
+                } else {
+                    newExpanded.add(folderPath);
+                }
+                setExpandedFolders(newExpanded);
+            };
+
+            const getIndentLevel = (depth) => {
+                return depth * 16; // 16px per level
+            };
+
+            const isFileVisible = (file) => {
+                if (file.depth === 0) return true;
+                
+                const pathParts = file.path.split('/');
+                for (let i = 0; i < pathParts.length - 1; i++) {
+                    const parentPath = pathParts.slice(0, i + 1).join('/');
+                    if (!expandedFolders.has(parentPath)) {
+                        return false;
+                    }
+                }
+                return true;
+            };
+
+            if (isLoading) {
+                return (
+                    <div className="p-4 text-center">
+                        <div className="text-2xl mb-2">⏳</div>
+                        <div className="text-sm text-gray-400">加载文件列表中...</div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="file-tree">
+                    {files.filter(isFileVisible).map((file, index) => (
+                        <div
+                            key={index}
+                            className={`file-item flex items-center ${
+                                selectedFile === file.path ? 'selected' : ''
+                            }`}
+                            style={{ paddingLeft: `${getIndentLevel(file.depth) + 8}px` }}
+                            onClick={() => {
+                                if (file.type === 'dir') {
+                                    toggleFolder(file.path);
+                                } else {
+                                    onFileSelect(file.path, file.name);
+                                }
+                            }}
+                        >
+                            <span className="mr-2 text-sm">
+                                {file.type === 'dir' ? (
+                                    expandedFolders.has(file.path) ? '📂' : '📁'
+                                ) : (
+                                    file.icon || '📄'
+                                )}
+                            </span>
+                            <span className="text-sm truncate">{file.name}</span>
+                            {file.type === 'file' && file.size && (
+                                <span className="ml-auto text-xs text-gray-500">
+                                    {(file.size / 1024).toFixed(1)}KB
+                                </span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // 主应用组件
+        function SmartUI() {
+            const [isLoggedIn, setIsLoggedIn] = useState(false);
+            const [activeTab, setActiveTab] = useState('cascade');
+            const [chatMessages, setChatMessages] = useState([]);
+            const [selectedFile, setSelectedFile] = useState(null);
+            const [selectedFileName, setSelectedFileName] = useState(null);
+            const [fileContent, setFileContent] = useState('');
+            const [githubFiles, setGithubFiles] = useState([]);
+            const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+            const [isLoadingContent, setIsLoadingContent] = useState(false);
+
+            useEffect(() => {
+                if (isLoggedIn) {
+                    loadGithubFiles();
+                }
+            }, [isLoggedIn]);
+
+            const loadGithubFiles = async () => {
+                setIsLoadingFiles(true);
+                try {
+                    const response = await fetch(`${GITHUB_API_BASE_URL}/github/files`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        setGithubFiles(result.files);
+                        console.log(`✅ 加载了 ${result.total_count} 个文件`);
+                    } else {
+                        console.error('❌ 加载文件列表失败:', result.error);
+                    }
+                } catch (error) {
+                    console.error('❌ 网络错误:', error);
+                } finally {
+                    setIsLoadingFiles(false);
+                }
+            };
+
+            const handleLogin = (apiKey) => {
+                setIsLoggedIn(true);
+            };
+
+            const handleFileSelect = async (filePath, fileName) => {
+                if (selectedFile === filePath) return;
+
+                setSelectedFile(filePath);
+                setSelectedFileName(fileName);
+                setIsLoadingContent(true);
+                setFileContent('// 加载中...');
+
+                try {
+                    const response = await fetch(`${GITHUB_API_BASE_URL}/github/file/${encodeURIComponent(filePath)}`);
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        setFileContent(result.content);
+                    } else {
+                        setFileContent(`// 加载失败: ${result.error}`);
+                    }
+                } catch (error) {
+                    setFileContent(`// 网络错误: ${error.message}`);
+                } finally {
+                    setIsLoadingContent(false);
+                }
+            };
+
+            const handleContentChange = (newContent) => {
+                setFileContent(newContent);
+            };
+
+            const handleSaveFile = async (content) => {
+                // 这里可以实现保存文件的逻辑
+                console.log('保存文件:', selectedFile, content.length, '字符');
+                // 暂时只是模拟保存
+                alert(`文件 ${selectedFileName} 已保存！\n(注意: 这是演示版本，实际保存功能需要GitHub写权限)`);
+            };
+
+            const handleSendMessage = async (message) => {
+                const timestamp = new Date().toLocaleTimeString();
+                
+                setChatMessages(prev => [...prev, {
+                    type: 'user',
+                    content: message,
+                    timestamp
+                }]);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/manus/send`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: message })
+                    });
+
+                    const result = await response.json();
+                    
+                    let aiResponse = "✅ 查詢處理成功！\n\n";
+                    aiResponse += `📝 您的查詢: ${message}\n\n`;
+                    
+                    if (result.success) {
+                        aiResponse += `🤖 AICore 響應: ${result.result}\n\n`;
+                        aiResponse += `📊 處理結果: ${result.success ? '成功' : '失败'}\n`;
+                        aiResponse += `⏰ 時間: ${result.timestamp}\n`;
+                        aiResponse += `🆔 項目ID: ${result.project_id || 'N/A'}\n\n`;
+                        aiResponse += `💡 建議: 您可以继续提出更多问题，我会根据项目上下文为您提供详细的代码分析和开发建议`;
+                    } else {
+                        aiResponse += `❌ 處理失敗: ${result.error || '未知错误'}`;
+                    }
+                    
+                    setChatMessages(prev => [...prev, {
+                        type: 'ai',
+                        content: aiResponse,
+                        timestamp: new Date().toLocaleTimeString()
+                    }]);
+
+                } catch (error) {
+                    setChatMessages(prev => [...prev, {
+                        type: 'ai',
+                        content: `❌ 連接錯誤: ${error.message}`,
+                        timestamp: new Date().toLocaleTimeString()
+                    }]);
+                }
+            };
+
+            if (!isLoggedIn) {
+                return <LoginForm onLogin={handleLogin} />;
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-900 text-white">
+                    {/* 顶部导航 */}
+                    <div className="bg-gray-800 border-b border-gray-700 p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <h1 className="text-xl font-bold">SmartUI + SmartInvention Flow MCP</h1>
+                                <div className="flex space-x-2">
+                                    <span className="px-2 py-1 bg-green-600 text-xs rounded">管理員權限</span>
+                                    <span className="px-2 py-1 bg-blue-600 text-xs rounded">SmartInvention MCP 啟用</span>
+                                    <span className="px-2 py-1 bg-purple-600 text-xs rounded">GitHub 已连接</span>
+                                </div>
+                            </div>
+                            <div className="text-sm text-gray-400">
+                                aicore0624 项目 | {githubFiles.length} 个文件
+                            </div>
+                        </div>
+                        
+                        {/* 功能标签 */}
+                        <div className="flex space-x-1 mt-4">
+                            {[
+                                { id: 'cascade', label: '✨ Cascade 協作', icon: '🤝' },
+                                { id: 'composer', label: '🎼 Composer', icon: '📝' },
+                                { id: 'preview', label: '👁️ 實時預覽', icon: '👀' },
+                                { id: 'terminal', label: '💻 終端機', icon: '⚡' }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`px-4 py-2 rounded-t text-sm font-medium ${
+                                        activeTab === tab.id 
+                                            ? 'bg-purple-600 text-white' 
+                                            : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* 主要内容区域 */}
+                    <div className="flex h-screen">
+                        {/* 左侧文件浏览器 */}
+                        <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
+                            <div className="p-4 border-b border-gray-700">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-semibold">📁 项目浏览器</h2>
+                                    <button
+                                        onClick={loadGithubFiles}
+                                        className="text-xs bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded"
+                                        disabled={isLoadingFiles}
+                                    >
+                                        {isLoadingFiles ? '⏳' : '🔄'}
+                                    </button>
+                                </div>
+                                <div className="text-sm text-gray-400">
+                                    alexchuang650730/aicore0624
+                                </div>
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                                <FileTree 
+                                    files={githubFiles}
+                                    onFileSelect={handleFileSelect}
+                                    selectedFile={selectedFile}
+                                    isLoading={isLoadingFiles}
+                                />
+                            </div>
+                        </div>
+
+                        {/* 右侧内容区域 */}
+                        <div className="flex-1 flex flex-col">
+                            {activeTab === 'cascade' && (
+                                <ChatArea 
+                                    messages={chatMessages} 
+                                    onSendMessage={handleSendMessage} 
+                                />
+                            )}
+                            
+                            {activeTab === 'composer' && (
+                                <CodeEditor 
+                                    content={fileContent}
+                                    fileName={selectedFileName}
+                                    onContentChange={handleContentChange}
+                                    onSave={handleSaveFile}
+                                />
+                            )}
+                            
+                            {activeTab === 'preview' && (
+                                <div className="h-full flex items-center justify-center bg-gray-800">
+                                    <div className="text-center">
+                                        <div className="text-6xl mb-4">👁️</div>
+                                        <h2 className="text-2xl mb-2">實時預覽</h2>
+                                        <p className="text-gray-400">选择文件查看预览效果</p>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {activeTab === 'terminal' && <Terminal />}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<SmartUI />, document.getElementById('root'));
+    </script>
+</body>
+</html>
+
