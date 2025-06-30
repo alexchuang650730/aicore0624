@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import GitHubFileExplorer from './components/GitHubFileExplorer'
 import CodeEditor from './components/CodeEditor'
+import MonacoCodeEditor from './components/MonacoCodeEditor'
 import FileManager from './components/FileManager'
 import AuthModal from './components/AuthModal'
 import mcpService from './services/mcpService'

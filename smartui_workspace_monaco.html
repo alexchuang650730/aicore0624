@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartUI 工作区 - AI-First IDE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Monaco Editor CDN -->
+    <script src="https://unpkg.com/monaco-editor@0.52.2/min/vs/loader.js"></script>
+    <style>
+        .tab-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .tab-inactive {
+            background: #374151;
+            color: #9ca3af;
+        }
+        .terminal-output {
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            color: #00ff00;
+        }
+        .file-item:hover {
+            background-color: #374151;
+        }
+        .quick-action-btn {
+            transition: all 0.2s ease;
+        }
+        .quick-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .status-indicator {
+            animation: pulse 2s infinite;
+        }
+        /* Monaco Editor 样式 */
+        #monaco-editor-container {
+            height: 400px;
+            border: 1px solid #4b5563;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+    <!-- 顶部导航栏 -->
+    <div class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold">SmartUI + SmartInvention Flow MCP</h1>
+            <div class="flex space-x-2">
+                <span class="px-3 py-1 bg-green-600 text-white rounded-full text-sm">✓ 自动登录成功</span>
+                <span class="px-3 py-1 bg-blue-600 text-white rounded-full text-sm">SmartInvention MCP 启用</span>
+                <span class="px-3 py-1 bg-purple-600 text-white rounded-full text-sm">Github 已连接</span>
+                <span id="modeIndicator" class="px-3 py-1 bg-gray-600 text-white rounded-full text-sm">处理模式：🌐 云端版本</span>
+                <button id="toggleModeBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-sm transition-colors">切换到本地</button>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="text-sm text-gray-300">
+                <span class="mr-4">📁 alexchuang650730/aicore0624 项目 | 4 个文件</span>
+            </div>
+            <button id="logoutBtn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition-colors">退出登录</button>
+        </div>
+    </div>
+
+    <div class="flex h-screen">
+        <!-- 左侧边栏 -->
+        <div class="w-64 bg-gray-800 border-r border-gray-700 p-4">
+            <!-- 项目浏览器 -->
+            <div class="mb-6">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <span class="mr-2">📁</span>
+                    项目浏览器
+                </h3>
+                <div class="space-y-1">
+                    <div class="text-sm text-gray-400 mb-2">alexchuang650730/aicore0624</div>
+                    <div class="ml-4 space-y-1">
+                        <div class="text-yellow-400 cursor-pointer hover:bg-gray-700 p-1 rounded">📁 PowerAutomation_local</div>
+                        <div class="ml-4 space-y-1">
+                            <div class="text-yellow-400 cursor-pointer hover:bg-gray-700 p-1 rounded">📁 powerautomation_web</div>
+                        </div>
+                        <div class="text-blue-400 cursor-pointer hover:bg-gray-700 p-1 rounded file-item" data-file="README.md">📄 README.md</div>
+                        <div class="text-blue-400 cursor-pointer hover:bg-gray-700 p-1 rounded file-item" data-file="package.json">📄 package.json</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 一键部署状态 -->
+            <div class="bg-gray-900 rounded-lg p-4">
+                <h3 class="text-lg font-semibold mb-3 flex items-center">
+                    <span class="mr-2 text-green-400">✅</span>
+                    一键部署状态
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <div class="text-green-400">
+                        <span class="status-indicator mr-2">✓</span>
+                        <span>PowerAutomation_local 自动成功</span>
+                    </div>
+                    <div class="text-green-400">
+                        <span class="status-indicator mr-2">✓</span>
+                        <span>PowerAutomation_web 自动成功</span>
+                    </div>
+                    <div class="text-green-400">
+                        <span class="status-indicator mr-2">✓</span>
+                        <span>SmartUI 工作区已就绪</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="flex-1 flex flex-col">
+            <!-- 标签页导航 -->
+            <div class="bg-gray-800 border-b border-gray-700 p-4">
+                <div class="flex space-x-2">
+                    <button class="tab-button tab-active px-4 py-2 rounded-lg font-medium transition-colors" data-tab="cascade">
+                        ✨ Cascade 协作
+                    </button>
+                    <button class="tab-button tab-inactive px-4 py-2 rounded-lg font-medium transition-colors" data-tab="composer">
+                        💻 Composer
+                    </button>
+                    <button class="tab-button tab-inactive px-4 py-2 rounded-lg font-medium transition-colors" data-tab="preview">
+                        👁️ 实时预览
+                    </button>
+                    <button class="tab-button tab-inactive px-4 py-2 rounded-lg font-medium transition-colors" data-tab="terminal">
+                        🖥️ 终端机
+                    </button>
+                </div>
+            </div>
+
+            <!-- 标签页内容 -->
+            <div class="flex-1 p-4">
+                <!-- Cascade 协作标签页 -->
+                <div id="cascade-tab" class="tab-content">
+                    <div class="bg-gray-800 rounded-lg p-6 h-full">
+                        <h2 class="text-2xl font-bold mb-4 flex items-center">
+                            <span class="mr-3">🤖</span>
+                            智能查询
+                        </h2>
+                        <div class="bg-blue-900 border border-blue-700 rounded-lg p-4 mb-6">
+                            <div class="flex items-start space-x-3">
+                                <span class="text-2xl">🚀</span>
+                                <div>
+                                    <h3 class="font-semibold text-blue-200 mb-2">欢迎使用 SmartUI 工作区！</h3>
+                                    <p class="text-blue-100 mb-3">您已成功通过自动登录进入工作区。</p>
+                                    <p class="text-blue-100 mb-3">当前运行模式：云端版本</p>
+                                    <p class="text-blue-100">所有必要的服务已自启动，您可以开始使用各项功能。</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex space-x-4 mb-4">
+                            <input 
+                                type="text" 
+                                id="queryInput" 
+                                placeholder="输入您的需求，例如：我要开发贪吃蛇游戏..." 
+                                class="flex-1 px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                            >
+                            <button id="queryBtn" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">查询</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Composer 标签页 - 集成Monaco Editor -->
+                <div id="composer-tab" class="tab-content hidden">
+                    <div class="bg-gray-800 rounded-lg p-4 h-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">💻 Monaco Editor + LSP</h2>
+                            <span id="editingFile" class="text-sm text-gray-400">正在编辑: 未选择文件</span>
+                        </div>
+                        <div class="h-full">
+                            <!-- Monaco Editor 容器 -->
+                            <div id="monaco-editor-container"></div>
+                            <div class="flex space-x-2 mt-4">
+                                <button id="saveFileBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors">保存文件</button>
+                                <button id="formatCodeBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">格式化代码</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 实时预览标签页 -->
+                <div id="preview-tab" class="tab-content hidden">
+                    <div class="bg-gray-800 rounded-lg p-4 h-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">👁️ 实时预览</h2>
+                            <button id="refreshPreviewBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">刷新预览</button>
+                        </div>
+                        <div id="previewContent" class="h-full bg-gray-900 rounded-lg p-4">
+                            <div class="text-center py-20">
+                                <h3 class="text-2xl font-bold text-blue-600 mb-4">🚀 SmartUI 实时预览</h3>
+                                <p class="text-gray-400 mb-4">预览内容将在这里显示</p>
+                                <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg max-w-md mx-auto">
+                                    <h4 class="text-lg font-semibold mb-2">实时预览内容</h4>
+                                    <p>HTML、CSS 和 JavaScript 的最新渲染效果</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 终端机标签页 -->
+                <div id="terminal-tab" class="tab-content hidden">
+                    <div class="bg-gray-800 rounded-lg p-4 h-full">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">🖥️ 终端机</h2>
+                        </div>
+                        <div class="bg-black rounded-lg p-4 h-4/5 overflow-y-auto">
+                            <div class="terminal-output">
+$ SmartUI Terminal Ready
+$ Platform: Cloud Mode
+$ PowerAutomation Services: Running
+$ Ready for commands...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧快速操作面板 -->
+        <div class="w-80 bg-gray-800 border-l border-gray-700 p-4">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <span class="mr-2">⚡</span>
+                快速操作
+            </h3>
+            <div class="space-y-3">
+                <button id="openFolderBtn" class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors quick-action-btn">
+                    📁 打开文件夹
+                </button>
+                <button id="cloneRepoBtn" class="w-full px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors quick-action-btn">
+                    🔄 克隆Git仓库
+                </button>
+                <button id="connectRemoteBtn" class="w-full px-4 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors quick-action-btn">
+                    🌐 连接远程主机
+                </button>
+                <button id="newFileBtn" class="w-full px-4 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors quick-action-btn">
+                    📄 新建文件
+                </button>
+            </div>
+
+            <!-- 操作状态 -->
+            <div class="mt-6">
+                <h4 class="text-md font-semibold mb-3">操作状态:</h4>
+                <div class="bg-gray-900 rounded-lg p-4">
+                    <div class="space-y-2 text-sm">
+                        <div class="text-green-400">
+                            <span class="status-indicator mr-2">✓</span>
+                            <span>自动登录完成</span>
+                        </div>
+                        <div class="text-green-400">
+                            <span class="status-indicator mr-2">✓</span>
+                            <span>服务已启动</span>
+                        </div>
+                        <div class="text-gray-400">等待用户操作...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let currentMode = 'cloud';
+        let currentPlatform = 'linux';
+        let monacoEditor = null;
+
+        // 初始化Monaco Editor
+        function initMonacoEditor() {
+            require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.52.2/min/vs' } });
+            require(['vs/editor/editor.main'], function () {
+                monacoEditor = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+                    value: '// 欢迎使用 Monaco Editor + LSP\n// 选择左侧文件开始编辑，或者在这里直接编写代码\n\nfunction hello() {\n    console.log("Hello from Monaco Editor!");\n}\n',
+                    language: 'javascript',
+                    theme: 'vs-dark',
+                    fontSize: 14,
+                    minimap: { enabled: true },
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    wordWrap: 'on'
+                });
+
+                // 监听内容变化
+                monacoEditor.onDidChangeModelContent(() => {
+                    const editingFile = document.getElementById('editingFile');
+                    if (!editingFile.textContent.includes('●')) {
+                        editingFile.textContent = editingFile.textContent.replace('正在编辑:', '● 正在编辑:');
+                    }
+                });
+            });
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initEventListeners();
+            initMonacoEditor();
+            
+            // 从URL参数获取模式和API Key
+            const urlParams = new URLSearchParams(window.location.search);
+            const mode = urlParams.get('mode') || 'cloud';
+            const apiKey = urlParams.get('apiKey');
+            
+            currentMode = mode;
+            updateModeDisplay();
+        });
+
+        function initEventListeners() {
+            // 标签页切换
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
+
+            // 文件项点击
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const fileName = this.dataset.file;
+                    openFileInComposer(fileName);
+                });
+            });
+
+            // 快速操作按钮
+            document.getElementById('openFolderBtn').addEventListener('click', handleOpenFolder);
+            document.getElementById('cloneRepoBtn').addEventListener('click', handleCloneRepo);
+            document.getElementById('connectRemoteBtn').addEventListener('click', handleConnectRemote);
+            document.getElementById('newFileBtn').addEventListener('click', handleNewFile);
+
+            // 其他按钮
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            document.getElementById('refreshPreviewBtn').addEventListener('click', handleRefreshPreview);
+            document.getElementById('saveFileBtn').addEventListener('click', handleSaveFile);
+            document.getElementById('formatCodeBtn').addEventListener('click', handleFormatCode);
+            document.getElementById('toggleModeBtn').addEventListener('click', handleToggleMode);
+            document.getElementById('queryBtn').addEventListener('click', handleQuery);
+        }
+
+        function switchTab(tabName) {
+            // 隐藏所有标签页内容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 显示选中的标签页内容
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            
+            // 更新标签页按钮样式
+            document.querySelectorAll('.tab-button').forEach(button => {
+                if (button.dataset.tab === tabName) {
+                    button.classList.remove('tab-inactive');
+                    button.classList.add('tab-active');
+                } else {
+                    button.classList.remove('tab-active');
+                    button.classList.add('tab-inactive');
+                }
+            });
+
+            // 如果切换到Composer标签页，调整Monaco Editor大小
+            if (tabName === 'composer' && monacoEditor) {
+                setTimeout(() => {
+                    monacoEditor.layout();
+                }, 100);
+            }
+        }
+
+        function handleQuery() {
+            const input = document.getElementById('queryInput');
+            const query = input.value.trim();
+            
+            if (!query) return;
+            
+            // 这里可以添加实际的查询逻辑
+            console.log('查询:', query);
+            
+            // 模拟查询响应
+            setTimeout(() => {
+                alert(`查询结果: "${query}" - 功能正在开发中`);
+            }, 500);
+            
+            input.value = '';
+        }
+
+        function openFileInComposer(fileName) {
+            switchTab('composer');
+            
+            const editingFile = document.getElementById('editingFile');
+            editingFile.textContent = `正在编辑: ${fileName}`;
+            
+            // 模拟文件内容
+            let fileContent = '';
+            if (fileName === 'README.md') {
+                fileContent = `# SmartUI + SmartInvention Flow MCP
+
+## 项目简介
+这是一个集成了 SmartInvention Flow MCP 的 SmartUI 工作区项目。
+
+## 功能特性
+- AI驱动的智能查询系统
+- 跨平台终端机支持 (Mac/Windows/Linux)
+- 实时预览功能
+- 快速操作面板
+- 文件编辑和管理
+
+## Monaco Editor 集成
+- VS Code级别的编辑体验
+- 语法高亮和智能补全
+- 代码格式化功能
+- LSP语言服务器支持
+
+## 使用方法
+1. 在左侧项目浏览器中选择文件
+2. 使用Monaco Editor进行编辑
+3. 保存和格式化代码
+4. 在实时预览中查看效果`;
+            } else if (fileName === 'package.json') {
+                fileContent = `{
+  "name": "smartui-workspace",
+  "version": "1.0.0",
+  "description": "SmartUI + Monaco Editor + LSP Integration",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "webpack --mode production"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.52.2",
+    "express": "^4.18.0",
+    "socket.io": "^4.7.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0",
+    "webpack": "^5.88.0"
+  },
+  "author": "SmartUI Team",
+  "license": "MIT"
+}`;
+            } else {
+                fileContent = `// ${fileName}
+console.log('Hello from ${fileName}');
+
+// 在这里添加您的代码...`;
+            }
+            
+            if (monacoEditor) {
+                monacoEditor.setValue(fileContent);
+                // 根据文件扩展名设置语言
+                const extension = fileName.split('.').pop();
+                let language = 'javascript';
+                if (extension === 'md') language = 'markdown';
+                else if (extension === 'json') language = 'json';
+                else if (extension === 'py') language = 'python';
+                else if (extension === 'html') language = 'html';
+                else if (extension === 'css') language = 'css';
+                
+                monaco.editor.setModelLanguage(monacoEditor.getModel(), language);
+            }
+        }
+
+        function handleOpenFolder() {
+            const statusDiv = document.querySelector('.space-y-2');
+            
+            // 确保变量已初始化
+            if (typeof currentMode === 'undefined') {
+                currentMode = 'cloud';
+            }
+            if (typeof currentPlatform === 'undefined') {
+                currentPlatform = 'linux';
+            }
+            
+            // 检查statusDiv是否存在
+            if (!statusDiv) {
+                console.error('Status div not found');
+                return;
+            }
+            
+            // 根据当前模式打开不同的文件夹
+            let folderPath = '';
+            let action = '';
+            if (currentMode === 'cloud') {
+                folderPath = '/cloud/workspace/aicore0624';
+                action = '正在打开云端工作区文件夹...';
+            } else {
+                // 本地模式根据平台选择不同路径
+                if (currentPlatform === 'mac') {
+                    folderPath = '~/Documents/aicore0624';
+                    action = '正在打开Mac本地文件夹...';
+                } else if (currentPlatform === 'windows') {
+                    folderPath = 'C:\\Users\\%USERNAME%\\Documents\\aicore0624';
+                    action = '正在打开Windows本地文件夹...';
+                } else {
+                    folderPath = '~/aicore0624';
+                    action = '正在打开Linux本地文件夹...';
+                }
+            }
+            
+            // 更新状态显示
+            const newStatus = document.createElement('div');
+            newStatus.className = 'text-blue-400';
+            newStatus.innerHTML = `<span class="status-indicator mr-2">🔄</span><span>${action}</span>`;
+            statusDiv.appendChild(newStatus);
+            
+            // 模拟文件夹打开过程
+            setTimeout(() => {
+                newStatus.className = 'text-green-400';
+                newStatus.innerHTML = `<span class="status-indicator mr-2">✓</span><span>已打开文件夹: ${folderPath}</span>`;
+            }, 2000);
+        }
+
+        function handleCloneRepo() {
+            const statusDiv = document.querySelector('.space-y-2');
+            if (!statusDiv) {
+                console.error('Status div not found');
+                return;
+            }
+            
+            const newStatus = document.createElement('div');
+            newStatus.className = 'text-blue-400';
+            newStatus.innerHTML = '<span class="status-indicator mr-2">🔄</span><span>正在克隆Git仓库...</span>';
+            statusDiv.appendChild(newStatus);
+            
+            setTimeout(() => {
+                newStatus.className = 'text-green-400';
+                newStatus.innerHTML = '<span class="status-indicator mr-2">✓</span><span>Git仓库克隆完成</span>';
+            }, 3000);
+        }
+
+        function handleConnectRemote() {
+            const statusDiv = document.querySelector('.space-y-2');
+            if (!statusDiv) {
+                console.error('Status div not found');
+                return;
+            }
+            
+            const newStatus = document.createElement('div');
+            newStatus.className = 'text-blue-400';
+            newStatus.innerHTML = '<span class="status-indicator mr-2">🔄</span><span>正在连接远程主机...</span>';
+            statusDiv.appendChild(newStatus);
+            
+            setTimeout(() => {
+                newStatus.className = 'text-green-400';
+                newStatus.innerHTML = '<span class="status-indicator mr-2">✓</span><span>远程主机连接成功</span>';
+            }, 2500);
+        }
+
+        function handleNewFile() {
+            const statusDiv = document.querySelector('.space-y-2');
+            if (!statusDiv) {
+                console.error('Status div not found');
+                return;
+            }
+            
+            const newStatus = document.createElement('div');
+            newStatus.className = 'text-green-400';
+            newStatus.innerHTML = '<span class="status-indicator mr-2">✓</span><span>新文件已创建</span>';
+            statusDiv.appendChild(newStatus);
+            
+            // 自动切换到Composer并创建新文件
+            setTimeout(() => {
+                switchTab('composer');
+                document.getElementById('editingFile').textContent = '● 正在编辑: new_file.js';
+                if (monacoEditor) {
+                    monacoEditor.setValue('// 新建文件\n// 在这里开始编写您的代码...\n\nfunction newFunction() {\n    // TODO: 实现功能\n}\n');
+                    monaco.editor.setModelLanguage(monacoEditor.getModel(), 'javascript');
+                }
+            }, 500);
+        }
+
+        function handleLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                window.location.href = 'smartui_login.html';
+            }
+        }
+
+        function handleRefreshPreview() {
+            const previewContent = document.getElementById('previewContent');
+            previewContent.innerHTML = '<div class="text-center py-20"><div class="animate-spin text-4xl mb-4">🔄</div><p>正在刷新预览...</p></div>';
+            
+            setTimeout(() => {
+                previewContent.innerHTML = `
+                    <div class="text-center py-20">
+                        <h3 class="text-2xl font-bold text-blue-600 mb-4">🚀 SmartUI 实时预览</h3>
+                        <p class="text-gray-600 mb-4">预览已刷新 - ${new Date().toLocaleTimeString()}</p>
+                        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-lg max-w-md mx-auto">
+                            <h4 class="text-lg font-semibold mb-2">实时预览内容</h4>
+                            <p>HTML、CSS 和 JavaScript 的最新渲染效果</p>
+                            <div class="mt-4 p-3 bg-white bg-opacity-20 rounded">
+                                <p class="text-sm">当前模式: ${currentMode === 'cloud' ? '云端版本' : '本地版本'}</p>
+                                <p class="text-sm">编辑器: Monaco Editor + LSP</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }, 1500);
+        }
+
+        function handleSaveFile() {
+            const statusDiv = document.querySelector('.bg-gray-900.rounded-lg.p-4 .space-y-2');
+            const newStatus = document.createElement('div');
+            newStatus.className = 'text-green-400';
+            newStatus.innerHTML = '<span class="status-indicator mr-2">✓</span><span>文件保存成功</span>';
+            statusDiv.appendChild(newStatus);
+            
+            // 移除文件名中的修改标记
+            const editingFile = document.getElementById('editingFile');
+            editingFile.textContent = editingFile.textContent.replace('● ', '');
+        }
+
+        function handleFormatCode() {
+            if (monacoEditor) {
+                // 使用Monaco Editor的格式化功能
+                monacoEditor.getAction('editor.action.formatDocument').run();
+                
+                const statusDiv = document.querySelector('.bg-gray-900.rounded-lg.p-4 .space-y-2');
+                const newStatus = document.createElement('div');
+                newStatus.className = 'text-green-400';
+                newStatus.innerHTML = '<span class="status-indicator mr-2">✓</span><span>代码格式化完成</span>';
+                statusDiv.appendChild(newStatus);
+            }
+        }
+
+        function handleToggleMode() {
+            currentMode = currentMode === 'cloud' ? 'local' : 'cloud';
+            updateModeDisplay();
+        }
+
+        function updateModeDisplay() {
+            const modeIndicator = document.getElementById('modeIndicator');
+            const toggleBtn = document.getElementById('toggleModeBtn');
+            
+            if (currentMode === 'cloud') {
+                modeIndicator.textContent = '处理模式：🌐 云端版本';
+                toggleBtn.textContent = '切换到本地';
+            } else {
+                modeIndicator.textContent = '处理模式：💻 本地版本';
+                toggleBtn.textContent = '切换到云端';
+            }
+        }
+    </script>
+</body>
+</html>
+
