@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartUI - AI-First IDE Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center text-white mb-12">
+            <h1 class="text-5xl font-bold mb-4">SmartUI</h1>
+            <p class="text-xl opacity-90">AI-First IDE Platform</p>
+            <p class="text-lg opacity-75 mt-2">智能开发环境 • 一键部署 • 自动登录</p>
+        </div>
+
+        <!-- Main Cards -->
+        <div class="grid md:grid-cols-2 gap-8 mb-12">
+            <!-- 统一部署平台 -->
+            <div class="bg-white rounded-2xl p-8 card-hover">
+                <div class="text-center">
+                    <div class="feature-icon">🚀</div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">统一部署平台</h2>
+                    <p class="text-gray-600 mb-6">选择云端或本地模式，一键部署所有服务</p>
+                    
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center text-green-600">
+                            <span class="mr-2">✅</span>
+                            <span>支持云端和本地两种模式</span>
+                        </div>
+                        <div class="flex items-center text-green-600">
+                            <span class="mr-2">✅</span>
+                            <span>自动启动PowerAutomation服务</span>
+                        </div>
+                        <div class="flex items-center text-green-600">
+                            <span class="mr-2">✅</span>
+                            <span>实时部署进度显示</span>
+                        </div>
+                        <div class="flex items-center text-green-600">
+                            <span class="mr-2">✅</span>
+                            <span>自动跳转到工作区</span>
+                        </div>
+                    </div>
+                    
+                    <a href="smartui_deploy.html" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium inline-block transition-colors">
+                        开始部署
+                    </a>
+                </div>
+            </div>
+
+            <!-- 直接登录 -->
+            <div class="bg-white rounded-2xl p-8 card-hover">
+                <div class="text-center">
+                    <div class="feature-icon">⚡</div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">直接登录</h2>
+                    <p class="text-gray-600 mb-6">已有API Key？直接登录使用</p>
+                    
+                    <div class="space-y-3 mb-6">
+                        <div class="flex items-center text-green-600">
+                            <span class="mr-2">✅</span>
+                            <span>快速登录界面</span>
+                        </div>
+                        <div class="flex items-center text-green-600">
+                            <span class="mr-2">✅</span>
+                            <span>支持模式选择</span>
+                        </div>
+                        <div class="flex items-center text-green-600">
+                            <span class="mr-2">✅</span>
+                            <span>即时进入工作区</span>
+                        </div>
+                        <div class="flex items-center text-green-600">
+                            <span class="mr-2">✅</span>
+                            <span>完整功能体验</span>
+                        </div>
+                    </div>
+                    
+                    <a href="smartui_login.html" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-medium inline-block transition-colors">
+                        直接登录
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 核心特性 -->
+        <div class="bg-white rounded-2xl p-8 mb-12">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">核心特性</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="feature-icon">🤖</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">AI智能协作</h3>
+                    <p class="text-gray-600">Cascade协作、智能查询、实时响应</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="feature-icon">🎼</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">代码编辑器</h3>
+                    <p class="text-gray-600">Composer、实时预览、智能补全</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="feature-icon">💻</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">智能终端</h3>
+                    <p class="text-gray-600">命令执行、状态监控、平台适配</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 技术栈 -->
+        <div class="bg-white rounded-2xl p-8 mb-12">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">技术栈</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">前端技术</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li>• HTML5 + CSS3 + JavaScript</li>
+                        <li>• Tailwind CSS 响应式设计</li>
+                        <li>• 现代浏览器兼容</li>
+                        <li>• 移动端适配</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-4">后端服务</h3>
+                    <ul class="space-y-2 text-gray-600">
+                        <li>• PowerAutomation_local MCP</li>
+                        <li>• PowerAutomation_web 服务</li>
+                        <li>• Claude API 集成</li>
+                        <li>• 自动服务管理</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 使用流程 -->
+        <div class="bg-white rounded-2xl p-8">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">使用流程</h2>
+            
+            <div class="flex flex-wrap justify-center items-center space-x-4">
+                <div class="text-center mb-4">
+                    <div class="w-16 h-16 bg-blue-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-2">1</div>
+                    <p class="text-gray-600">选择模式<br><small>云端或本地</small></p>
+                </div>
+                
+                <div class="text-2xl text-gray-400 mb-4">→</div>
+                
+                <div class="text-center mb-4">
+                    <div class="w-16 h-16 bg-purple-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-2">2</div>
+                    <p class="text-gray-600">输入API Key<br><small>Claude API密钥</small></p>
+                </div>
+                
+                <div class="text-2xl text-gray-400 mb-4">→</div>
+                
+                <div class="text-center mb-4">
+                    <div class="w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-2">3</div>
+                    <p class="text-gray-600">一键部署<br><small>自动启动服务</small></p>
+                </div>
+                
+                <div class="text-2xl text-gray-400 mb-4">→</div>
+                
+                <div class="text-center mb-4">
+                    <div class="w-16 h-16 bg-orange-500 text-white rounded-full flex items-center justify-center text-2xl font-bold mb-2">4</div>
+                    <p class="text-gray-600">开始使用<br><small>进入工作区</small></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="text-center text-white mt-12">
+            <p class="opacity-75">SmartUI - AI-First IDE Platform | <a href="https://github.com" class="underline hover:opacity-100">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>
+
