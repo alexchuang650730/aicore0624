@@ -955,17 +955,15 @@
                 openHITLWorkflow('monitor', '监控运维', '', 'AdminBoard运维监控');
             });
 
-            // 退出登录 - 跳转到登录页面
+            // 退出登录 - 直接执行退出登录逻辑
             document.getElementById('logoutBtn').addEventListener('click', function() {
-                if (confirm('确定要退出登录吗？')) {
-                    // 清除本地存储的用户状态
-                    localStorage.removeItem('userToken');
-                    localStorage.removeItem('userSession');
-                    sessionStorage.clear();
-                    
-                    // 跳转到登录页面
-                    window.location.href = 'index.html';
-                }
+                // 清除本地存储的用户状态
+                localStorage.removeItem('userToken');
+                localStorage.removeItem('userSession');
+                sessionStorage.clear();
+                
+                // 跳转到登录页面
+                window.location.href = 'index.html';
             });
 
             // 克隆仓库和打开文件夹
