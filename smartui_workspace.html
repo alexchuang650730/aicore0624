@@ -398,14 +398,6 @@
                             
                             <div class="status-item">
                                 <div class="flex items-center gap-2">
-                                    <span>🔧</span>
-                                    <span class="text-sm">LSP</span>
-                                </div>
-                                <div class="status-dot" id="lspStatusDot"></div>
-                            </div>
-                            
-                            <div class="status-item">
-                                <div class="flex items-center gap-2">
                                     <span>☁️</span>
                                     <span class="text-sm">端云一键部署</span>
                                 </div>
@@ -573,7 +565,7 @@
                     <!-- Monaco Editor 工具栏 -->
                     <div class="bg-gray-800 border-b border-gray-700 px-4 py-2 flex items-center justify-between">
                         <div class="flex items-center space-x-2">
-                            <span class="text-sm font-medium text-blue-400">💻 Monaco Editor + LSP</span>
+                            <span class="text-sm font-medium text-blue-400">💻 Monaco Editor</span>
                             <span class="text-xs text-gray-400" id="currentFile">未选择文件</span>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -731,7 +723,7 @@
             require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.34.0/min/vs' } });
             require(['vs/editor/editor.main'], function () {
                 monacoEditor = monaco.editor.create(document.getElementById('monacoContainer'), {
-                    value: '# 欢迎使用 SmartUI IDE\n\n# 请从左侧项目资源中选择文件开始编辑\n# LSP服务器将提供智能补全、错误诊断等功能\n# 端云一键部署已建立，支持端侧/云侧无缝切换\n# AIcore部署和语意分析服务已就绪\n\ndef hello_smartui():\n    print("Hello from SmartUI!")\n    return "AI-First IDE Platform"',
+                    value: '# 欢迎使用 SmartUI IDE\n\n# 请从左侧项目资源中选择文件开始编辑\n# 语意分析服务将提供智能补全、错误诊断等功能\n# 端云一键部署已建立，支持端侧/云侧无缝切换\n# AIcore部署和语意分析服务已就绪\n\ndef hello_smartui():\n    print("Hello from SmartUI!")\n    return "AI-First IDE Platform"',
                     language: 'python',
                     theme: 'vs-dark',
                     automaticLayout: true,
@@ -869,9 +861,9 @@
             semanticAnalysisDot.classList.remove('disconnected'); // 假设服务正常运行
         }
 
-        // 更新LSP状态
+        // 更新语意分析服务状态
         function updateLSPStatus(connected) {
-            const statusDot = document.getElementById('lspStatusDot');
+            const statusDot = document.getElementById('semanticAnalysisDot');
             if (connected) {
                 statusDot.classList.remove('disconnected');
             } else {
