@@ -955,25 +955,49 @@
                 openHITLWorkflow('monitor', '监控运维', '', 'AdminBoard运维监控');
             });
 
-            // 退出登录 - 直接执行退出登录逻辑
-            const logoutBtn = document.getElementById('logoutBtn');
-            console.log('正在绑定退出登录事件监听器，按钮:', logoutBtn);
-            
-            if (logoutBtn) {
-                logoutBtn.addEventListener('click', function() {
-                    console.log('退出登录按钮被点击！');
-                    // 清除本地存储的用户状态
-                    localStorage.removeItem('userToken');
-                    localStorage.removeItem('userSession');
-                    sessionStorage.clear();
+            // 退出登录 - 使用更可靠的事件绑定方法
+            function bindLogoutEvent() {
+                const logoutBtn = document.getElementById('logoutBtn');
+                console.log('正在绑定退出登录事件监听器，按钮:', logoutBtn);
+                
+                if (logoutBtn) {
+                    // 移除可能存在的旧事件监听器
+                    logoutBtn.onclick = null;
                     
-                    // 跳转到登录页面
-                    window.location.href = 'index.html';
-                });
-                console.log('退出登录事件监听器绑定成功');
-            } else {
-                console.error('找不到退出登录按钮，ID: logoutBtn');
+                    // 使用onclick属性直接绑定
+                    logoutBtn.onclick = function() {
+                        console.log('退出登录按钮被点击！');
+                        // 清除本地存储的用户状态
+                        localStorage.removeItem('userToken');
+                        localStorage.removeItem('userSession');
+                        sessionStorage.clear();
+                        
+                        // 跳转到登录页面
+                        window.location.href = 'index.html';
+                    };
+                    
+                    // 同时使用addEventListener作为备用
+                    logoutBtn.addEventListener('click', function() {
+                        console.log('退出登录按钮被点击（addEventListener）！');
+                        // 清除本地存储的用户状态
+                        localStorage.removeItem('userToken');
+                        localStorage.removeItem('userSession');
+                        sessionStorage.clear();
+                        
+                        // 跳转到登录页面
+                        window.location.href = 'index.html';
+                    });
+                    
+                    console.log('退出登录事件监听器绑定成功');
+                } else {
+                    console.error('找不到退出登录按钮，ID: logoutBtn');
+                    // 延迟重试
+                    setTimeout(bindLogoutEvent, 1000);
+                }
             }
+            
+            // 立即尝试绑定，如果失败则延迟重试
+            bindLogoutEvent();
 
             // 克隆仓库和打开文件夹
             document.getElementById('cloneRepoBtn').addEventListener('click', showCloneModal);
