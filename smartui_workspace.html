@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartUI 工作区 - AI-First IDE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/monaco-editor@0.34.0/min/vs/loader.js"></script>
+    <style>
+        .quick-actions-panel {
+            width: 240px;
+            min-height: 100vh;
+        }
+        .project-panel {
+            width: 280px;
+            min-height: 100vh;
+        }
+        .quick-action-btn {
+            height: 48px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .quick-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .quick-action-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .main-content {
+            width: calc(100% - 520px);
+        }
+        .terminal-output {
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            line-height: 1.4;
+        }
+        .terminal-line {
+            display: block;
+            margin-bottom: 2px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-btn.active {
+            background-color: #3b82f6 !important;
+            color: white !important;
+        }
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+        .tab-btn:hover {
+            background-color: #1e40af;
+            color: white;
+        }
+        
+        /* 退出登录按钮样式 */
+        .logout-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        /* SmartUI标题样式 */
+        .smartui-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            border-bottom: 1px solid #374151;
+        }
+        .smartui-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        /* 滑动切换器样式 */
+        .toggle-switch {
+            position: relative;
+            width: 120px;
+            height: 32px;
+            background: #374151;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid #4b5563;
+        }
+        .toggle-switch.active {
+            background: #3b82f6;
+        }
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 56px;
+            height: 28px;
+            background: white;
+            border-radius: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(60px);
+        }
+        .toggle-text {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+        .toggle-text.left {
+            left: 8px;
+        }
+        .toggle-text.right {
+            right: 8px;
+        }
+        /* 未激活状态：左侧选中(aicore) */
+        .toggle-switch:not(.active) .toggle-text.left {
+            color: #374151; /* 深色文字在白色滑块上 */
+        }
+        .toggle-switch:not(.active) .toggle-text.right {
+            color: #d1d5db; /* 更亮的灰色文字，提高可见度 */
+        }
+        /* 激活状态：右侧选中(manus) */
+        .toggle-switch.active .toggle-text.left {
+            color: #e5e7eb; /* 更亮的白色文字在蓝色背景上 */
+        }
+        .toggle-switch.active .toggle-text.right {
+            color: #374151; /* 深色文字在白色滑块上 */
+        }
+        
+        /* 系统状态面板样式 */
+        .system-status-panel {
+            background: rgba(55, 65, 81, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid #374151;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #10b981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+        }
+        .status-dot.disconnected {
+            background-color: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+        }
+        
+        /* 文件项样式 */
+        .file-item {
+            transition: all 0.2s ease;
+        }
+        .file-item:hover {
+            background-color: #374151;
+            transform: translateX(4px);
+        }
+        .file-item.selected {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        /* 成功提示动画 */
+        @keyframes success-flash {
+            0% { background-color: #10b981; }
+            50% { background-color: #059669; }
+            100% { background-color: #10b981; }
+        }
+        
+        .success-flash {
+            animation: success-flash 0.5s ease;
+        }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: #1f2937;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            border: 1px solid #374151;
+        }
+        .close {
+            color: #9ca3af;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close:hover {
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+    <!-- 右上角退出登录按钮 -->
+    <button class="logout-btn px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-medium shadow-lg" id="logoutBtn">
+        退出登录
+    </button>
+
+    <!-- 克隆仓库模态框 -->
+    <div id="cloneModal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeCloneModal">&times;</span>
+            <h2 class="text-xl font-bold mb-4">克隆Git仓库</h2>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">仓库URL:</label>
+                <input type="text" id="repoUrl" class="w-full p-2 bg-gray-700 border border-gray-600 rounded" placeholder="https://github.com/alexchuang650730/aicore0624.git" value="https://github.com/alexchuang650730/aicore0624.git">
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">本地目录名:</label>
+                <input type="text" id="localDir" class="w-full p-2 bg-gray-700 border border-gray-600 rounded" placeholder="aicore0624" value="aicore0624">
+            </div>
+            <div class="flex gap-2">
+                <button id="confirmClone" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded">克隆</button>
+                <button id="cancelClone" class="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 打开文件夹模态框 -->
+    <div id="folderModal" class="modal">
+        <div class="modal-content" style="max-width: 700px; max-height: 85vh;">
+            <span class="close" id="closeFolderModal">&times;</span>
+            <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                <span>📁</span>
+                <span>打开项目文件夹</span>
+            </h2>
+            
+            <!-- 当前路径显示 -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">当前路径:</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="currentPath" class="flex-1 p-2 bg-gray-700 border border-gray-600 rounded text-sm font-mono" value="/home/ec2-user" readonly>
+                    <button id="goUpFolder" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 rounded transition-colors" title="上级目录">
+                        <span class="text-sm">↑</span>
+                    </button>
+                    <button id="refreshFolder" class="px-3 py-2 bg-gray-600 hover:bg-gray-700 rounded transition-colors" title="刷新">
+                        <span class="text-sm">⟳</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 文件夹浏览器 -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">浏览文件夹:</label>
+                <div id="folderBrowser" class="bg-gray-800 border border-gray-600 rounded p-3 h-72 overflow-y-auto">
+                    <div class="text-gray-400 text-center py-8 flex items-center justify-center gap-2">
+                        <span class="animate-spin">⟳</span>
+                        <span>加载中...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 选中的文件夹 -->
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">选中的项目文件夹:</label>
+                <input type="text" id="selectedFolder" class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-sm font-mono" placeholder="请选择一个项目文件夹" readonly>
+            </div>
+            
+            <!-- 操作提示 -->
+            <div class="mb-4 p-3 bg-blue-900/30 border border-blue-600/50 rounded">
+                <div class="text-sm text-blue-300">
+                    <div class="font-medium mb-1">💡 操作提示:</div>
+                    <div>• 单击选择文件夹，双击进入子文件夹</div>
+                    <div>• 选择包含项目文件的文件夹作为工作区</div>
+                    <div>• 支持浏览 aicore0624、aicore0701、powerautomation_web 等项目</div>
+                </div>
+            </div>
+            
+            <div class="flex gap-2">
+                <button id="confirmFolder" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded transition-colors font-medium" disabled>选择此文件夹</button>
+                <button id="cancelFolder" class="px-6 py-2 bg-gray-600 hover:bg-gray-700 rounded transition-colors">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex h-screen">
+        <!-- 左侧项目资源面板 -->
+        <div class="project-panel bg-gray-800 border-r border-gray-700 flex flex-col">
+            <!-- SmartUI 标题区域 -->
+            <div class="smartui-header">
+                <div class="flex items-center space-x-4">
+                    <div class="smartui-logo">🎯</div>
+                    <div>
+                        <h1 class="text-xl font-bold text-white">SmartUI</h1>
+                        <p class="text-sm text-gray-200 opacity-90">AI-First IDE Platform</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 项目资源标题 -->
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-md font-semibold text-blue-400 flex items-center gap-2">
+                    <span>📁</span>
+                    <span>项目资源</span>
+                </h2>
+                <p class="text-xs text-gray-400 mt-1" id="currentWorkspace">powerautomation_web</p>
+            </div>
+
+            <!-- 项目文件浏览器 -->
+            <div class="flex-1 p-4 overflow-y-auto" id="fileExplorer">
+                <div class="space-y-1" id="fileList">
+                    <!-- 文件列表将动态生成 -->
+                </div>
+            </div>
+
+            <!-- 左下角系统状态面板 -->
+            <div class="p-4">
+                <div class="system-status-panel">
+                    <div class="p-3">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="text-blue-400">📊</span>
+                            <span class="font-semibold text-sm">系统状态</span>
+                        </div>
+                        
+                        <div class="space-y-2">
+                            <div class="status-item">
+                                <div class="flex items-center gap-2">
+                                    <span>🚀</span>
+                                    <span class="text-sm">一键部署</span>
+                                </div>
+                                <div class="status-dot" id="deployStatusDot"></div>
+                            </div>
+                            
+                            <div class="status-item">
+                                <div class="flex items-center gap-2">
+                                    <span>🔧</span>
+                                    <span class="text-sm">LSP</span>
+                                </div>
+                                <div class="status-dot" id="lspStatusDot"></div>
+                            </div>
+                            
+                            <div class="status-item">
+                                <div class="flex items-center gap-2">
+                                    <span>🔗</span>
+                                    <span class="text-sm">SSH隧道</span>
+                                </div>
+                                <div class="status-dot" id="sshTunnelDot"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="main-content bg-gray-900 flex flex-col">
+            <!-- 顶部状态栏 -->
+            <div class="bg-gray-800 border-b border-gray-700 px-4 py-2 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-300">工作区: <span id="workspacePath">/home/ec2-user/powerautomation_web</span></span>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- aicore/manus模式切换 -->
+                    <div class="toggle-switch" id="aiModeToggle">
+                        <div class="toggle-slider"></div>
+                        <span class="toggle-text left">aicore</span>
+                        <span class="toggle-text right">manus</span>
+                    </div>
+                    
+                    <!-- 端侧/云侧模式切换 -->
+                    <div class="toggle-switch active" id="deployModeToggle">
+                        <div class="toggle-slider"></div>
+                        <span class="toggle-text left">端侧</span>
+                        <span class="toggle-text right">云侧</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页导航 -->
+            <div class="bg-gray-800 border-b border-gray-700 px-4 py-2">
+                <div class="flex space-x-2">
+                    <button class="tab-btn px-4 py-2 rounded-t-lg bg-blue-600 text-white active" data-tab="cascade">
+                        ✨ Cascade 协作
+                    </button>
+                    <button class="tab-btn px-4 py-2 rounded-t-lg bg-gray-700 text-gray-300" data-tab="composer">
+                        💻 Composer
+                    </button>
+                    <button class="tab-btn px-4 py-2 rounded-t-lg bg-gray-700 text-gray-300" data-tab="preview">
+                        👁️ 实时预览
+                    </button>
+                    <button class="tab-btn px-4 py-2 rounded-t-lg bg-gray-700 text-gray-300" data-tab="terminal">
+                        🖥️ 终端机
+                    </button>
+                </div>
+            </div>
+
+            <!-- 标签页内容 -->
+            <div class="flex-1 overflow-hidden">
+                <!-- Cascade 协作标签页 -->
+                <div id="cascade" class="tab-content active h-full flex flex-col bg-gray-900">
+                    <div class="flex-1 p-6">
+                        <!-- 标题区域 -->
+                        <div class="text-center mb-8">
+                            <h2 class="text-3xl font-bold text-white mb-2">✨ Cascade 协作模式</h2>
+                            <p class="text-gray-400">多人实时协作开发，AI辅助编程</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <!-- 协作成员 -->
+                            <div class="bg-gray-800 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                    <span>👥</span>
+                                    <span>协作成员</span>
+                                </h3>
+                                
+                                <div class="space-y-3">
+                                    <div class="flex items-center gap-3 p-3 bg-gray-700 rounded-lg">
+                                        <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                                            A
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-medium text-white">Alex (你)</div>
+                                            <div class="text-sm text-gray-400">项目负责人</div>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                            <span class="text-sm text-green-400">在线</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center gap-3 p-3 bg-gray-700 rounded-lg">
+                                        <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white">
+                                            🤖
+                                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-medium text-white">Claude AI</div>
+                                            <div class="text-sm text-gray-400">AI编程助手</div>
+                                        </div>
+                                        <div class="flex items-center gap-1">
+                                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                            <span class="text-sm text-green-400">就绪</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 当前任务 -->
+                            <div class="bg-gray-800 rounded-lg p-6">
+                                <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                    <span>🎯</span>
+                                    <span>当前任务</span>
+                                </h3>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <div class="text-sm text-gray-400 mb-1">正在开发:</div>
+                                        <div class="text-blue-400 font-medium">PowerAutomation Web IDE</div>
+                                    </div>
+                                    
+                                    <div>
+                                        <div class="text-sm text-gray-400 mb-2">进度: 75%</div>
+                                        <div class="w-full bg-gray-700 rounded-full h-2">
+                                            <div class="bg-blue-600 h-2 rounded-full" style="width: 75%"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="space-y-2">
+                                        <div class="text-sm text-gray-400">最近活动:</div>
+                                        <div class="text-sm text-gray-300">
+                                            • 完成SmartUI工作区界面设计<br>
+                                            • 集成WebSocket终端功能<br>
+                                            • 添加HITL工作流按钮
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 协作工具栏 -->
+                        <div class="mt-8 flex justify-center space-x-4">
+                            <button class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2">
+                                <span>💬</span>
+                                <span>开始协作</span>
+                            </button>
+                            <button class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2">
+                                <span>🔄</span>
+                                <span>同步代码</span>
+                            </button>
+                            <button class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2">
+                                <span>🤖</span>
+                                <span>AI助手</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Composer 标签页 -->
+                <div id="composer" class="tab-content h-full flex flex-col" style="display: none;">
+                    <!-- Monaco Editor 工具栏 -->
+                    <div class="bg-gray-800 border-b border-gray-700 px-4 py-2 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-blue-400">💻 Monaco Editor + LSP</span>
+                            <span class="text-xs text-gray-400" id="currentFile">未选择文件</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button id="saveBtn" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
+                                保存文件
+                            </button>
+                            <button id="formatBtn" class="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-sm">
+                                格式化代码
+                            </button>
+                            <button id="minimapBtn" class="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm">
+                                🗺️ 小地图
+                            </button>
+                            <button id="findReplaceBtn" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm">
+                                🔍 查找替换
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Monaco Editor 容器 -->
+                    <div id="monacoContainer" class="flex-1 bg-gray-900"></div>
+                </div>
+
+                <!-- 终端标签页 -->
+                <div id="terminal" class="tab-content h-full bg-black p-4" style="display: none;">
+                    <div class="h-full flex flex-col">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-green-400 text-sm font-mono" id="terminalPrompt">ec2-user@smartui:~$</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs text-gray-400" id="terminalStatus">已连接</span>
+                                <div class="w-2 h-2 bg-green-400 rounded-full" id="terminalIndicator"></div>
+                            </div>
+                        </div>
+                        <div class="flex-1 overflow-y-auto">
+                            <div id="terminalOutput" class="terminal-output text-green-400 font-mono text-sm"></div>
+                        </div>
+                        <div class="flex items-center mt-2">
+                            <span class="text-green-400 font-mono text-sm mr-2" id="inputPrompt">$</span>
+                            <input type="text" id="terminalInput" class="flex-1 bg-transparent text-green-400 font-mono text-sm outline-none" placeholder="输入命令...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 预览标签页 -->
+                <div id="preview" class="tab-content h-full bg-white" style="display: none;">
+                    <iframe id="previewFrame" class="w-full h-full border-0" src="about:blank"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧快速操作面板         <!-- 右侧快速操作面板 -->
+        <div class="quick-actions-panel bg-gray-800 border-l border-gray-700 p-4">
+            <h3 class="text-lg font-semibold mb-4 text-blue-400">快速操作</h3>
+            
+            <div class="space-y-3">
+                <!-- 项目管理 -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-medium text-gray-300 mb-2">项目管理</h4>
+                    <button id="cloneRepoBtn" class="quick-action-btn w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2">
+                        <span>📥</span>
+                        <span>克隆仓库</span>
+                    </button>
+                    <button id="openFolderBtn" class="quick-action-btn w-full bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center justify-center gap-2 mt-2">
+                        <span>📁</span>
+                        <span>打开文件夹</span>
+                    </button>
+                </div>
+
+                <!-- HITL工作流 -->
+                <div class="mb-6">
+                    <h4 class="text-sm font-medium text-gray-300 mb-2">HITL工作流</h4>
+                                    <!-- 需求分析 -->
+                    <button id="requirementAnalysisBtn" class="quick-action-btn w-full bg-cyan-600 hover:bg-cyan-700 text-white rounded-lg flex items-center justify-center gap-2 mb-2">
+                        <span>📋</span>
+                        <span>需求分析</span>
+                    </button>
+                    
+                    <!-- 架构设计 -->
+                    <button id="architectureDesignBtn" class="quick-action-btn w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center gap-2 mb-2">
+                        <span>🏗️</span>
+                        <span>架构设计</span>
+                    </button>
+                    
+                    <!-- 编码实现 -->
+                    <button id="codingImplementationBtn" class="quick-action-btn w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center justify-center gap-2 mb-2">
+                        <span>💻</span>
+                        <span>编码实现</span>
+                    </button>
+                    
+                    <!-- 测试验证 -->
+                    <button id="testingValidationBtn" class="quick-action-btn w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg flex items-center justify-center gap-2 mb-2">
+                        <span>🧪</span>
+                        <span>测试验证</span>
+                    </button>
+                    
+                    <!-- 部署发布 -->
+                    <button id="deploymentReleaseBtn" class="quick-action-btn w-full bg-red-600 hover:bg-red-700 text-white rounded-lg flex items-center justify-center gap-2 mb-2">
+                        <span>🚀</span>
+                        <span>部署发布</span>
+                    </button>
+                    
+                    <!-- 监控运维 -->
+                    <button id="monitoringOpsBtn" class="quick-action-btn w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center justify-center gap-2">
+                        <span>📊</span>
+                        <span>监控运维</span>
+                    </button>          </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let monacoEditor = null;
+        let lspSocket = null;
+        let currentMode = 'cloud'; // 'cloud' 或 'local'
+        let currentAIMode = 'aicore'; // 'aicore' 或 'manus'
+        let currentWorkspace = '/home/ec2-user/powerautomation_web';
+        let currentFiles = [];
+        let sshTunnelConnected = true; // 假设SSH隧道已通过登录建立
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMonacoEditor();
+            initializeLSPConnection();
+            initializeEventListeners();
+            initializeFileExplorer();
+            updateTerminalMode();
+            updateSystemStatus();
+            initializeToggleSwitches();
+            initializeTerminal();
+        });
+
+        // 初始化终端
+        function initializeTerminal() {
+            addTerminalOutput('SmartUI IDE 终端已启动');
+            addTerminalOutput('SSH隧道已建立，支持端侧/云侧无缝切换');
+            addTerminalOutput('当前模式: 云侧终端 (EC2)');
+            addTerminalOutput('');
+        }
+
+        // 初始化切换器状态
+        function initializeToggleSwitches() {
+            const aiModeToggle = document.getElementById('aiModeToggle');
+            const deployModeToggle = document.getElementById('deployModeToggle');
+            
+            // 设置初始状态：aicore模式（不激活），云侧模式（激活）
+            aiModeToggle.classList.remove('active');
+            deployModeToggle.classList.add('active');
+            
+            console.log('切换器初始化完成 - AI模式:', currentAIMode, '部署模式:', currentMode);
+        }
+
+        // 初始化Monaco Editor
+        function initializeMonacoEditor() {
+            require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.34.0/min/vs' } });
+            require(['vs/editor/editor.main'], function () {
+                monacoEditor = monaco.editor.create(document.getElementById('monacoContainer'), {
+                    value: '# 欢迎使用 SmartUI IDE\n\n# 请从左侧项目资源中选择文件开始编辑\n# LSP服务器将提供智能补全、错误诊断等功能\n# SSH隧道已建立，支持端侧/云侧无缝切换\n\ndef hello_smartui():\n    print("Hello from SmartUI!")\n    return "AI-First IDE Platform"',
+                    language: 'python',
+                    theme: 'vs-dark',
+                    automaticLayout: true,
+                    fontSize: 14,
+                    lineNumbers: 'on',
+                    minimap: { enabled: true },
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                    suggestOnTriggerCharacters: true,
+                    quickSuggestions: true,
+                    parameterHints: { enabled: true },
+                    formatOnPaste: true,
+                    formatOnType: true
+                });
+
+                // 监听编辑器内容变化
+                monacoEditor.onDidChangeModelContent(function() {
+                    if (lspSocket && lspSocket.readyState === WebSocket.OPEN) {
+                        const content = monacoEditor.getValue();
+                        sendLSPMessage({
+                            method: 'textDocument/didChange',
+                            params: {
+                                textDocument: { uri: 'file:///current.py' },
+                                contentChanges: [{ text: content }]
+                            }
+                        });
+                    }
+                });
+            });
+        }
+
+        // 初始化LSP连接
+        function initializeLSPConnection() {
+            try {
+                lspSocket = new WebSocket('ws://localhost:8081');
+                
+                lspSocket.onopen = function() {
+                    console.log('LSP WebSocket连接已建立');
+                    updateLSPStatus(true);
+                    
+                    // 发送初始化消息
+                    sendLSPMessage({
+                        method: 'initialize',
+                        params: {
+                            processId: null,
+                            rootUri: 'file:///workspace',
+                            capabilities: {
+                                textDocument: {
+                                    completion: { dynamicRegistration: true },
+                                    hover: { dynamicRegistration: true },
+                                    signatureHelp: { dynamicRegistration: true },
+                                    definition: { dynamicRegistration: true },
+                                    references: { dynamicRegistration: true },
+                                    documentHighlight: { dynamicRegistration: true },
+                                    documentSymbol: { dynamicRegistration: true },
+                                    formatting: { dynamicRegistration: true },
+                                    rangeFormatting: { dynamicRegistration: true },
+                                    rename: { dynamicRegistration: true },
+                                    publishDiagnostics: { relatedInformation: true }
+                                }
+                            }
+                        }
+                    });
+                };
+                
+                lspSocket.onmessage = function(event) {
+                    try {
+                        const message = JSON.parse(event.data);
+                        handleLSPMessage(message);
+                    } catch (e) {
+                        console.error('LSP消息解析错误:', e);
+                    }
+                };
+                
+                lspSocket.onclose = function() {
+                    console.log('LSP WebSocket连接已关闭');
+                    updateLSPStatus(false);
+                    // 尝试重连
+                    setTimeout(initializeLSPConnection, 3000);
+                };
+                
+                lspSocket.onerror = function(error) {
+                    console.error('LSP WebSocket错误:', error);
+                    updateLSPStatus(false);
+                };
+                
+            } catch (error) {
+                console.error('LSP连接初始化失败:', error);
+                updateLSPStatus(false);
+            }
+        }
+
+        // 发送LSP消息
+        function sendLSPMessage(message) {
+            if (lspSocket && lspSocket.readyState === WebSocket.OPEN) {
+                lspSocket.send(JSON.stringify(message));
+            }
+        }
+
+        // 处理LSP消息
+        function handleLSPMessage(message) {
+            if (message.method === 'textDocument/publishDiagnostics') {
+                // 处理诊断信息
+                const diagnostics = message.params.diagnostics;
+                if (monacoEditor && diagnostics.length > 0) {
+                    const markers = diagnostics.map(diag => ({
+                        startLineNumber: diag.range.start.line + 1,
+                        startColumn: diag.range.start.character + 1,
+                        endLineNumber: diag.range.end.line + 1,
+                        endColumn: diag.range.end.character + 1,
+                        message: diag.message,
+                        severity: diag.severity === 1 ? monaco.MarkerSeverity.Error : monaco.MarkerSeverity.Warning
+                    }));
+                    monaco.editor.setModelMarkers(monacoEditor.getModel(), 'lsp', markers);
+                }
+            }
+        }
+
+        // 更新系统状态
+        function updateSystemStatus() {
+            // 一键部署状态（假设已通过登录建立）
+            const deployStatusDot = document.getElementById('deployStatusDot');
+            deployStatusDot.classList.remove('disconnected');
+            
+            // SSH隧道状态（假设已通过登录建立）
+            const sshTunnelDot = document.getElementById('sshTunnelDot');
+            if (sshTunnelConnected) {
+                sshTunnelDot.classList.remove('disconnected');
+            } else {
+                sshTunnelDot.classList.add('disconnected');
+            }
+        }
+
+        // 更新LSP状态
+        function updateLSPStatus(connected) {
+            const statusDot = document.getElementById('lspStatusDot');
+            if (connected) {
+                statusDot.classList.remove('disconnected');
+            } else {
+                statusDot.classList.add('disconnected');
+            }
+        }
+
+        // 初始化事件监听器
+        function initializeEventListeners() {
+            // 标签页切换
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.dataset.tab;
+                    switchTab(tabId);
+                });
+            });
+
+            // 模式切换
+            document.getElementById('aiModeToggle').addEventListener('click', function() {
+                this.classList.toggle('active');
+                currentAIMode = this.classList.contains('active') ? 'manus' : 'aicore';
+                console.log('AI模式切换为:', currentAIMode);
+            });
+
+            document.getElementById('deployModeToggle').addEventListener('click', function() {
+                if (!sshTunnelConnected) {
+                    alert('SSH隧道未建立，无法切换模式。请先运行一键部署建立连接。');
+                    return;
+                }
+                
+                this.classList.toggle('active');
+                currentMode = this.classList.contains('active') ? 'cloud' : 'local';
+                updateTerminalMode();
+                updateWorkspacePath();
+                switchEnvironment();
+                console.log('部署模式切换为:', currentMode);
+            });
+
+            // 工具栏按钮
+            document.getElementById('saveBtn').addEventListener('click', saveFile);
+            document.getElementById('formatBtn').addEventListener('click', formatCode);
+            document.getElementById('minimapBtn').addEventListener('click', toggleMinimap);
+            document.getElementById('findReplaceBtn').addEventListener('click', openFindReplace);
+
+            // 克隆仓库模态框
+            document.getElementById('cloneRepoBtn').addEventListener('click', function() {
+                document.getElementById('cloneModal').style.display = 'block';
+            });
+            document.getElementById('closeCloneModal').addEventListener('click', function() {
+                document.getElementById('cloneModal').style.display = 'none';
+            });
+            document.getElementById('cancelClone').addEventListener('click', function() {
+                document.getElementById('cloneModal').style.display = 'none';
+            });
+            document.getElementById('confirmClone').addEventListener('click', cloneRepository);
+
+            // 打开文件夹模态框
+            document.getElementById('openFolderBtn').addEventListener('click', function() {
+                document.getElementById('folderModal').style.display = 'block';
+                loadFolderContents('/home/ec2-user'); // 加载默认目录
+            });
+            document.getElementById('closeFolderModal').addEventListener('click', function() {
+                document.getElementById('folderModal').style.display = 'none';
+            });
+            document.getElementById('cancelFolder').addEventListener('click', function() {
+                document.getElementById('folderModal').style.display = 'none';
+            });
+            document.getElementById('confirmFolder').addEventListener('click', openSelectedFolder);
+            document.getElementById('goUpFolder').addEventListener('click', goUpDirectory);
+            document.getElementById('refreshFolder').addEventListener('click', refreshCurrentDirectory);
+
+            // HITL工作流按钮事件
+            document.getElementById('requirementAnalysisBtn').addEventListener('click', () => {
+                openHITLWorkflow('requirement', '需求分析', '', '智能引擎辅助需求收集和分析');
+            });
+            document.getElementById('architectureDesignBtn').addEventListener('click', () => {
+                openHITLWorkflow('architecture', '架构设计', '', '智能引擎辅助系统架构设计');
+            });
+            document.getElementById('codingImplementationBtn').addEventListener('click', () => {
+                openHITLWorkflow('coding', '编码实现', '', 'Claude Code SDK辅助代码生成');
+            });
+            document.getElementById('testingValidationBtn').addEventListener('click', () => {
+                openHITLWorkflow('testing', '测试验证', '', '模板测试生成引擎辅助测试');
+            });
+            document.getElementById('deploymentReleaseBtn').addEventListener('click', () => {
+                openHITLWorkflow('deploy', '部署发布', '', 'Release Manager + 插件系统');
+            });
+            document.getElementById('monitoringOpsBtn').addEventListener('click', () => {
+                openHITLWorkflow('monitor', '监控运维', '', 'AdminBoard运维监控');
+            });
+
+            // 退出登录 - 修复路径，跳转到deployment目录的登录页面
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('确定要退出登录吗？')) {
+                    // 跳转到deployment目录的登录页面
+                    window.location.href = '../deployment/static/index.html';
+                }
+            });
+
+            // 克隆仓库和打开文件夹
+            document.getElementById('cloneRepoBtn').addEventListener('click', showCloneModal);
+            document.getElementById('openFolderBtn').addEventListener('click', showFolderModal);
+
+            // 模态框事件
+            setupModalEvents();
+
+            // 终端输入
+            document.getElementById('terminalInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    executeTerminalCommand(this.value);
+                    this.value = '';
+                }
+            });
+        }
+
+        // 切换环境
+        function switchEnvironment() {
+            addTerminalOutput(`正在切换到${currentMode === 'cloud' ? '云侧' : '端侧'}环境...`);
+            
+            // 模拟环境切换过程
+            setTimeout(() => {
+                addTerminalOutput(`✅ 已成功切换到${currentMode === 'cloud' ? '云侧' : '端侧'}环境`);
+                addTerminalOutput(`当前工作目录: ${currentWorkspace}`);
+                
+                // 更新文件列表
+                loadEnvironmentFiles();
+            }, 1000);
+        }
+
+        // 加载环境文件
+        function loadEnvironmentFiles() {
+            if (currentMode === 'cloud') {
+                // 云侧文件
+                currentFiles = [
+                    { name: 'powerautomation_web', type: 'folder', children: [] },
+                    { name: 'README.md', type: 'file', content: '# PowerAutomation Web (云侧)\n\n这是云侧EC2环境的项目文件。\n\n## 云侧特性\n\n- 高性能计算资源\n- 弹性扩展能力\n- 24/7可用性\n\n```python\n# 云侧Python示例\ndef cloud_function():\n    print("Running on EC2 cloud!")\n    return "cloud-mode"\n```' },
+                    { name: 'deploy.sh', type: 'file', content: '#!/bin/bash\n# 云侧部署脚本\necho "Deploying to EC2..."\ndocker build -t app .\ndocker run -p 80:3000 app' },
+                    { name: 'config.yaml', type: 'file', content: '# 云侧配置\nmode: cloud\nhost: 0.0.0.0\nport: 3000\nenv: production' }
+                ];
+            } else {
+                // 端侧文件
+                currentFiles = [
+                    { name: 'local_project', type: 'folder', children: [] },
+                    { name: 'README.md', type: 'file', content: '# PowerAutomation Web (端侧)\n\n这是端侧本地环境的项目文件。\n\n## 端侧特性\n\n- 本地开发环境\n- 快速迭代\n- 离线工作能力\n\n```python\n# 端侧Python示例\ndef local_function():\n    print("Running on local machine!")\n    return "local-mode"\n```' },
+                    { name: 'dev.sh', type: 'file', content: '#!/bin/bash\n# 端侧开发脚本\necho "Starting local development..."\nnpm install\nnpm run dev' },
+                    { name: 'config.yaml', type: 'file', content: '# 端侧配置\nmode: local\nhost: localhost\nport: 3001\nenv: development' }
+                ];
+            }
+            
+            renderFileList();
+            document.getElementById('currentWorkspace').textContent = currentMode === 'cloud' ? 'powerautomation_web' : 'local_project';
+        }
+
+        // 初始化文件浏览器
+        function initializeFileExplorer() {
+            loadEnvironmentFiles();
+        }
+
+        // 渲染文件列表
+        function renderFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            currentFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'flex items-center p-2 hover:bg-gray-700 rounded cursor-pointer file-item';
+                
+                const icon = file.type === 'folder' ? '📁' : (file.name.endsWith('.py') ? '🐍' : (file.name.endsWith('.md') ? '📄' : (file.name.endsWith('.sh') ? '⚡' : '⚙️')));
+                
+                fileItem.innerHTML = `
+                    <span class="mr-2">${icon}</span>
+                    <span>${file.name}</span>
+                    <span class="ml-auto text-xs text-gray-400">${file.type === 'folder' ? file.children?.length || 0 : Math.floor(Math.random() * 10) + 1}</span>
+                `;
+                
+                if (file.type === 'file') {
+                    fileItem.addEventListener('click', () => openFile(file));
+                }
+                
+                fileList.appendChild(fileItem);
+            });
+        }
+
+        // 打开文件
+        function openFile(file) {
+            if (monacoEditor && file.content) {
+                // 切换到Composer标签
+                switchTab('composer');
+                
+                // 设置编辑器内容
+                monacoEditor.setValue(file.content);
+                
+                // 设置语言模式
+                const language = getLanguageFromFileName(file.name);
+                monaco.editor.setModelLanguage(monacoEditor.getModel(), language);
+                
+                // 更新当前文件显示
+                document.getElementById('currentFile').textContent = file.name;
+                
+                // 高亮选中的文件
+                document.querySelectorAll('.file-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                event.currentTarget.classList.add('selected');
+                
+                console.log('已打开文件:', file.name);
+            }
+        }
+
+        // 根据文件名获取语言
+        function getLanguageFromFileName(fileName) {
+            const ext = fileName.split('.').pop().toLowerCase();
+            const languageMap = {
+                'py': 'python',
+                'js': 'javascript',
+                'ts': 'typescript',
+                'html': 'html',
+                'css': 'css',
+                'json': 'json',
+                'md': 'markdown',
+                'yaml': 'yaml',
+                'yml': 'yaml',
+                'sh': 'shell'
+            };
+            return languageMap[ext] || 'plaintext';
+        }
+
+        // 切换标签页
+        function switchTab(tabId) {
+            // 更新标签按钮状态
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-600', 'text-white');
+                btn.classList.add('bg-gray-700', 'text-gray-300');
+            });
+            const targetBtn = document.querySelector(`[data-tab="${tabId}"]`);
+            if (targetBtn) {
+                targetBtn.classList.add('active', 'bg-blue-600', 'text-white');
+                targetBtn.classList.remove('bg-gray-700', 'text-gray-300');
+            }
+            
+            // 更新内容显示
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+                content.style.display = 'none';
+            });
+            const targetContent = document.getElementById(tabId);
+            if (targetContent) {
+                targetContent.classList.add('active');
+                targetContent.style.display = 'block';
+            }
+        }
+
+        // 更新终端模式
+        function updateTerminalMode() {
+            const terminalPrompt = document.getElementById('terminalPrompt');
+            const inputPrompt = document.getElementById('inputPrompt');
+            
+            if (currentMode === 'cloud') {
+                terminalPrompt.textContent = 'ec2-user@smartui:~$';
+                inputPrompt.textContent = '$';
+            } else {
+                // 检测操作系统
+                const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+                const isWindows = navigator.platform.toUpperCase().indexOf('WIN') >= 0;
+                
+                if (isMac) {
+                    terminalPrompt.textContent = 'alexchuang@MacBook:~$';
+                } else if (isWindows) {
+                    terminalPrompt.textContent = 'alexchuang@WSL:~$';
+                } else {
+                    terminalPrompt.textContent = 'user@local:~$';
+                }
+                inputPrompt.textContent = '$';
+            }
+        }
+
+        // 更新工作区路径
+        function updateWorkspacePath() {
+            const workspacePath = document.getElementById('workspacePath');
+            if (currentMode === 'cloud') {
+                currentWorkspace = '/home/ec2-user/powerautomation_web';
+            } else {
+                currentWorkspace = '/Users/alexchuang/powerautomation_web';
+            }
+            workspacePath.textContent = currentWorkspace;
+        }
+
+        // 保存文件
+        function saveFile() {
+            if (monacoEditor) {
+                const content = monacoEditor.getValue();
+                const fileName = document.getElementById('currentFile').textContent;
+                
+                // 模拟保存操作
+                console.log('保存文件:', fileName, '内容长度:', content.length);
+                addTerminalOutput(`保存文件: ${fileName} (${currentMode === 'cloud' ? '云侧' : '端侧'})`);
+                
+                // 显示保存成功提示
+                const saveBtn = document.getElementById('saveBtn');
+                saveBtn.classList.add('success-flash');
+                saveBtn.textContent = '已保存';
+                
+                setTimeout(() => {
+                    saveBtn.classList.remove('success-flash');
+                    saveBtn.textContent = '保存文件';
+                }, 1000);
+            }
+        }
+
+        // 格式化代码
+        function formatCode() {
+            if (monacoEditor) {
+                monacoEditor.getAction('editor.action.formatDocument').run();
+                
+                // 显示格式化成功提示
+                const formatBtn = document.getElementById('formatBtn');
+                formatBtn.classList.add('success-flash');
+                formatBtn.textContent = '已格式化';
+                
+                setTimeout(() => {
+                    formatBtn.classList.remove('success-flash');
+                    formatBtn.textContent = '格式化代码';
+                }, 1000);
+            }
+        }
+
+        // 切换小地图
+        function toggleMinimap() {
+            if (monacoEditor) {
+                const minimapEnabled = monacoEditor.getOptions().get(monaco.editor.EditorOption.minimap).enabled;
+                monacoEditor.updateOptions({
+                    minimap: { enabled: !minimapEnabled }
+                });
+                
+                const minimapBtn = document.getElementById('minimapBtn');
+                minimapBtn.textContent = minimapEnabled ? '🗺️ 显示小地图' : '🗺️ 隐藏小地图';
+            }
+        }
+
+        // 打开查找替换
+        function openFindReplace() {
+            if (monacoEditor) {
+                monacoEditor.getAction('editor.action.startFindReplaceAction').run();
+            }
+        }
+
+        // 显示克隆仓库模态框
+        function showCloneModal() {
+            document.getElementById('cloneModal').style.display = 'block';
+        }
+
+        // 显示打开文件夹模态框
+        function showFolderModal() {
+            document.getElementById('folderModal').style.display = 'block';
+        }
+
+        // 设置模态框事件
+        function setupModalEvents() {
+            // 克隆仓库模态框
+            document.getElementById('closeCloneModal').addEventListener('click', () => {
+                document.getElementById('cloneModal').style.display = 'none';
+            });
+            
+            document.getElementById('cancelClone').addEventListener('click', () => {
+                document.getElementById('cloneModal').style.display = 'none';
+            });
+            
+            document.getElementById('confirmClone').addEventListener('click', () => {
+                const repoUrl = document.getElementById('repoUrl').value;
+                const localDir = document.getElementById('localDir').value;
+                
+                if (repoUrl && localDir) {
+                    cloneRepository(repoUrl, localDir);
+                    document.getElementById('cloneModal').style.display = 'none';
+                    document.getElementById('repoUrl').value = '';
+                    document.getElementById('localDir').value = '';
+                }
+            });
+
+            // 打开文件夹模态框
+            document.getElementById('closeFolderModal').addEventListener('click', () => {
+                document.getElementById('folderModal').style.display = 'none';
+            });
+            
+            document.getElementById('cancelFolder').addEventListener('click', () => {
+                document.getElementById('folderModal').style.display = 'none';
+            });
+            
+            document.getElementById('confirmFolder').addEventListener('click', () => {
+                const folderPath = document.getElementById('folderPath').value;
+                
+                if (folderPath) {
+                    openFolder(folderPath);
+                    document.getElementById('folderModal').style.display = 'none';
+                    document.getElementById('folderPath').value = '';
+                }
+            });
+
+            // 点击模态框外部关闭
+            window.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal')) {
+                    e.target.style.display = 'none';
+                }
+            });
+        }
+
+        // 克隆仓库
+        async function cloneRepository(repoUrl, localDir) {
+            console.log('克隆仓库:', repoUrl, '到目录:', localDir);
+            
+            addTerminalOutput(`正在克隆仓库 ${repoUrl} 到 ${localDir}...`);
+            addTerminalOutput(`使用${currentMode === 'cloud' ? '云侧EC2' : '端侧本地'}环境`);
+            
+            try {
+                // 调用真实的后端API进行克隆
+                const response = await fetch('http://18.212.49.136:5002/api/clone-repo', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        repo_url: repoUrl,
+                        local_dir: localDir
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addTerminalOutput(`✅ 克隆完成！`);
+                    addTerminalOutput(`项目已保存到: ${result.path}`);
+                    
+                    // 更新当前工作区
+                    currentWorkspace = result.path;
+                    document.getElementById('workspacePath').textContent = currentWorkspace;
+                    
+                    // 获取项目信息并更新界面
+                    await updateProjectInfo(result.path);
+                    
+                    // 加载项目文件树
+                    await loadProjectFiles(result.path);
+                    
+                } else {
+                    addTerminalOutput(`❌ 克隆失败: ${result.error}`);
+                }
+                
+            } catch (error) {
+                console.error('克隆仓库失败:', error);
+                addTerminalOutput(`❌ 克隆失败: ${error.message}`);
+            }
+        }
+
+        // 更新项目信息
+        async function updateProjectInfo(projectPath) {
+            try {
+                const response = await fetch('http://18.212.49.136:5002/api/get-project-info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ path: projectPath })
+                });
+                
+                const projectInfo = await response.json();
+                
+                if (projectInfo.name) {
+                    // 更新右上角项目信息 - 尝试多个可能的元素
+                    const projectElements = [
+                        document.querySelector('.project-name'),
+                        document.getElementById('currentWorkspace'),
+                        document.querySelector('[class*="project"]'),
+                        document.querySelector('.workspace-path'),
+                        document.getElementById('workspacePath')
+                    ];
+                    
+                    projectElements.forEach(element => {
+                        if (element) {
+                            if (element.classList.contains('workspace-path')) {
+                                element.textContent = `工作区: ${projectPath}`;
+                            } else {
+                                element.textContent = projectInfo.name;
+                            }
+                        }
+                    });
+                    
+                    // 更新页面标题
+                    document.title = `SmartUI - ${projectInfo.name}`;
+                    
+                    // 更新项目类型和描述
+                    console.log('项目信息:', projectInfo);
+                    addTerminalOutput(`项目名称: ${projectInfo.name}`);
+                    addTerminalOutput(`项目类型: ${projectInfo.type}`);
+                    if (projectInfo.description) {
+                        addTerminalOutput(`项目描述: ${projectInfo.description}`);
+                    }
+                    if (projectInfo.version) {
+                        addTerminalOutput(`项目版本: ${projectInfo.version}`);
+                    }
+                    if (projectInfo.git_url) {
+                        addTerminalOutput(`Git仓库: ${projectInfo.git_url}`);
+                    }
+                    addTerminalOutput(`文件数量: ${projectInfo.file_count}, 文件夹数量: ${projectInfo.folder_count}`);
+                    
+                    // 尝试更新右上角的项目管理区域
+                    const projectManagementArea = document.querySelector('.project-management') || 
+                                                 document.querySelector('[class*="管理"]');
+                    if (projectManagementArea) {
+                        projectManagementArea.innerHTML = `
+                            <div class="project-info">
+                                <h3>${projectInfo.name}</h3>
+                                <p>类型: ${projectInfo.type}</p>
+                                ${projectInfo.description ? `<p>${projectInfo.description}</p>` : ''}
+                            </div>
+                        `;
+                    }
+                }
+                
+            } catch (error) {
+                console.error('获取项目信息失败:', error);
+                addTerminalOutput(`获取项目信息失败: ${error.message}`);
+            }
+        }
+
+        // 加载项目文件
+        async function loadProjectFiles(projectPath) {
+            try {
+                const response = await fetch('http://18.212.49.136:5002/api/get-file-tree', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        path: projectPath,
+                        max_depth: 3
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.tree) {
+                    // 更新左侧文件资源管理器
+                    currentFiles = result.tree;
+                    renderFileList();
+                    addTerminalOutput(`已加载 ${result.tree.length} 个文件/文件夹`);
+                }
+                
+            } catch (error) {
+                console.error('加载项目文件失败:', error);
+                addTerminalOutput(`加载文件失败: ${error.message}`);
+            }
+        }
+                renderFileList();
+                
+                // 更新当前工作区
+                document.getElementById('currentWorkspace').textContent = localDir;
+            }, 2000);
+        }
+
+        // 打开文件夹
+        async function openFolder(folderPath) {
+            console.log('打开文件夹:', folderPath);
+            
+            addTerminalOutput(`正在打开文件夹 ${folderPath}...`);
+            addTerminalOutput(`使用${currentMode === 'cloud' ? '云侧EC2' : '端侧本地'}环境`);
+            
+            try {
+                // 更新当前工作区
+                currentWorkspace = folderPath;
+                document.getElementById('workspacePath').textContent = currentWorkspace;
+                
+                // 获取项目信息并更新界面
+                await updateProjectInfo(folderPath);
+                
+                // 加载项目文件树
+                await loadProjectFiles(folderPath);
+                
+                addTerminalOutput(`✅ 文件夹已打开！`);
+                addTerminalOutput(`当前工作目录: ${folderPath}`);
+                
+            } catch (error) {
+                console.error('打开文件夹失败:', error);
+                addTerminalOutput(`❌ 打开文件夹失败: ${error.message}`);
+            }
+        }
+
+        // 执行终端命令
+        function executeTerminalCommand(command) {
+            if (!command.trim()) return;
+            
+            const prompt = currentMode === 'cloud' ? 'ec2-user@smartui:~$' : 
+                          (navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'alexchuang@MacBook:~$' : 'alexchuang@WSL:~$');
+            
+            addTerminalOutput(`${prompt} ${command}`);
+            
+            // 立即处理某些命令，避免延迟
+            if (command.toLowerCase() === 'clear') {
+                document.getElementById('terminalOutput').innerHTML = '';
+                return;
+            }
+            
+            // 模拟命令执行，减少延迟
+            setTimeout(() => {
+                let output = '';
+                
+                switch (command.toLowerCase().trim()) {
+                    case 'ls':
+                    case 'dir':
+                        output = currentFiles.map(f => f.name).join('  ');
+                        break;
+                    case 'pwd':
+                        output = currentWorkspace;
+                        break;
+                    case 'whoami':
+                        output = currentMode === 'cloud' ? 'ec2-user' : 'alexchuang';
+                        break;
+                    case 'date':
+                        output = new Date().toString();
+                        break;
+                    case 'env':
+                        output = `MODE=${currentMode}\nWORKSPACE=${currentWorkspace}\nSSH_TUNNEL=${sshTunnelConnected ? 'connected' : 'disconnected'}`;
+                        break;
+                    case 'cd ..':
+                        // 处理返回上级目录
+                        const pathParts = currentWorkspace.split('/');
+                        if (pathParts.length > 1) {
+                            pathParts.pop();
+                            currentWorkspace = pathParts.join('/') || '/';
+                            document.getElementById('workspacePath').textContent = currentWorkspace;
+                            output = `切换到目录: ${currentWorkspace}`;
+                        } else {
+                            output = '已在根目录';
+                        }
+                        break;
+                    case 'cd ~':
+                        // 处理返回主目录
+                        currentWorkspace = currentMode === 'cloud' ? '/home/ec2-user' : '/Users/alexchuang';
+                        document.getElementById('workspacePath').textContent = currentWorkspace;
+                        output = `切换到主目录: ${currentWorkspace}`;
+                        break;
+                    default:
+                        if (command.startsWith('cd ')) {
+                            const targetDir = command.substring(3).trim();
+                            if (targetDir) {
+                                // 处理cd命令
+                                if (targetDir === '..') {
+                                    const pathParts = currentWorkspace.split('/');
+                                    if (pathParts.length > 1) {
+                                        pathParts.pop();
+                                        currentWorkspace = pathParts.join('/') || '/';
+                                    }
+                                } else if (targetDir === '~') {
+                                    currentWorkspace = currentMode === 'cloud' ? '/home/ec2-user' : '/Users/alexchuang';
+                                } else if (targetDir.startsWith('/')) {
+                                    currentWorkspace = targetDir;
+                                } else {
+                                    currentWorkspace = currentWorkspace + '/' + targetDir;
+                                }
+                                document.getElementById('workspacePath').textContent = currentWorkspace;
+                                output = `切换到目录: ${currentWorkspace}`;
+                            } else {
+                                output = '请指定目录';
+                            }
+                        } else if (command.startsWith('git ')) {
+                            output = `执行Git命令: ${command} (${currentMode === 'cloud' ? '云侧' : '端侧'})`;
+                        } else if (command.startsWith('npm ') || command.startsWith('yarn ')) {
+                            output = `执行包管理命令: ${command} (${currentMode === 'cloud' ? '云侧' : '端侧'})`;
+                        } else {
+                            output = `命令执行完成: ${command} (${currentMode === 'cloud' ? '云侧EC2' : '端侧本地'})`;
+                        }
+                }
+                
+                if (output) {
+                    addTerminalOutput(output);
+                }
+                
+                // 显示新的提示符
+                setTimeout(() => {
+                    const newPrompt = currentMode === 'cloud' ? 'ec2-user@smartui:~$' : 
+                                    (navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'alexchuang@MacBook:~$' : 'alexchuang@WSL:~$');
+                    addTerminalOutput(newPrompt + ' ');
+                }, 100);
+                
+            }, 200); // 减少延迟时间
+        }
+
+        // 添加终端输出
+        function addTerminalOutput(text) {
+            const output = document.getElementById('terminalOutput');
+            const line = document.createElement('div');
+            line.className = 'terminal-line';
+            line.textContent = text;
+            output.appendChild(line);
+            output.scrollTop = output.scrollHeight;
+        }
+    </script>
+</body>
+</html>
+
+
+        // 文件夹浏览器相关函数
+        let currentBrowsePath = '/home/ec2-user';
+        let selectedFolderPath = '';
+
+        // 加载文件夹内容
+        async function loadFolderContents(path) {
+            currentBrowsePath = path;
+            document.getElementById('currentPath').value = path;
+            
+            const browser = document.getElementById('folderBrowser');
+            browser.innerHTML = '<div class="text-gray-400 text-center py-8">加载中...</div>';
+            
+            // 获取真实文件夹内容
+            try {
+                const folders = await getRealFolders(path);
+                displayFolders(folders);
+            } catch (error) {
+                console.error('加载文件夹失败:', error);
+                browser.innerHTML = '<div class="text-red-400 text-center py-8">加载失败，请重试</div>';
+            }
+        }
+
+        // 获取真实文件夹数据
+        async function getRealFolders(path) {
+            try {
+                const response = await fetch('http://18.212.49.136:5002/api/browse-folder', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ path: path })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                return data.items || [];
+            } catch (error) {
+                console.error('获取文件夹内容失败:', error);
+                // 如果API调用失败，返回空数组
+                return [];
+            }
+        }
+
+        // 显示文件夹列表
+        function displayFolders(folders) {
+            const browser = document.getElementById('folderBrowser');
+            browser.innerHTML = '';
+            
+            folders.forEach(folder => {
+                const folderItem = document.createElement('div');
+                folderItem.className = 'folder-item flex items-center gap-2 p-2 hover:bg-gray-700 cursor-pointer rounded';
+                
+                // 根据类型显示不同图标
+                const icon = folder.type === 'folder' ? '📁' : '📄';
+                const iconColor = folder.type === 'folder' ? 'text-blue-400' : 'text-green-400';
+                
+                folderItem.innerHTML = `
+                    <span class="${iconColor}">${icon}</span>
+                    <span class="flex-1">${folder.name}</span>
+                    <span class="text-xs text-gray-500">${folder.type}</span>
+                `;
+                
+                folderItem.addEventListener('click', function() {
+                    selectFolder(folder.path, folderItem, folder.type);
+                });
+                
+                // 只有文件夹可以双击进入
+                if (folder.type === 'folder') {
+                    folderItem.addEventListener('dblclick', function() {
+                        loadFolderContents(folder.path);
+                    });
+                }
+                
+                browser.appendChild(folderItem);
+            });
+        }
+
+        // 选择文件夹
+        function selectFolder(path, element, type) {
+            // 清除之前的选择
+            document.querySelectorAll('.folder-item').forEach(item => {
+                item.classList.remove('bg-blue-600');
+            });
+            
+            // 高亮当前选择
+            element.classList.add('bg-blue-600');
+            
+            // 更新选中的文件夹
+            selectedFolderPath = path;
+            document.getElementById('selectedFolder').value = path;
+            
+            // 只有选择文件夹时才能确认
+            const confirmBtn = document.getElementById('confirmFolder');
+            if (type === 'folder') {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = '选择此文件夹';
+            } else {
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = '请选择文件夹';
+            }
+        }
+
+        // 上级目录
+        function goUpDirectory() {
+            const pathParts = currentBrowsePath.split('/').filter(part => part);
+            if (pathParts.length > 1) {
+                pathParts.pop();
+                const parentPath = '/' + pathParts.join('/');
+                loadFolderContents(parentPath);
+            } else if (currentBrowsePath !== '/') {
+                loadFolderContents('/');
+            }
+        }
+
+        // 刷新当前目录
+        function refreshCurrentDirectory() {
+            loadFolderContents(currentBrowsePath);
+        }
+
+        // 打开选中的文件夹
+        function openSelectedFolder() {
+            if (selectedFolderPath) {
+                currentWorkspace = selectedFolderPath;
+                document.getElementById('folderModal').style.display = 'none';
+                
+                // 更新工作区显示
+                document.querySelector('.workspace-path').textContent = `工作区: ${selectedFolderPath}`;
+                
+                // 重新加载文件列表
+                initializeFileExplorer();
+                
+                console.log('已打开文件夹:', selectedFolderPath);
+                alert(`已打开文件夹: ${selectedFolderPath}`);
+            }
+        }
+
+        // 克隆仓库函数
+        function cloneRepository() {
+            const repoUrl = document.getElementById('repoUrl').value;
+            const localDir = document.getElementById('localDir').value;
+            
+            if (repoUrl && localDir) {
+                document.getElementById('cloneModal').style.display = 'none';
+                
+                // 模拟克隆过程
+                console.log('正在克隆仓库:', repoUrl, '到目录:', localDir);
+                alert(`正在克隆仓库 ${repoUrl} 到 ${localDir} 目录...`);
+                
+                // 更新工作区
+                setTimeout(() => {
+                    currentWorkspace = `/home/ec2-user/${localDir}`;
+                    document.querySelector('.workspace-path').textContent = `工作区: ${currentWorkspace}`;
+                    initializeFileExplorer();
+                    alert('仓库克隆完成！');
+                }, 2000);
+            }
+        }
+
+
+        // ============================================================================
+        // WebSocket 终端连接功能
+        // ============================================================================
+        
+        // 添加Socket.IO客户端
+        const script = document.createElement('script');
+        script.src = 'https://cdn.socket.io/4.7.2/socket.io.min.js';
+        document.head.appendChild(script);
+        
+        // 终端WebSocket连接
+        let terminalSocket = null;
+        let currentTerminalSession = null;
+        let currentEnvironment = 'cloud'; // 'cloud' or 'local'
+        
+        // 初始化终端WebSocket连接
+        function initializeTerminalWebSocket() {
+            // 等待Socket.IO加载完成
+            setTimeout(() => {
+                if (typeof io !== 'undefined') {
+                    // 连接到后端WebSocket终端服务
+                    terminalSocket = io('http://localhost:8080');
+                    
+                    terminalSocket.on('connect', function() {
+                        console.log('终端WebSocket连接成功');
+                        updateTerminalStatus('已连接', 'green');
+                    });
+                    
+                    terminalSocket.on('disconnect', function() {
+                        console.log('终端WebSocket连接断开');
+                        updateTerminalStatus('已断开', 'red');
+                    });
+                    
+                    terminalSocket.on('terminal_started', function(data) {
+                        console.log('终端会话启动:', data);
+                        currentTerminalSession = data.session_id;
+                        updateTerminalPrompt(data.environment);
+                    });
+                    
+                    terminalSocket.on('terminal_output', function(data) {
+                        if (data.session_id === currentTerminalSession) {
+                            appendTerminalOutput(data.data);
+                        }
+                    });
+                    
+                    terminalSocket.on('terminal_error', function(data) {
+                        console.error('终端错误:', data.message);
+                        appendTerminalOutput(`错误: ${data.message}\n`);
+                    });
+                    
+                    terminalSocket.on('terminal_closed', function(data) {
+                        console.log('终端会话关闭:', data.session_id);
+                        if (data.session_id === currentTerminalSession) {
+                            currentTerminalSession = null;
+                            appendTerminalOutput('终端会话已关闭\n');
+                        }
+                    });
+                } else {
+                    console.error('Socket.IO未加载，重试中...');
+                    setTimeout(initializeTerminalWebSocket, 1000);
+                }
+            }, 1000);
+        }
+        
+        // 启动终端会话
+        function startTerminalSession(environment = 'cloud') {
+            if (terminalSocket && terminalSocket.connected) {
+                currentEnvironment = environment;
+                terminalSocket.emit('start_terminal', {
+                    environment: environment
+                });
+                
+                // 清空终端输出
+                document.getElementById('terminalOutput').innerHTML = '';
+                appendTerminalOutput(`正在启动${environment === 'cloud' ? '云侧' : '端侧'}终端...\n`);
+            } else {
+                console.error('终端WebSocket未连接');
+                appendTerminalOutput('错误: 终端服务未连接\n');
+            }
+        }
+        
+        // 发送终端输入
+        function sendTerminalInput(input) {
+            if (terminalSocket && currentTerminalSession) {
+                terminalSocket.emit('terminal_input', {
+                    session_id: currentTerminalSession,
+                    data: input
+                });
+            }
+        }
+        
+        // 添加终端输出
+        function appendTerminalOutput(output) {
+            const terminalOutput = document.getElementById('terminalOutput');
+            if (terminalOutput) {
+                // 转义HTML并保持格式
+                const escapedOutput = output
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br>')
+                    .replace(/ /g, '&nbsp;');
+                
+                terminalOutput.innerHTML += escapedOutput;
+                
+                // 滚动到底部
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }
+        }
+        
+        // 更新终端状态
+        function updateTerminalStatus(status, color) {
+            const statusElement = document.getElementById('terminalStatus');
+            const indicatorElement = document.getElementById('terminalIndicator');
+            
+            if (statusElement) {
+                statusElement.textContent = status;
+            }
+            
+            if (indicatorElement) {
+                indicatorElement.className = `w-2 h-2 bg-${color}-400 rounded-full`;
+            }
+        }
+        
+        // 更新终端提示符
+        function updateTerminalPrompt(environment) {
+            const promptElement = document.getElementById('terminalPrompt');
+            const inputPromptElement = document.getElementById('inputPrompt');
+            
+            if (environment === 'cloud') {
+                const cloudPrompt = 'ec2-user@smartui:~$';
+                if (promptElement) promptElement.textContent = cloudPrompt;
+                if (inputPromptElement) inputPromptElement.textContent = '$';
+            } else {
+                const localPrompt = 'alexchuang@MacBook:~$';
+                if (promptElement) promptElement.textContent = localPrompt;
+                if (inputPromptElement) inputPromptElement.textContent = '$';
+            }
+        }
+        
+        // 修改原有的终端输入处理
+        function handleTerminalInput() {
+            const terminalInput = document.getElementById('terminalInput');
+            if (terminalInput) {
+                terminalInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        const command = this.value;
+                        if (command.trim()) {
+                            // 显示用户输入
+                            const prompt = currentEnvironment === 'cloud' ? 'ec2-user@smartui:~$' : 'alexchuang@MacBook:~$';
+                            appendTerminalOutput(`${prompt} ${command}\n`);
+                            
+                            // 发送到真实终端
+                            sendTerminalInput(command + '\n');
+                            
+                            // 清空输入框
+                            this.value = '';
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 环境切换处理
+        function handleEnvironmentSwitch() {
+            const deployModeToggle = document.getElementById('deployModeToggle');
+            if (deployModeToggle) {
+                deployModeToggle.addEventListener('click', function() {
+                    const isActive = this.classList.contains('active');
+                    const newEnvironment = isActive ? 'local' : 'cloud';
+                    
+                    // 关闭当前终端会话
+                    if (terminalSocket && currentTerminalSession) {
+                        terminalSocket.emit('close_terminal', {
+                            session_id: currentTerminalSession
+                        });
+                    }
+                    
+                    // 启动新环境的终端会话
+                    setTimeout(() => {
+                        startTerminalSession(newEnvironment);
+                    }, 500);
+                });
+            }
+        }
+        
+        // 修改原有的初始化函数
+        const originalInitialize = window.onload;
+        window.onload = function() {
+            if (originalInitialize) originalInitialize();
+            
+            // 初始化WebSocket终端
+            initializeTerminalWebSocket();
+            
+            // 绑定终端输入事件
+            handleTerminalInput();
+            
+            // 绑定环境切换事件
+            handleEnvironmentSwitch();
+            
+            // 当切换到终端标签页时启动终端会话
+            const terminalTab = document.querySelector('[data-tab="terminal"]');
+            if (terminalTab) {
+                terminalTab.addEventListener('click', function() {
+                    setTimeout(() => {
+                        if (!currentTerminalSession) {
+                            startTerminalSession(currentEnvironment);
+                        }
+                    }, 100);
+                });
+            }
+        };
+    </script>
+</body>
+</html>
+
