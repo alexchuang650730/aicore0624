@@ -103,7 +103,9 @@
             border: 1px solid #4b5563;
         }
         .toggle-switch.active {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
         .toggle-slider {
             position: absolute;
@@ -111,22 +113,24 @@
             left: 2px;
             width: 56px;
             height: 28px;
-            background: white;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
             border-radius: 14px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1);
         }
         .toggle-switch.active .toggle-slider {
             transform: translateX(60px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 2px 4px rgba(0,0,0,0.15);
         }
         .toggle-text {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
             font-size: 11px;
-            font-weight: 500;
-            transition: all 0.3s ease;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         .toggle-text.left {
             left: 8px;
@@ -134,19 +138,49 @@
         .toggle-text.right {
             right: 8px;
         }
-        /* 未激活状态：左侧选中(aicore) */
+        /* 未激活状态：左侧选中(aicore/端侧) - 左边蓝色高亮 */
+        .toggle-switch:not(.active) {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #6b7280 50%, #9ca3af 100%);
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
         .toggle-switch:not(.active) .toggle-text.left {
-            color: #374151; /* 深色文字在白色滑块上 */
+            color: #1f2937;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
         }
         .toggle-switch:not(.active) .toggle-text.right {
-            color: #d1d5db; /* 更亮的灰色文字，提高可见度 */
+            color: #f3f4f6;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
-        /* 激活状态：右侧选中(manus) */
+        /* 激活状态：右侧选中(manus/云侧) - 右边蓝色高亮 */
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #6b7280 0%, #9ca3af 50%, #1e40af 50%, #3b82f6 100%);
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        }
         .toggle-switch.active .toggle-text.left {
-            color: #e5e7eb; /* 更亮的白色文字在蓝色背景上 */
+            color: #f3f4f6;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
         }
         .toggle-switch.active .toggle-text.right {
-            color: #374151; /* 深色文字在白色滑块上 */
+            color: #1f2937;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+        
+        /* 悬停效果增强 */
+        .toggle-switch:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
+        }
+        
+        /* 点击效果 */
+        .toggle-switch:active {
+            transform: translateY(0);
+            transition: all 0.1s ease;
         }
         
         /* 系统状态面板样式 */
@@ -356,8 +390,8 @@
                         <div class="space-y-2">
                             <div class="status-item">
                                 <div class="flex items-center gap-2">
-                                    <span>🚀</span>
-                                    <span class="text-sm">一键部署</span>
+                                    <span>🤖</span>
+                                    <span class="text-sm">AIcore部署</span>
                                 </div>
                                 <div class="status-dot" id="deployStatusDot"></div>
                             </div>
@@ -372,10 +406,18 @@
                             
                             <div class="status-item">
                                 <div class="flex items-center gap-2">
-                                    <span>🔗</span>
-                                    <span class="text-sm">SSH隧道</span>
+                                    <span>☁️</span>
+                                    <span class="text-sm">端云一键部署</span>
                                 </div>
                                 <div class="status-dot" id="sshTunnelDot"></div>
+                            </div>
+                            
+                            <div class="status-item">
+                                <div class="flex items-center gap-2">
+                                    <span>🧠</span>
+                                    <span class="text-sm">语意分析服务部署</span>
+                                </div>
+                                <div class="status-dot" id="semanticAnalysisDot"></div>
                             </div>
                         </div>
                     </div>
@@ -647,7 +689,8 @@
         let lspSocket = null;
         let currentMode = 'cloud'; // 'cloud' 或 'local'
         let currentAIMode = 'aicore'; // 'aicore' 或 'manus'
-        let currentWorkspace = '/home/ec2-user/powerautomation_web';
+        // 根据当前环境设置初始工作区路径
+        let currentWorkspace = currentMode === 'cloud' ? '/home/ec2-user/powerautomation_web' : '/Users/alexchuang/powerautomation_web';
         let currentFiles = [];
         let sshTunnelConnected = true; // 假设SSH隧道已通过登录建立
 
@@ -666,7 +709,7 @@
         // 初始化终端
         function initializeTerminal() {
             addTerminalOutput('SmartUI IDE 终端已启动');
-            addTerminalOutput('SSH隧道已建立，支持端侧/云侧无缝切换');
+            addTerminalOutput('端云一键部署已建立，支持端侧/云侧无缝切换');
             addTerminalOutput('当前模式: 云侧终端 (EC2)');
             addTerminalOutput('');
         }
@@ -688,7 +731,7 @@
             require.config({ paths: { vs: 'https://unpkg.com/monaco-editor@0.34.0/min/vs' } });
             require(['vs/editor/editor.main'], function () {
                 monacoEditor = monaco.editor.create(document.getElementById('monacoContainer'), {
-                    value: '# 欢迎使用 SmartUI IDE\n\n# 请从左侧项目资源中选择文件开始编辑\n# LSP服务器将提供智能补全、错误诊断等功能\n# SSH隧道已建立，支持端侧/云侧无缝切换\n\ndef hello_smartui():\n    print("Hello from SmartUI!")\n    return "AI-First IDE Platform"',
+                    value: '# 欢迎使用 SmartUI IDE\n\n# 请从左侧项目资源中选择文件开始编辑\n# LSP服务器将提供智能补全、错误诊断等功能\n# 端云一键部署已建立，支持端侧/云侧无缝切换\n# AIcore部署和语意分析服务已就绪\n\ndef hello_smartui():\n    print("Hello from SmartUI!")\n    return "AI-First IDE Platform"',
                     language: 'python',
                     theme: 'vs-dark',
                     automaticLayout: true,
@@ -809,17 +852,21 @@
 
         // 更新系统状态
         function updateSystemStatus() {
-            // 一键部署状态（假设已通过登录建立）
+            // AIcore部署状态（假设已通过登录建立）
             const deployStatusDot = document.getElementById('deployStatusDot');
             deployStatusDot.classList.remove('disconnected');
             
-            // SSH隧道状态（假设已通过登录建立）
+            // 端云一键部署状态（假设已通过登录建立）
             const sshTunnelDot = document.getElementById('sshTunnelDot');
             if (sshTunnelConnected) {
                 sshTunnelDot.classList.remove('disconnected');
             } else {
                 sshTunnelDot.classList.add('disconnected');
             }
+            
+            // 语意分析服务部署状态
+            const semanticAnalysisDot = document.getElementById('semanticAnalysisDot');
+            semanticAnalysisDot.classList.remove('disconnected'); // 假设服务正常运行
         }
 
         // 更新LSP状态
@@ -851,7 +898,7 @@
 
             document.getElementById('deployModeToggle').addEventListener('click', function() {
                 if (!sshTunnelConnected) {
-                    alert('SSH隧道未建立，无法切换模式。请先运行一键部署建立连接。');
+                    alert('端云一键部署未建立，无法切换模式。请先运行AIcore部署建立连接。');
                     return;
                 }
                 
@@ -1677,7 +1724,9 @@
                 
                 // 更新工作区
                 setTimeout(() => {
-                    currentWorkspace = `/home/ec2-user/${localDir}`;
+                    // 根据当前环境设置正确的路径
+                    const basePath = currentMode === 'cloud' ? '/home/ec2-user' : '/Users/alexchuang';
+                    currentWorkspace = `${basePath}/${localDir}`;
                     document.querySelector('.workspace-path').textContent = `工作区: ${currentWorkspace}`;
                     initializeFileExplorer();
                     alert('仓库克隆完成！');
@@ -1855,6 +1904,21 @@
                 deployModeToggle.addEventListener('click', function() {
                     const isActive = this.classList.contains('active');
                     const newEnvironment = isActive ? 'local' : 'cloud';
+                    
+                    // 更新当前模式
+                    currentMode = newEnvironment;
+                    
+                    // 更新工作区路径
+                    const projectName = currentWorkspace.split('/').pop();
+                    const basePath = currentMode === 'cloud' ? '/home/ec2-user' : '/Users/alexchuang';
+                    currentWorkspace = `${basePath}/${projectName}`;
+                    
+                    // 更新界面显示
+                    const workspacePathElement = document.getElementById('workspacePath') || 
+                                               document.querySelector('.workspace-path');
+                    if (workspacePathElement) {
+                        workspacePathElement.textContent = currentWorkspace;
+                    }
                     
                     // 关闭当前终端会话
                     if (terminalSocket && currentTerminalSession) {
