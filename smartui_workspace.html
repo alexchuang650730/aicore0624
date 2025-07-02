@@ -1595,6 +1595,21 @@
             output.scrollTop = output.scrollHeight;
         }
     </script>
+<script src="/tmp/logout_fix.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+        logoutBtn.onclick = function(e) {
+            e.preventDefault();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        };
+        console.log("退出登录功能已修复");
+    }
+});
+</script>
 </body>
 </html>
 
@@ -1990,6 +2005,21 @@
             }
         };
     </script>
+<script src="/tmp/logout_fix.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+        logoutBtn.onclick = function(e) {
+            e.preventDefault();
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = "index.html";
+        };
+        console.log("退出登录功能已修复");
+    }
+});
+</script>
 </body>
 </html>
 
